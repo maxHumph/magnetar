@@ -56,32 +56,32 @@ STATIC_ASSERT(sizeof(b32) == 4, "Expected b32 = 4 bytes.");
 // Platform detection
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
-#define KPLATFORM_WINDOWS 1
+#define MPLATFORM_WINDOWS 1
 #ifndef _WIN65
 #error "Requires a 64 bit windows version."
 #endif
 
 #elif defined(__linux__) || defined(__gnu_linux__)
-#define KPLATFORM_LINUX 1
+#define MPLATFORM_LINUX 1
 #if defined(__ANDROID__)
-#define KPLATFORM_ANDROID 1
+#define MPLATFORM_ANDROID 1
 #endif
 
 #elif defined(__unix__)
-#define KPLATFORM_UNIX 1
+#define MPLATFORM_UNIX 1
 
 #elif defined(_POSIX_VERSION)
-#define KPLATFORM_POSIX 1
+#define MPLATFORM_POSIX 1
 
 #elif __APPLE__
-#define KPLATFORM_APPLE 1
+#define MPLATFORM_APPLE 1
 #include <TargetConditionals.h>
 
 #if TARGET_IPHONE_SIMULATOR
-#define KPLATFORM_IOS 1
-#define KPLATFORM_IOS_SIMULATOR 1
+#define MPLATFORM_IOS 1
+#define MPLATFORM_IOS_SIMULATOR 1
 #elif TARGET_OS_IPHONE
-#define KPLATFORM_IOS 1
+#define MPLATFORM_IOS 1
 
 #elif TARGET_OS_MAC
 #else
@@ -91,7 +91,7 @@ STATIC_ASSERT(sizeof(b32) == 4, "Expected b32 = 4 bytes.");
 #error "Unknown platform."
 #endif
 
-#ifdef KEXPORT
+#ifdef MEXPORT
 
 // Exports
 #ifdef _MSC_VER

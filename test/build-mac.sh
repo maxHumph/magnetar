@@ -6,7 +6,7 @@ set -x
 mkdir -p ../bin
 
 # Glob c files
-cFiles=$(find . -type f -name "*.c")
+cFiles=("${(@f)$(find . -type f -name '*.c')}")
 
 # echo "Files:" $cFiles
 
@@ -16,7 +16,7 @@ compilerFlags=(-g -fPIC)
 # -Wall -Werror
 includeFlags=(-Isrc -I../engine/src/)
 linkerFlags=(-L../bin/ -lengine -Wl,-rpath,@loader_path)
-defines=(-D_DEBUG -DKEXPORT)
+defines=(-D_DEBUG -DMEXPORT)
 
 echo "Building $assembly..."
 echo clang $cFiles $compilerFlags -o ../bin/$assembly $defines $includeFlags $linkerFlags

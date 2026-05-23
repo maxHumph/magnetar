@@ -1,3 +1,9 @@
+/**
+ * @file define.h
+ * @brief Contains definitions for basic types, platform information and
+ * function exports
+ */
+
 #pragma once
 
 // Basic types
@@ -89,7 +95,7 @@ STATIC_ASSERT(sizeof(b32) == 4, "Expected b32 = 4 bytes.");
 
 // Exports
 #ifdef _MSC_VER
-#define MGAPI __declspec(dllimport)
+#define MGAPI __declspec(dllexport)
 #else
 #define MGAPI __attribute((visibility("default")))
 #endif

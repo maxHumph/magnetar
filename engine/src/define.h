@@ -85,20 +85,20 @@ STATIC_ASSERT(sizeof(b32) == 4, "Expected b32 = 4 bytes.");
 #error "Unknown platform."
 #endif
 
-#ifndef KEXPORT
+#ifdef KEXPORT
 
 // Exports
-#ifndef _MSC_VER
-#define MAGN __declspec(dllimport)
+#ifdef _MSC_VER
+#define MGAPI __declspec(dllimport)
 #else
-#define MAGN __attribute((visibility("default")))
+#define MGAPI __attribute((visibility("default")))
 #endif
 #else
 
 // Imports
-#ifndef _MSC_VER
-#define MAGN __declspec(dllimport)
+#ifdef _MSC_VER
+#define MGAPI __declspec(dllimport)
 #else
-#define MAGN
+#define MGAPI
 #endif
 #endif

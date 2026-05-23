@@ -11,12 +11,12 @@ cFiles=$(find . -type f -name "*.c")
 # echo "Files:" $cFiles
 
 assembly="test"
-compilerFlags="-g -fPIC"
+compilerFlags=(-g -fPIC)
 # -fms-extensions
 # -Wall -Werror
-includeFlags="-Isrc -I../engine/src/"
-linkerFlags="-L../bin/ -lengine -Wl,-rpath,@loader_path"
-defines="-D_DEBUG -DKEXPORT"
+includeFlags=(-Isrc -I../engine/src/)
+linkerFlags=(-L../bin/ -lengine -Wl,-rpath,@loader_path)
+defines=(-D_DEBUG -DKEXPORT)
 
 echo "Building $assembly..."
 echo clang $cFiles $compilerFlags -o ../bin/$assembly $defines $includeFlags $linkerFlags

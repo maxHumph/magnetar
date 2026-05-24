@@ -2,9 +2,7 @@
  * @file platform_mac.m
  * @brief MacOS API specific stuff written in disgusting Objective C.
  *
- * Warning: This file is vibe coded because I don't want to learn objective c so
- * the code is probably a bit dodgy. (This is the only time I have ever or will
- * ever vibe code.)
+ * Warning: I don't understand objective-c so this code is probably terrible.
  */
 
 #include "platform.h"
@@ -19,10 +17,56 @@
 
 #import <Cocoa/Cocoa.h>
 
+/**
+ * @brief Event type specifier for sruct MacEvent.
+ */
+typedef enum MacEventType {
+
+  MAC_EVENT_TYPE_NONE = 0,
+
+  MAC_EVENT_TYPE_QUIT,
+
+  MAC_EVENT_TYPE_WINDOW_RESIZED,
+  MAC_EVENT_TYPE_WINDOW_MINIMIZED,
+  MAC_EVENT_TYPE_WINDOW_RESTORED,
+
+  MAC_EVENT_TYPE_FOCUS_GAINED,
+  MAC_EVENT_TYPE_FOCUS_LOST,
+
+  MAC_EVENT_TYPE_KEY_DOWN,
+  MAC_EVENT_TYPE_KEY_UP,
+  
+} MacEventType;
+
+typedef struct MacEventWindowResized {
+  i32 height;
+  i32 width;
+} MacEventWindowResized;
+
+/**
+ * @brief Generic type for handling mac events since mac uses NSEvents for input and NSNotifications for window events.
+ */
+typedef struct MacEvent {
+
+  MacEventType event_type;
+
+  union {
+    MacEventWindowResized window_resized;
+  };
+
+} MacEvent;
+
+/**
+ * @brief Used by the engine to access os specific API code.
+ */
 typedef struct InternalState {
   NSWindow* ns_window;
   // CAMetalLayer* layer;
 } InternalState;
+
+
+@interface WindowDelegate : NSObject<NSWindowDelegate>
+@end
 
 b8 platform_startup(PlatformState* platform_state, const char* application_name, i32 x_pos,
                     i32 y_pos, i32 width, i32 height) {
@@ -60,23 +104,25 @@ void platform_shutdown(PlatformState* platform_state) {
   free(state);
 }
 
-//implemented further down.
-static void process_event(NSEvent* ns_event);
+static void translate_ns_event(NSEvent* ns_event); //implemented further down.
 
 b8 platform_pump_messages(PlatformState* platform_state) {
-  NSEvent* event;
+  NSEvent* ns_event;
 
-  while ((event =
+  while ((ns_event =
 	  [NSApp nextEventMatchingMask:NSEventMaskAny
 			     untilDate:nil
 				inMode:NSDefaultRunLoopMode
 			       dequeue:YES]))
     {
-      process_event(event);
+      MacEvent e = translate_ns_event(ns_event);
 
+      if (e.event_type != MAC_EVENT_TYPE_NONE)
       {
-	[NSApp sendEvent:event];
+	process_event(&e);
       }
+
+      [NSApp sendEvent:ns_event];
     }
   return TRUE;
 }
@@ -137,7 +183,15 @@ void platform_sleep(u64 ms)
     nanosleep(&ts, NULL);
 }
 
-static void process_event(NSEvent* ns_event) {
+/**
+ * @brief Translates input events into a generic mac os event type so all mac events can be handled together.
+ * @param ns_event A point to the NSEvent.
+ * @return A MacEvent containing the relavent data.
+ */
+static MacEvent translate_ns_event(NSEvent* ns_event) {
+  MacEvent e;
+  e.event_type = MAC_EVENT_TYPE_NONE;
+
   switch ([ns_event type]){
   case NSEventTypeKeyDown:
     break;
@@ -151,6 +205,13 @@ static void process_event(NSEvent* ns_event) {
   default:
     break;
   }
+}
+
+/**
+ * @brief Handles how differnet MacEvents are used.
+ * @param e A pointer to the MacEvent.
+ */
+static void process_event(MacEvent* e) {
 }
 
 #endif

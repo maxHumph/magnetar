@@ -53,12 +53,15 @@ b8 platform_startup(PlatformState* platform_state, const char* application_name,
 }
 
 void platform_shutdown(PlatformState* platform_state) {
-  InternalState *state = (InternalState*i) platform_state->internal_state;
+  InternalState *state = (InternalState *)platform_state->internal_state;
   [state->ns_window close];
   state->ns_window = nil;
 
   free(state);
 }
+
+//implemented further down.
+static void process_event(NSEvent* ns_event);
 
 b8 platform_pump_messages(PlatformState* platform_state) {
   NSEvent* event;
@@ -69,7 +72,11 @@ b8 platform_pump_messages(PlatformState* platform_state) {
 				inMode:NSDefaultRunLoopMode
 			       dequeue:YES]))
     {
-      [NSApp sendEvent:event];
+      process_event(event);
+
+      {
+	[NSApp sendEvent:event];
+      }
     }
   return TRUE;
 }
@@ -105,7 +112,7 @@ void platform_print_error(const char* message, u8 colour) {
 
 f64 platform_get_time_abs() {
   static mach_timebase_info_data_t timebase;
-  static i32 initialzed = 0;
+  static i32 initialized = 0;
 
   if (!initialized) {
     mach_timebase_info(&timebase);
@@ -128,6 +135,22 @@ void platform_sleep(u64 ms)
     ts.tv_sec = ms / 1000;
     ts.tv_nsec = (ms % 1000) * 1000000;
     nanosleep(&ts, NULL);
+}
+
+static void process_event(NSEvent* ns_event) {
+  switch ([ns_event type]){
+  case NSEventTypeKeyDown:
+    break;
+
+  case NSEventTypeKeyUp:
+    break;
+
+  case NSEventTypeMouseMoved:
+    break;
+
+  default:
+    break;
+  }
 }
 
 #endif

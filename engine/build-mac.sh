@@ -6,7 +6,8 @@ set -x
 mkdir -p ../bin
 
 # Glob c files
-cFiles=("${(@f)$(find . -type f -name '*.c')}")
+# cFiles=("${(@f)$(find . -type f -name '*.c')}")
+cFiles=("${(@f)$(find . -type f \( -name '*.c' -o -name '*.m' \))}")
 
 # echo "Files:" $cFiles
 

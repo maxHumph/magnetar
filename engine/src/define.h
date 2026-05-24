@@ -84,6 +84,7 @@ STATIC_ASSERT(sizeof(b32) == 4, "Expected b32 = 4 bytes.");
 #define MPLATFORM_IOS 1
 
 #elif TARGET_OS_MAC
+#define MPLATFORM_MAC 1
 #else
 #error "Unknown apple platform."
 #endif

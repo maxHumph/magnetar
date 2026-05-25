@@ -1,3 +1,4 @@
+#include <core/mmemory.h>
 #include <entry_point.h>
 #include <platform/platform.h>
 
@@ -16,7 +17,7 @@ b8 create_game(Game* out_game) {
   out_game->on_render = on_render;
   out_game->on_resize = on_resize;
 
-  out_game->state = platform_alloc(sizeof(GameState), FALSE);
+  out_game->state = mallocate(sizeof(GameState), MEMORY_TAG_GAME);
 
   return TRUE;
 }

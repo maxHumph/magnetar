@@ -1,9 +1,11 @@
 #include "game.h"
 
 #include <core/log.h>
+#include <core/mmemory.h>
 
 b8 game_initalize(Game* game_instance) {
   MDEBUG("game_initialize() was called");
+  MINFO(get_memory_usage_string());
   return TRUE;
 }
 

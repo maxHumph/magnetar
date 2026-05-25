@@ -6,21 +6,27 @@
 
 #include "core/application.h"
 #include "core/log.h"
+#include "core/mmemory.h"
 #include "game_interface.h"
 
 extern b8 create_game(Game* out_game);
 
 int main(void) {
+  if (!initialize_memory()) {
+    MFATAL("Failed to initialize memory subsystem");
+    return -1;
+  }
+
   Game game_instance;
   if (!create_game(&game_instance)) {
     MFATAL("Failed to create_game.");
-    return -1;
+    return -2;
   }
 
   if (!game_instance.initialize || !game_instance.on_update || !game_instance.on_render ||
       !game_instance.on_resize) {
     MFATAL("Required Game function pointers are not assigned.");
-    return -2;
+    return -3;
   }
 
   // Init
@@ -35,6 +41,7 @@ int main(void) {
     return 2;
   }
 
+  shutdown_memory();
 
   return 0;
 }

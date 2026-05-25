@@ -104,6 +104,9 @@ typedef struct InternalState {
 } InternalState;
 
 
+/**
+ * @brief Containds methods for handling non-input window events like window_resize or window_close. (Implemented further down).
+ */
 @interface WindowDelegate : NSObject<NSWindowDelegate>
 @end
 

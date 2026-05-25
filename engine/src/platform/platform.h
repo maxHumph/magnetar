@@ -11,15 +11,15 @@ typedef struct PlatformState {
   void* internal_state;
 } PlatformState;
 
-MGAPI b8 platform_startup(PlatformState* platform_state, const char* application_name, i32 x_pos,
+b8 platform_startup(PlatformState* platform_state, const char* application_name, i32 x_pos,
                      i32 y_pos, i32 width, i32 height);
 
 void platform_shutdown(PlatformState* platform_state);
 
-MGAPI b8 platform_pump_messages(PlatformState* platform_state);
+b8 platform_pump_messages(PlatformState* platform_state);
 
-void* platform_alloc(u64 size, b8 is_aligned);
-void platform_free(void* block, b8 is_aligned);
+MGAPI void* platform_alloc(u64 size, b8 is_aligned);
+MGAPI void platform_free(void* block, b8 is_aligned);
 void* platform_mem_zero(void* block, u64 size);
 void* platform_mem_cpy(void* out, const void* src, u64 size);
 void* platform_mem_set(void* target, i32 val, u64 size);

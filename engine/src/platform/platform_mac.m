@@ -6,6 +6,7 @@
  */
 
 #include "platform.h"
+#include "core/log.h"
 
 #if defined(MPLATFORM_APPLE)
 
@@ -35,13 +36,45 @@ typedef enum MacEventType {
 
   MAC_EVENT_TYPE_KEY_DOWN,
   MAC_EVENT_TYPE_KEY_UP,
+
+  MAC_EVENT_TYPE_MOUSE_MOVED,
+
+  MAC_EVENT_TYPE_MOUSE_BUTTON_DOWN,
+  MAC_EVENT_TYPE_MOUSE_BUTTON_UP,
+
+  MAC_EVENT_TYPE_SCROLL_WHEEL,
   
 } MacEventType;
 
 typedef struct MacEventWindowResized {
-  i32 height;
   i32 width;
+  i32 height;
 } MacEventWindowResized;
+
+typedef struct MacEventKeyDown {
+  i32 keycode;
+} MacEventKeyDown;
+
+typedef struct MacEventKeyUp {
+  i32 keycode;
+} MacEventKeyUp;
+
+typedef struct MacEventMouseMoved {
+  f32 x_pos;
+  f32 y_pos;
+} MacEventMouseMoved;
+
+typedef struct MacEventMouseButtonDown {
+  i32 button;
+  f32 x_pos;
+  f32 y_pos;
+} MacEventMouseButtonDown;
+
+typedef struct MacEventMouseButtonUp{
+  i32 button;
+  f32 x_pos;
+  f32 y_pos;
+} MacEventMouseButtonUp;
 
 /**
  * @brief Generic type for handling mac events since mac uses NSEvents for input and NSNotifications for window events.
@@ -52,6 +85,11 @@ typedef struct MacEvent {
 
   union {
     MacEventWindowResized window_resized;
+    MacEventKeyDown key_down;
+    MacEventKeyUp key_up;
+    MacEventMouseMoved mouse_moved;
+    MacEventMouseButtonDown mouse_button_down;
+    MacEventMouseButtonUp mouse_button_up;
   };
 
 } MacEvent;
@@ -70,6 +108,12 @@ typedef struct InternalState {
 
 b8 platform_startup(PlatformState* platform_state, const char* application_name, i32 x_pos,
                     i32 y_pos, i32 width, i32 height) {
+  [NSApplication sharedApplication];
+  [NSApp setActivationPolicy:
+	   NSApplicationActivationPolicyRegular];
+
+
+
   platform_state->internal_state = malloc(sizeof(InternalState));
   InternalState *state = (InternalState *)platform_state->internal_state;
   NSRect frame = NSMakeRect(x_pos, y_pos, width, height);
@@ -91,7 +135,9 @@ b8 platform_startup(PlatformState* platform_state, const char* application_name,
 
   [state->ns_window makeKeyAndOrderFront:nil];
 
-  [[NSApplication sharedApplication] activateIgnoringOtherApps:YES];
+  [NSApp finishLaunching];
+
+  [NSApp activateIgnoringOtherApps:YES];
 
   return TRUE;
 }
@@ -104,7 +150,8 @@ void platform_shutdown(PlatformState* platform_state) {
   free(state);
 }
 
-static void translate_ns_event(NSEvent* ns_event); //implemented further down.
+static MacEvent translate_ns_event(NSEvent* ns_event); //implemented further down.
+static void process_event(MacEvent* e); // implemented fiurther down.
 
 b8 platform_pump_messages(PlatformState* platform_state) {
   NSEvent* ns_event;
@@ -144,7 +191,7 @@ void* platform_mem_cpy(void* out, const void* src, u64 size) {
   return memcpy(out, src, size);
 }
 
-void* platoform_mem_set(void* block, i32 val, u64 size) {
+void* platform_mem_set(void* block, i32 val, u64 size) {
   return memset(block, val, size);
 }
 
@@ -183,6 +230,41 @@ void platform_sleep(u64 ms)
     nanosleep(&ts, NULL);
 }
 
+
+@implementation WindowDelegate
+
+- (BOOL)WindowShouldClose:(id)sender{
+  MacEvent e;
+  e.event_type = MAC_EVENT_TYPE_QUIT;
+
+  // process_event(&e);
+
+  return YES;
+}
+
+- (void)windowDidResize:(NSNotification *)notification
+{
+    NSWindow* window =
+        (NSWindow*)[notification object];
+
+    NSRect frame = [window contentRectForFrameRect:
+        [window frame]];
+
+    MacEvent e;
+
+    e.event_type = MAC_EVENT_TYPE_WINDOW_RESIZED;
+
+    e.window_resized.width =
+        (int)frame.size.width;
+
+    e.window_resized.height =
+        (int)frame.size.height;
+
+    // process_event(&e);
+}
+
+@end
+
 /**
  * @brief Translates input events into a generic mac os event type so all mac events can be handled together.
  * @param ns_event A point to the NSEvent.
@@ -199,12 +281,44 @@ static MacEvent translate_ns_event(NSEvent* ns_event) {
   case NSEventTypeKeyUp:
     break;
 
-  case NSEventTypeMouseMoved:
+  case NSEventTypeMouseMoved: {
+    NSPoint p =
+      [ns_event locationInWindow];
+
+    e.event_type = MAC_EVENT_TYPE_MOUSE_MOVED;
+
+    e.mouse_moved.x_pos = p.x;
+    e.mouse_moved.y_pos = p.y;
+  } break;
+
+  case NSEventTypeLeftMouseDown: {
+    NSPoint p =
+      [ns_event locationInWindow];
+    
+    e.event_type = MAC_EVENT_TYPE_MOUSE_BUTTON_DOWN;
+    e.mouse_button_down.button = 0;
+    
+    e.mouse_button_down.x_pos = p.x;
+    e.mouse_button_down.y_pos = p.y;
+    
+  } break;
+
+  case NSEventTypeLeftMouseUp:
+    break;
+
+  case NSEventTypeRightMouseDown:
+    break;
+
+  case NSEventTypeRightMouseUp:
+    break;
+
+  case NSEventTypeScrollWheel:
     break;
 
   default:
     break;
   }
+  return e;
 }
 
 /**
@@ -212,6 +326,15 @@ static MacEvent translate_ns_event(NSEvent* ns_event) {
  * @param e A pointer to the MacEvent.
  */
 static void process_event(MacEvent* e) {
+  switch (e->event_type) {
+  case MAC_EVENT_TYPE_MOUSE_MOVED:
+    // MTRACE("Mouse moved: (%f, %f)", e->mouse_moved.x_pos, e->mouse_moved.y_pos);
+    break;
+
+  default:
+    break;
+  }
+
 }
 
 #endif

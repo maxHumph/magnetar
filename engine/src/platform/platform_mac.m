@@ -100,6 +100,7 @@ typedef struct MacEvent {
 typedef struct InternalState {
   NSWindow* ns_window;
   // CAMetalLayer* layer;
+  id window_delegate;
 } InternalState;
 
 
@@ -132,6 +133,12 @@ b8 platform_startup(PlatformState* platform_state, const char* application_name,
   [window setTitle:nsTitle];
 
   state->ns_window = window;
+
+  state->window_delegate =
+    [[WindowDelegate alloc] init];
+
+  [state->ns_window
+      setDelegate:state->window_delegate];
 
   [state->ns_window makeKeyAndOrderFront:nil];
 
@@ -233,13 +240,21 @@ void platform_sleep(u64 ms)
 
 @implementation WindowDelegate
 
-- (BOOL)WindowShouldClose:(id)sender{
-  MacEvent e;
-  e.event_type = MAC_EVENT_TYPE_QUIT;
+// - (BOOL)WindowShouldClose:(id)sender{
+//   MacEvent e;
+//   e.event_type = MAC_EVENT_TYPE_QUIT;
 
-  // process_event(&e);
+//   process_event(&e);
 
-  return YES;
+//   return YES;
+// }
+
+- (void)windowWillClose:(NSNotification *)notification
+{
+    MacEvent e;
+    e.event_type = MAC_EVENT_TYPE_QUIT;
+
+    process_event(&e);
 }
 
 - (void)windowDidResize:(NSNotification *)notification
@@ -260,7 +275,7 @@ void platform_sleep(u64 ms)
     e.window_resized.height =
         (int)frame.size.height;
 
-    // process_event(&e);
+    process_event(&e);
 }
 
 @end
@@ -327,6 +342,18 @@ static MacEvent translate_ns_event(NSEvent* ns_event) {
  */
 static void process_event(MacEvent* e) {
   switch (e->event_type) {
+    
+    // Doesnt work
+  case MAC_EVENT_TYPE_QUIT:
+    MINFO("Application QUIT");
+    platform_sleep(100);
+    exit(0);
+    break;
+
+  case MAC_EVENT_TYPE_WINDOW_RESIZED:
+    // MTRACE("Window Resized: (%i, %i)", e->window_resized.width, e->window_resized.height);
+    break;
+
   case MAC_EVENT_TYPE_MOUSE_MOVED:
     // MTRACE("Mouse moved: (%f, %f)", e->mouse_moved.x_pos, e->mouse_moved.y_pos);
     break;

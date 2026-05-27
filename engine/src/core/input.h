@@ -5,6 +5,7 @@
 #pragma once
 
 #include "define.h"
+#include "maths/vector.h"
 
 typedef enum Buttons {
   // left mouse
@@ -17,6 +18,8 @@ typedef enum Buttons {
   BUTTON_3,
   // mouse button 5
   BUTTON_4,
+
+  BUTTON_MAX_BUTTONS,
 } Buttons;
 
 typedef enum Keys {
@@ -122,4 +125,54 @@ typedef enum Keys {
   KEY_F23 = 0x86,
   KEY_F24 = 0x86,
 
+  KEY_MAX_KEYS
+
 } Keys;
+
+/**
+ * @brief Initializes the input subsystem.
+ * @return TRUE if initialization was successful, FALSE if it failed.
+ */
+b8 input_initialize();
+
+void input_shutdown();
+
+/**
+ * @brief
+ * @param delta_time
+ *
+ * Called once per frame.
+ */
+void input_update(f64 delta_time);
+
+// Key input
+
+MGAPI b8 key_down(Keys key);
+
+MGAPI b8 key_up(Keys key);
+
+MGAPI b8 key_down_prev(Keys key);
+
+MGAPI b8 key_up_prev(Keys key);
+
+void input_process_key(Keys key, b8 is_pressed);
+
+// Mouse input
+
+MGAPI b8 button_down(Buttons button);
+
+MGAPI b8 button_up(Buttons button);
+
+MGAPI b8 button_down_prev(Buttons button);
+
+MGAPI b8 button_up_prev(Buttons button);
+
+MGAPI Vec2i16 mouse_pos();
+
+MGAPI Vec2i16 mouse_pos_prev();
+
+void input_process_button(Buttons button, b8 is_pressed);
+
+void input_process_mouse_moved(i16 x, i16 y);
+
+void imput_process_mouse_wheel(i8 delta);

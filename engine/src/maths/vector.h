@@ -6,10 +6,15 @@
 
 #include "define.h"
 
+typedef struct Vec2i16 {
+  i16 x;
+  i16 y;
+} Vec2i16;
+
 typedef struct Vec2i32 {
   i32 x;
   i32 y;
-} Vec2i;
+} Vec2i32;
 
 typedef struct Vec2f32 {
   f32 x;

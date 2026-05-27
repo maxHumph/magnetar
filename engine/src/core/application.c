@@ -1,9 +1,10 @@
 #include "application.h"
 
+#include "core/events.h"
 #include "core/log.h"
+#include "game_interface.h"
 #include "log.h"
 #include "platform/platform.h"
-#include "game_interface.h"
 
 typedef struct ApplicationState {
   Game* game_instance;
@@ -33,6 +34,11 @@ MGAPI b8 application_create(Game* game_instance) {
   // Initialize subsystems.
   initialize_logging();
 
+  if (!event_initialize()) {
+    MERROR("Event subsystem failed to init.");
+    return FALSE;
+  }
+
   s_application_state.is_running = TRUE;
   s_application_state.is_suspended = FALSE;
 
@@ -60,15 +66,12 @@ MGAPI b8 application_create(Game* game_instance) {
 }
 
 MGAPI b8 application_run() {
-
   while (s_application_state.is_running) {
-
     if (!platform_pump_messages(&s_application_state.platform_state)) {
       s_application_state.is_running = FALSE;
     }
 
     if (!s_application_state.is_suspended) {
-
       if (!s_application_state.game_instance->on_update(s_application_state.game_instance,
                                                         (f32)0)) {
         MFATAL("on_update failed, EXITING PROCESS.");
@@ -85,6 +88,8 @@ MGAPI b8 application_run() {
     }
   }
   s_application_state.is_running = FALSE;
+
+  event_shutdown();
 
   platform_shutdown(&s_application_state.platform_state);
 

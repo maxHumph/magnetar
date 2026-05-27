@@ -29,11 +29,23 @@ typedef struct EventData {
 
 } EventData;
 
+// should return TRUE if the event has been handled.
 typedef b8 (*fp_on_event)(u16 code, void* sender, void* listener, EventData data);
 
+/**
+ * @brief Initializes the event subsystem.
+ * @return TRUE if successful. FALSE if unsucessful.
+ */
 b8 event_initialize();
+
+/**
+ * @brief Shutdown the event subsystem and deallocates any memory it was using.
+ */
 void event_shutdown();
 
+/**
+ * @brief
+ */
 MGAPI b8 event_register(u16 code, void* listener, fp_on_event on_event);
 
 MGAPI b8 event_unregister(u16 code, void* listener, fp_on_event on_event);

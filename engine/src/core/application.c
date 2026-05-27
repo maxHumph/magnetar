@@ -1,6 +1,7 @@
 #include "application.h"
 
 #include "core/events.h"
+#include "core/input.h"
 #include "core/log.h"
 #include "game_interface.h"
 #include "log.h"
@@ -35,6 +36,11 @@ MGAPI b8 application_create(Game* game_instance) {
   initialize_logging();
 
   if (!event_initialize()) {
+    MERROR_CORE("Event subsystem failed to init.");
+    return FALSE;
+  }
+
+  if (!input_initialize()) {
     MERROR_CORE("Event subsystem failed to init.");
     return FALSE;
   }
@@ -85,10 +91,13 @@ MGAPI b8 application_run() {
         s_application_state.is_running = FALSE;
         break;
       }
+
+      input_update(0);
     }
   }
   s_application_state.is_running = FALSE;
 
+  input_shutdown();
   event_shutdown();
 
   platform_shutdown(&s_application_state.platform_state);

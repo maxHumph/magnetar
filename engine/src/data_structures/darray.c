@@ -1,5 +1,6 @@
 #include "darray.h"
 
+#include "core/log.h"
 #include "core/mmemory.h"
 
 void* _darray_create(u64 length, u64 stride) {
@@ -62,6 +63,45 @@ void* _darray_pop(void* darray, void* dest) {
   return dest;
 }
 
-void* _darray_insert(void* darray, u64 index, void* val_ptr);
+void* _darray_insert(void* darray, u64 index, void* val_ptr) {
+  u64 length = _darray_get(darray, DARRAY_LENGTH);
+  u64 stride = _darray_get(darray, DARRAY_STRIDE);
 
-void* _darray_pop_at(void* darray, u64 index, void* dest);
+  if (length >= _darray_get(darray, DARRAY_CAPACITY)) {
+    _darray_resize(darray);
+  }
+
+  if (index > length) {
+    MERROR("Index out of bounds in _darray_insert, Length: %u, Index: %u.", length, index);
+  }
+
+  u64 address = (u64)darray;
+
+  if (index != length) {
+    mcopy_memory((void*)(address + ((index + 1) * stride)), (void*)(address + (index * stride)),
+                 stride * (length - index));
+    mcopy_memory((void*)(address + (index * stride)), val_ptr, stride);
+  }
+  _darray_set(darray, DARRAY_LENGTH, length + 1);
+  return darray;
+}
+
+void* _darray_pop_at(void* darray, u64 index, void* dest) {
+  u64 length = _darray_get(darray, DARRAY_LENGTH);
+  u64 stride = _darray_get(darray, DARRAY_STRIDE);
+
+  if (index >= length) {
+    MERROR("Index out of bounds an darray. Length: %u, Index: %u.", length, index);
+  }
+
+  u64 address = (u64)darray;
+  mcopy_memory(dest, (void*)(address + (index * stride)), stride);
+
+  if (index != length - 1) {
+    mcopy_memory((void*)(address + (index * stride)), (void*)(address + ((index + 1) * stride)),
+                 stride * (length - index));
+  }
+
+  _darray_set(darray, DARRAY_LENGTH, length - 1);
+  return darray;
+}

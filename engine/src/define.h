@@ -26,6 +26,7 @@ typedef int b32;
 
 #define TRUE 1
 #define FALSE 0
+#define NULL_PTR (void*)0
 
 // Define static assertions
 

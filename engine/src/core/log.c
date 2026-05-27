@@ -13,9 +13,11 @@ void shutdown_logging() {}
 
 void log_output(LogLevel level, const char* message, ...) {
   // 32K character limit
-  const char* level_strings[6] = {
-      "[FATAL]: ", "[ERROR]: ", "[WARNING]: ", "[INFO]: ", "[DEBUG]: ", "[TRACE]: "};
-  b8 is_error = level < 2;
+  const char* level_strings[12] = {
+      "[FATAL (core)]: ",   "[FATAL]: ",   "[ERROR (core)]: ", "[ERROR]: ",
+      "[WARNING (core)]: ", "[WARNING]: ", "[INFO (core)]: ",  "[INFO]: ",
+      "[DEBUG (core)]: ",   "[DEBUG]: ",   "[TRACE (core)]: ", "[TRACE]: "};
+  b8 is_error = level < 4;
 
   char out_buffer[32000];
   memset(out_buffer, 0, sizeof(out_buffer));

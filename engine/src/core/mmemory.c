@@ -31,7 +31,7 @@ void shutdown_memory() {}
 
 MGAPI void* mallocate(u64 size, MemoryTag memory_tag) {
   if (memory_tag == MEMORY_TAG_UNKNOWN) {
-    MWARN("mallocate call with MEMORY_TAG_UNKNOWN");
+    MWARN_CORE("mallocate call with MEMORY_TAG_UNKNOWN");
   }
   s_stats.total_allocated += size;
   s_stats.tagged_allocations[memory_tag] += size;
@@ -43,7 +43,7 @@ MGAPI void* mallocate(u64 size, MemoryTag memory_tag) {
 
 MGAPI void mfree(void* block, u64 size, MemoryTag memory_tag) {
   if (memory_tag == MEMORY_TAG_UNKNOWN) {
-    MWARN("mallocate call with MEMORY_TAG_UNKNOWN");
+    MWARN_CORE("mallocate call with MEMORY_TAG_UNKNOWN");
   }
 
   s_stats.total_allocated -= size;

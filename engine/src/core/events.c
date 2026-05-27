@@ -55,7 +55,7 @@ b8 event_register(u16 code, void* listener, fp_on_event on_event) {
   u64 registered_count = darray_get_length(s_state.registered[code].events);
   for (u64 i = 0; i < registered_count; i++) {
     if (s_state.registered[code].events[i].listener == listener) {
-      MWARN("Listener has already been registered");
+      MWARN_CORE("Listener has already been registered");
       return FALSE;
     }
   }
@@ -74,7 +74,7 @@ b8 event_unregister(u16 code, void* listener, fp_on_event on_event) {
   }
 
   if (s_state.registered[code].events == NULL_PTR) {
-    MWARN("Event: %u was not found in registered events.", code);
+    MWARN_CORE("Event: %u was not found in registered events.", code);
     return FALSE;
   }
 
@@ -97,7 +97,7 @@ b8 fire_event(u16 code, void* sender, EventData data) {
   }
 
   if (s_state.registered[code].events == NULL_PTR) {
-    MWARN("Event: %u could not be found in registered events.", code);
+    MWARN_CORE("Event: %u could not be found in registered events.", code);
     return FALSE;
   }
 

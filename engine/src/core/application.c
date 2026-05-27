@@ -25,7 +25,7 @@ static ApplicationState s_application_state;
 
 MGAPI b8 application_create(Game* game_instance) {
   if (s_initialized) {
-    MERROR("application_create called multiple times!");
+    MERROR_CORE("application_create called multiple times!");
     return FALSE;
   }
 
@@ -35,7 +35,7 @@ MGAPI b8 application_create(Game* game_instance) {
   initialize_logging();
 
   if (!event_initialize()) {
-    MERROR("Event subsystem failed to init.");
+    MERROR_CORE("Event subsystem failed to init.");
     return FALSE;
   }
 
@@ -53,7 +53,7 @@ MGAPI b8 application_create(Game* game_instance) {
 
   // Initialize game.
   if (!s_application_state.game_instance->initialize(s_application_state.game_instance)) {
-    MFATAL("Failed to initialize Game.");
+    MFATAL_CORE("Failed to initialize Game.");
     return FALSE;
   }
 
@@ -74,14 +74,14 @@ MGAPI b8 application_run() {
     if (!s_application_state.is_suspended) {
       if (!s_application_state.game_instance->on_update(s_application_state.game_instance,
                                                         (f32)0)) {
-        MFATAL("on_update failed, EXITING PROCESS.");
+        MFATAL_CORE("on_update failed, EXITING PROCESS.");
         s_application_state.is_running = FALSE;
         break;
       }
 
       if (!s_application_state.game_instance->on_render(s_application_state.game_instance,
                                                         (f32)0)) {
-        MFATAL("on_render failed, EXITING PROCESS.");
+        MFATAL_CORE("on_render failed, EXITING PROCESS.");
         s_application_state.is_running = FALSE;
         break;
       }

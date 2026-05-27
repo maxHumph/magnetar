@@ -348,7 +348,7 @@ static void process_event(MacEvent* e) {
     
     // Doesnt work
   case MAC_EVENT_TYPE_QUIT:
-    MINFO("Application QUIT");
+    MINFO_CORE("Application QUIT");
     platform_sleep(100);
     exit(0);
     break;

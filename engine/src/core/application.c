@@ -24,6 +24,9 @@ typedef struct ApplicationState {
 static b8 s_initialized = FALSE;
 static ApplicationState s_application_state;
 
+b8 application_on_event(u16 code, void* sender, void* listener, EventData event_data);
+b8 application_on_key(u16 code, void* sender, void* listener, EventData event_data);
+
 MGAPI b8 application_create(Game* game_instance) {
   if (s_initialized) {
     MERROR_CORE("application_create called multiple times!");
@@ -47,6 +50,10 @@ MGAPI b8 application_create(Game* game_instance) {
 
   s_application_state.is_running = TRUE;
   s_application_state.is_suspended = FALSE;
+
+  event_register(EVENT_CODE_APPLICATION_QUIT, 0, application_on_event);
+  event_register(EVENT_CODE_KEY_DOWN, 0, application_on_key);
+  event_register(EVENT_CODE_KEY_UP, 0, application_on_key);
 
   // Setup window and other platform specific things.
   if (!platform_startup(
@@ -97,10 +104,38 @@ MGAPI b8 application_run() {
   }
   s_application_state.is_running = FALSE;
 
+  event_unregister(EVENT_CODE_APPLICATION_QUIT, 0, application_on_event);
+  event_unregister(EVENT_CODE_KEY_DOWN, 0, application_on_key);
+  event_unregister(EVENT_CODE_KEY_UP, 0, application_on_key);
+
   input_shutdown();
   event_shutdown();
 
   platform_shutdown(&s_application_state.platform_state);
 
+  return FALSE;
+}
+
+b8 application_on_event(u16 code, void* sender, void* listener, EventData event_data) {
+  switch (code) {
+    case EVENT_CODE_APPLICATION_QUIT: {
+      MINFO_CORE("Application QUIT");
+      s_application_state.is_running = FALSE;
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
+b8 application_on_key(u16 code, void* sender, void* listener, EventData event_data) {
+  if (code == EVENT_CODE_KEY_DOWN) {
+    Keys keycode = event_data.data.u16[0];
+    if (keycode == KEY_ESCAPE && key_down(KEY_LSHIFT)) {
+      EventData data = {};
+      fire_event(EVENT_CODE_APPLICATION_QUIT, 0, data);
+      return TRUE;
+    }
+  }
   return FALSE;
 }

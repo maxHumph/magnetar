@@ -648,43 +648,43 @@ static void process_event(MacEvent* e) {
     
     // Doesnt work
   case MAC_EVENT_TYPE_QUIT:
-    MINFO_CORE("Application QUIT");
+    // MINFO_CORE("Application QUIT");
     platform_sleep(100);
     exit(0);
     break;
     
   case MAC_EVENT_TYPE_WINDOW_RESIZED:
-    MTRACE_CORE("Window Resized: (%i, %i)", e->window_resized.width, e->window_resized.height);
+    // MTRACE_CORE("Window Resized: (%i, %i)", e->window_resized.width, e->window_resized.height);
     break;
     
   case MAC_EVENT_TYPE_KEY_DOWN:
     input_process_key(e->key_down.keycode, TRUE);
-    MTRACE_CORE("Keydown: %d", e->key_down.keycode);
+    // MTRACE_CORE("Keydown: %d", e->key_down.keycode);
     break;
     
   case MAC_EVENT_TYPE_KEY_UP:
     input_process_key(e->key_up.keycode, FALSE);
-    MTRACE_CORE("Keyup: %d", e->key_up.keycode);
+    // MTRACE_CORE("Keyup: %d", e->key_up.keycode);
     break;
     
   case MAC_EVENT_TYPE_MOUSE_BUTTON_DOWN:
     input_process_button(e->mouse_button_down.button, TRUE);
-    MTRACE_CORE("Button down: %d", e->mouse_button_down.button);
+    // MTRACE_CORE("Button down: %d", e->mouse_button_down.button);
     break;
     
   case MAC_EVENT_TYPE_MOUSE_BUTTON_UP:
     input_process_button(e->mouse_button_up.button, FALSE);
-    MTRACE_CORE("Button up: %d", e->mouse_button_up.button);
+    // MTRACE_CORE("Button up: %d", e->mouse_button_up.button);
     break;
     
   case MAC_EVENT_TYPE_MOUSE_MOVED:
     input_process_mouse_moved(e->mouse_moved.x_pos, e->mouse_moved.y_pos);
-    MTRACE_CORE("Mouse moved: (%f, %f)", e->mouse_moved.x_pos, e->mouse_moved.y_pos);
+    // MTRACE_CORE("Mouse moved: (%f, %f)", e->mouse_moved.x_pos, e->mouse_moved.y_pos);
     break;
     
   case MAC_EVENT_TYPE_SCROLL_WHEEL:
     input_process_mouse_wheel(e->scroll_wheel.delta_x, e->scroll_wheel.delta_y);
-    MTRACE_CORE("Mouse Wheel: (%f, %f)", e->scroll_wheel.delta_x, e->scroll_wheel.delta_y);
+    // MTRACE_CORE("Mouse Wheel: (%f, %f)", e->scroll_wheel.delta_x, e->scroll_wheel.delta_y);
     break;
     
   default:

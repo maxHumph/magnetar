@@ -5,10 +5,13 @@
  * Warning: I don't understand objective-c so this code is probably terrible.
  */
 
-#include "platform.h"
-#include "core/log.h"
+#include "define.h"
 
 #if defined(MPLATFORM_APPLE)
+
+#include "platform.h"
+#include "core/log.h"
+#include "core/input.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -17,6 +20,7 @@
 #include <mach/mach_time.h>
 
 #import <Cocoa/Cocoa.h>
+#import <Carbon/Carbon.h>
 
 /**
  * @brief Event type specifier for sruct MacEvent.
@@ -52,11 +56,11 @@ typedef struct MacEventWindowResized {
 } MacEventWindowResized;
 
 typedef struct MacEventKeyDown {
-  i32 keycode;
+  i16 keycode;
 } MacEventKeyDown;
 
 typedef struct MacEventKeyUp {
-  i32 keycode;
+  i16 keycode;
 } MacEventKeyUp;
 
 typedef struct MacEventMouseMoved {
@@ -281,7 +285,67 @@ void platform_sleep(u64 ms)
     process_event(&e);
 }
 
+
 @end
+static Keys translate_mac_keycode(NSEvent* ns_event) {
+  
+  switch ([ns_event keyCode]) {
+  case kVK_ANSI_A:
+    return KEY_A;
+  case kVK_ANSI_B:
+    return KEY_B;
+  case kVK_ANSI_C:
+    return KEY_C;
+  case kVK_ANSI_D:
+    return KEY_D;
+  case kVK_ANSI_E:
+    return KEY_E;
+  case kVK_ANSI_F:
+    return KEY_F;
+  case kVK_ANSI_G:
+    return KEY_G;
+  case kVK_ANSI_H:
+    return KEY_H;
+  case kVK_ANSI_I:
+    return KEY_I;
+  case kVK_ANSI_J:
+    return KEY_J;
+  case kVK_ANSI_K:
+    return KEY_K;
+  case kVK_ANSI_L:
+    return KEY_L;
+  case kVK_ANSI_M:
+    return KEY_M;
+  case kVK_ANSI_N:
+    return KEY_N;
+  case kVK_ANSI_O:
+    return KEY_O;
+  case kVK_ANSI_P:
+    return KEY_P;
+  case kVK_ANSI_Q:
+    return KEY_Q;
+  case kVK_ANSI_R:
+    return KEY_R;
+  case kVK_ANSI_S:
+    return KEY_S;
+  case kVK_ANSI_T:
+    return KEY_T;
+  case kVK_ANSI_U:
+    return KEY_U;
+  case kVK_ANSI_V:
+    return KEY_V;
+  case kVK_ANSI_W:
+    return KEY_W;
+  case kVK_ANSI_X:
+    return KEY_X;
+  case kVK_ANSI_Y:
+    return KEY_Y;
+  case kVK_ANSI_Z:
+    return KEY_Z;
+  default:
+    return SILLY_KEY;
+  }
+}
 
 /**
  * @brief Translates input events into a generic mac os event type so all mac events can be handled together.
@@ -293,10 +357,14 @@ static MacEvent translate_ns_event(NSEvent* ns_event) {
   e.event_type = MAC_EVENT_TYPE_NONE;
 
   switch ([ns_event type]){
-  case NSEventTypeKeyDown:
+  case NSEventTypeKeyDown :
+    e.event_type = MAC_EVENT_TYPE_KEY_DOWN;
+    e.key_down.keycode = translate_mac_keycode(ns_event);
     break;
 
   case NSEventTypeKeyUp:
+    e.event_type = MAC_EVENT_TYPE_KEY_UP;
+    e.key_up.keycode = translate_mac_keycode(ns_event);
     break;
 
   case NSEventTypeMouseMoved: {
@@ -357,7 +425,18 @@ static void process_event(MacEvent* e) {
     // MTRACE("Window Resized: (%i, %i)", e->window_resized.width, e->window_resized.height);
     break;
 
+  case MAC_EVENT_TYPE_KEY_DOWN:
+    input_process_key(e->key_down.keycode, TRUE);
+    MTRACE("Keydown: %d", e->key_down.keycode);
+    break;
+
+  case MAC_EVENT_TYPE_KEY_UP:
+    input_process_key(e->key_up.keycode, FALSE);
+    MTRACE("Keyup: %d", e->key_up.keycode);
+    break;
+
   case MAC_EVENT_TYPE_MOUSE_MOVED:
+    // input_process_mouse_moved(,);
     // MTRACE("Mouse moved: (%f, %f)", e->mouse_moved.x_pos, e->mouse_moved.y_pos);
     break;
 
@@ -366,5 +445,6 @@ static void process_event(MacEvent* e) {
   }
 
 }
+
 
 #endif

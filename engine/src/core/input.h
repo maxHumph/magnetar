@@ -32,7 +32,7 @@ typedef enum Buttons {
  */
 typedef enum Keys {
 
-  KEY_ = 0x00,
+  SILLY_KEY = 0x00,
 
   KEY_SPACE = 0x01,
   KEY_BACKSPACE = 0x02,

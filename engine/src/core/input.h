@@ -1,5 +1,7 @@
 /**
- * @brief input.h
+ * @file input.h
+ * @brief Contains functions for polling input, sending platform api input data to the engine and
+ * defines the key and button codes used by the engine.
  */
 
 #pragma once
@@ -7,6 +9,9 @@
 #include "define.h"
 #include "maths/vector.h"
 
+/**
+ * @brief Codes for button input.
+ */
 typedef enum Buttons {
   // left mouse
   BUTTON_0,
@@ -22,6 +27,9 @@ typedef enum Buttons {
   BUTTON_MAX_BUTTONS,
 } Buttons;
 
+/**
+ * @brief Engine key-codes.
+ */
 typedef enum Keys {
 
   KEY_ = 0x00,
@@ -147,32 +155,102 @@ void input_update(f64 delta_time);
 
 // Key input
 
+/**
+ * @brief Returns whether a key is currently down.
+ * @param The keycode to check for. (KEY_...).
+ * @return TRUE if the key is down, otherwise FALSE.
+ */
 MGAPI b8 key_down(Keys key);
 
+/**
+ * @brief Returns whether a key is currently up.
+ * @param The keycode to check for. (KEY_...).
+ * @return TRUE if the key is up, otherwise FALSE.
+ */
 MGAPI b8 key_up(Keys key);
 
+/**
+ * @brief Return whether a key was down in the previous frame.
+ * @param The keycode to check for. (KEY_...).
+ * @return TRUE if the key was down, otherwise FALSE.
+ */
 MGAPI b8 key_down_prev(Keys key);
 
+/**
+ * @brief Return whether a key was up in the previous frame.
+ * @param The keycode to check for. (KEY_...).
+ * @return TRUE if the key was up, otherwise FALSE.
+ */
 MGAPI b8 key_up_prev(Keys key);
 
+/**
+ * @brief Used in platform specific code sent key input data to the engine.
+ * @param key The keycode to process.
+ * @param is_pressed TRUE if the key is down, FALSE if it is UP.
+ */
 void input_process_key(Keys key, b8 is_pressed);
 
 // Mouse input
 
+/**
+ * @brief Returns whether a mouse button is currently down.
+ * @param button The button_code to check for.
+ * @return TRUE if the button is down, otherwise FALSE.
+ */
 MGAPI b8 button_down(Buttons button);
 
+/**
+ * @brief Returns whether a mouse button is currently up.
+ * @param button The button_code to check for.
+ * @return TRUE if the button is up, otherwise FALSE.
+ */
 MGAPI b8 button_up(Buttons button);
 
+/**
+ * @brief Returns whether a mouse button was down on the previous frame.
+ * @param button The button_code to check for.
+ * @return TRUE if the button was down, otherwise FALSE.
+ */
 MGAPI b8 button_down_prev(Buttons button);
 
+/**
+ * @brief Returns whether a mouse button was up on the previous frame.
+ * @param button The button_code to check for.
+ * @return TRUE if the button was up, otherwise FALSE.
+ */
 MGAPI b8 button_up_prev(Buttons button);
 
+/**
+ * @brief Gets the current position of the mouse.
+ * @return The mouse position as a Vec2i16.
+ */
 MGAPI Vec2i16 mouse_pos();
 
+/**
+ * @brief Gets the position of the mouse on the previous frame.
+ * @return The previous mouse position as a Vec2i16.
+ */
 MGAPI Vec2i16 mouse_pos_prev();
 
+/**
+ * @brief Used in platform specific code to send button input data to the engine.
+ * @param button The button code to process.
+ * @param is_pressed TRUE if the button is down, FALSE if it is UP.
+ */
 void input_process_button(Buttons button, b8 is_pressed);
 
+/**
+ * @brief Used in platform specific code to send mouse position input data to the engine.
+ * @param x The x position of the mouse.
+ * @param y The y position of the mouse.
+ */
 void input_process_mouse_moved(i16 x, i16 y);
 
+/**
+ * @brief Used in platform specific code to send mouse wheel input data to the engine.
+ * @param delta The direction of movement.
+ *
+ * Mouse wheel input can currently only be obtained through the Event subsystem hence why there are
+ * no mouse wheel polling functions.
+ */
 void imput_process_mouse_wheel(i8 delta);

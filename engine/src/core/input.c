@@ -1,7 +1,6 @@
 #include "input.h"
 
 #include "core/events.h"
-#include "core/log.h"
 #include "core/mmemory.h"
 #include "maths/vector.h"
 

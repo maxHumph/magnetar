@@ -41,7 +41,7 @@ MGAPI b8 application_create(Game* game_instance) {
   }
 
   if (!input_initialize()) {
-    MERROR_CORE("Event subsystem failed to init.");
+    MERROR_CORE("Input subsystem failed to init.");
     return FALSE;
   }
 

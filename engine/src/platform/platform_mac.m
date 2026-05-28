@@ -290,6 +290,7 @@ void platform_sleep(u64 ms)
 static Keys translate_mac_keycode(NSEvent* ns_event) {
   
   switch ([ns_event keyCode]) {
+    // A-Z
   case kVK_ANSI_A:
     return KEY_A;
   case kVK_ANSI_B:
@@ -342,6 +343,147 @@ static Keys translate_mac_keycode(NSEvent* ns_event) {
     return KEY_Y;
   case kVK_ANSI_Z:
     return KEY_Z;
+
+  case kVK_ANSI_1:
+    return  KEY_1;
+  case kVK_ANSI_2:
+    return  KEY_2;
+  case kVK_ANSI_3:
+    return  KEY_3;
+  case kVK_ANSI_4:
+    return  KEY_4;
+  case kVK_ANSI_5:
+    return  KEY_5;
+  case kVK_ANSI_6:
+    return  KEY_6;
+  case kVK_ANSI_7:
+    return  KEY_7;
+  case kVK_ANSI_8:
+    return  KEY_8;
+  case kVK_ANSI_9:
+    return  KEY_9;
+  case kVK_ANSI_0:
+    return  KEY_0;
+
+    // Moving around thingys
+
+  case kVK_Space:
+    return KEY_SPACE; 
+  case kVK_Delete:
+    return KEY_BACKSPACE; 
+  case kVK_Return:
+    return KEY_RETURN;
+  case kVK_Tab:
+    return KEY_TAB;
+  case kVK_Escape:
+    return KEY_ESCAPE;
+
+    // Modifiers and arrows
+
+  case kVK_CapsLock:
+    return KEY_CAPS_LOCK;
+  case kVK_Shift:
+    return KEY_LSHIFT;
+  case kVK_RightShift:
+    return KEY_RSHIFT;
+  case kVK_Control:
+    return KEY_LCTRL;
+  case kVK_RightControl:
+    return KEY_RCTRL;
+  case kVK_Option:
+    return KEY_LMETA;
+  case kVK_RightOption:
+    return KEY_RMETA;
+  case kVK_Command:
+    return KEY_LSUPER;
+  case kVK_RightCommand:
+    return KEY_RSUPER;
+  case kVK_UpArrow:
+    return KEY_UP_ARROW;
+  case kVK_DownArrow:
+    return KEY_DOWN_ARROW;
+  case kVK_LeftArrow:
+    return KEY_LEFT_ARROW;
+  case kVK_RightArrow:
+    return KEY_RIGHT_ARROW;
+
+    // Symbols
+  case kVK_ANSI_Minus:
+    return KEY_MINUS;
+  case kVK_ANSI_Equal:
+    return KEY_EQUALS;
+
+  case kVK_ANSI_Backslash:
+    return KEY_BSLASH;
+  case kVK_ANSI_Slash:
+    return KEY_FSLASH;
+  case kVK_ANSI_LeftBracket:
+    return KEY_OPEN_SQUARE;
+  case kVK_ANSI_RightBracket:
+    return KEY_CLOSE_SQUARE;
+  case kVK_ANSI_Semicolon:
+    return KEY_SEMICOL;
+  case kVK_ANSI_Quote:
+    return KEY_APOSTROPHY;
+  //   case kVK_?
+  // KEY_HASH = 0x26,
+  case kVK_ANSI_Comma:
+    return KEY_COMMA;
+  case kVK_ANSI_Period:
+    return KEY_PERIOD;
+  case kVK_ANSI_Grave:
+    return KEY_GRAVE;
+
+    // Func keys 
+
+  case kVK_F1:
+    return KEY_F1;
+  case kVK_F2:
+    return KEY_F2;
+  case kVK_F3:
+    return KEY_F3;
+  case kVK_F4:
+    return KEY_F4;
+  case kVK_F5:
+    return KEY_F5;
+  case kVK_F6:
+    return KEY_F6;
+  case kVK_F7:
+    return KEY_F7;
+  case kVK_F8:
+    return KEY_F8;
+  case kVK_F9:
+    return KEY_F9;
+  case kVK_F10:
+    return KEY_F10;
+  case kVK_F11:
+    return KEY_F11;
+  case kVK_F12:
+    return KEY_F12;
+  case kVK_F13:
+    return KEY_F13;
+  case kVK_F14:
+    return KEY_F14;
+  case kVK_F15:
+    return KEY_F15;
+  case kVK_F16:
+    return KEY_F16;
+  case kVK_F17:
+    return KEY_F17;
+  case kVK_F18:
+    return KEY_F18;
+  case kVK_F19:
+    return KEY_F19;
+  case kVK_F20:
+    return KEY_F20;
+    // Not supported by MacOS
+    /*
+  KEY_F21
+  KEY_F22
+  KEY_F23
+  KEY_F24
+    */
+
   default:
     return SILLY_KEY;
   }
@@ -357,15 +499,15 @@ static MacEvent translate_ns_event(NSEvent* ns_event) {
   e.event_type = MAC_EVENT_TYPE_NONE;
 
   switch ([ns_event type]){
-  case NSEventTypeKeyDown :
+  case NSEventTypeKeyDown : {
     e.event_type = MAC_EVENT_TYPE_KEY_DOWN;
     e.key_down.keycode = translate_mac_keycode(ns_event);
-    break;
+  } break;
 
-  case NSEventTypeKeyUp:
+  case NSEventTypeKeyUp: {
     e.event_type = MAC_EVENT_TYPE_KEY_UP;
     e.key_up.keycode = translate_mac_keycode(ns_event);
-    break;
+  } break;
 
   case NSEventTypeMouseMoved: {
     NSPoint p =
@@ -424,7 +566,7 @@ static void process_event(MacEvent* e) {
   case MAC_EVENT_TYPE_WINDOW_RESIZED:
     // MTRACE("Window Resized: (%i, %i)", e->window_resized.width, e->window_resized.height);
     break;
-
+    
   case MAC_EVENT_TYPE_KEY_DOWN:
     input_process_key(e->key_down.keycode, TRUE);
     MTRACE("Keydown: %d", e->key_down.keycode);

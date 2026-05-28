@@ -9,9 +9,9 @@ typedef struct KeyboardState {
 } KeyboardState;
 
 typedef struct MouseState {
-  i16 x;
-  i16 y;
-  u8 buttons[BUTTON_MAX_BUTTONS];
+  f32 x;
+  f32 y;
+  b8 buttons[BUTTON_MAX_BUTTONS];
 } MouseState;
 
 typedef struct InputState {
@@ -84,15 +84,15 @@ MGAPI b8 button_up_prev(Buttons button) {
   return s_input_state.mouse_state_prev.buttons[button] == FALSE;
 }
 
-MGAPI Vec2i16 mouse_pos() {
-  Vec2i16 pos;
+MGAPI Vec2f32 mouse_pos() {
+  Vec2f32 pos;
   pos.x = s_input_state.mouse_state_curr.x;
   pos.y = s_input_state.mouse_state_curr.y;
   return pos;
 }
 
-MGAPI Vec2i16 mouse_pos_prev() {
-  Vec2i16 pos;
+MGAPI Vec2f32 mouse_pos_prev() {
+  Vec2f32 pos;
   pos.x = s_input_state.mouse_state_prev.x;
   pos.y = s_input_state.mouse_state_prev.y;
   return pos;
@@ -113,21 +113,22 @@ void input_process_button(Buttons button, b8 is_pressed) {
   }
 }
 
-void input_process_mouse_moved(i16 x, i16 y) {
+void input_process_mouse_moved(f32 x, f32 y) {
   if (s_input_state.mouse_state_curr.x != x || s_input_state.mouse_state_curr.y != y) {
     s_input_state.mouse_state_curr.x = x;
     s_input_state.mouse_state_curr.y = y;
 
     EventData event_data;
-    event_data.data.i16[0] = x;
-    event_data.data.i16[1] = y;
+    event_data.data.f32[0] = x;
+    event_data.data.f32[1] = y;
 
     fire_event(EVENT_CODE_MOUSE_MOVED, 0, event_data);
   }
 }
 
-void imput_process_mouse_wheel(i8 delta) {
+void input_process_mouse_wheel(f32 delta_x, f32 delta_y) {
   EventData event_data;
-  event_data.data.u8[0] = delta;
+  event_data.data.f32[0] = delta_x;
+  event_data.data.f32[1] = delta_y;
   fire_event(EVENT_CODE_MOUSE_WHEEL, 0, event_data);
 }

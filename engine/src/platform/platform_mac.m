@@ -56,11 +56,11 @@ typedef struct MacEventWindowResized {
 } MacEventWindowResized;
 
 typedef struct MacEventKeyDown {
-  i16 keycode;
+  u16 keycode;
 } MacEventKeyDown;
 
 typedef struct MacEventKeyUp {
-  i16 keycode;
+  u16 keycode;
 } MacEventKeyUp;
 
 typedef struct MacEventMouseMoved {
@@ -69,7 +69,7 @@ typedef struct MacEventMouseMoved {
 } MacEventMouseMoved;
 
 typedef struct MacEventMouseButtonDown {
-  i32 button;
+  u16 button;
   f32 x_pos;
   f32 y_pos;
 } MacEventMouseButtonDown;
@@ -79,6 +79,11 @@ typedef struct MacEventMouseButtonUp{
   f32 x_pos;
   f32 y_pos;
 } MacEventMouseButtonUp;
+
+typedef struct MacEventScrollWheel {
+  f32 delta_x;
+  f32 delta_y;
+} MacEventScrollWheel;
 
 /**
  * @brief Generic type for handling mac events since mac uses NSEvents for input and NSNotifications for window events.
@@ -94,6 +99,7 @@ typedef struct MacEvent {
     MacEventMouseMoved mouse_moved;
     MacEventMouseButtonDown mouse_button_down;
     MacEventMouseButtonUp mouse_button_up;
+    MacEventScrollWheel scroll_wheel;
   };
 
 } MacEvent;
@@ -497,8 +503,64 @@ static Keys translate_mac_keycode(NSEvent* ns_event) {
 static MacEvent translate_ns_event(NSEvent* ns_event) {
   MacEvent e;
   e.event_type = MAC_EVENT_TYPE_NONE;
-
+  
   switch ([ns_event type]){
+    
+    // For modifier keys
+  case NSEventTypeFlagsChanged:
+    {
+      Keys key =
+        translate_mac_keycode(ns_event);
+      
+      NSEventModifierFlags flags =
+        [ns_event modifierFlags];
+      
+      b8 pressed = FALSE;
+      
+      switch ([ns_event keyCode]) {
+      case kVK_Shift:
+      case kVK_RightShift:
+	pressed =
+	  (flags & NSEventModifierFlagShift) != 0;
+	break;
+	
+      case kVK_Control:
+      case kVK_RightControl:
+	pressed =
+	  (flags & NSEventModifierFlagControl) != 0;
+	break;
+	
+      case kVK_Option:
+      case kVK_RightOption:
+	pressed =
+	  (flags & NSEventModifierFlagOption) != 0;
+	break;
+	
+      case kVK_Command:
+      case kVK_RightCommand:
+	pressed =
+	  (flags & NSEventModifierFlagCommand) != 0;
+	break;
+	
+      case kVK_CapsLock:
+	pressed =
+	  (flags & NSEventModifierFlagCapsLock) != 0;
+	break;
+      }
+      
+      e.event_type =
+        pressed
+	? MAC_EVENT_TYPE_KEY_DOWN
+	: MAC_EVENT_TYPE_KEY_UP;
+      
+      if (pressed) {
+	e.key_down.keycode = key;
+      } else {
+        e.key_up.keycode = key;
+      }
+      
+    } break;
+    
   case NSEventTypeKeyDown : {
     e.event_type = MAC_EVENT_TYPE_KEY_DOWN;
     e.key_down.keycode = translate_mac_keycode(ns_event);
@@ -515,32 +577,60 @@ static MacEvent translate_ns_event(NSEvent* ns_event) {
 
     e.event_type = MAC_EVENT_TYPE_MOUSE_MOVED;
 
-    e.mouse_moved.x_pos = p.x;
-    e.mouse_moved.y_pos = p.y;
+    e.mouse_moved.x_pos = (f32)p.x;
+    e.mouse_moved.y_pos = (f32)p.y;
   } break;
 
   case NSEventTypeLeftMouseDown: {
-    NSPoint p =
-      [ns_event locationInWindow];
+    // NSPoint p =
+    //   [ns_event locationInWindow];
     
     e.event_type = MAC_EVENT_TYPE_MOUSE_BUTTON_DOWN;
-    e.mouse_button_down.button = 0;
+    e.mouse_button_down.button = BUTTON_0;
     
-    e.mouse_button_down.x_pos = p.x;
-    e.mouse_button_down.y_pos = p.y;
+    // e.mouse_button_down.x_pos = p.x;
+    // e.mouse_button_down.y_pos = p.y;
     
   } break;
 
   case NSEventTypeLeftMouseUp:
+    // NSPoint p =
+    //   [ns_event locationInWindow];
+    
+    e.event_type = MAC_EVENT_TYPE_MOUSE_BUTTON_UP;
+    e.mouse_button_up.button = BUTTON_0;
+    
+    // e.mouse_button_up.x_pos = p.x;
+    // e.mouse_button_up.y_pos = p.y;
     break;
 
   case NSEventTypeRightMouseDown:
+    // NSPoint p =
+    //   [ns_event locationInWindow];
+    
+    e.event_type = MAC_EVENT_TYPE_MOUSE_BUTTON_DOWN;
+    e.mouse_button_down.button = BUTTON_1;
+    
+    // e.mouse_button_down.x_pos = p.x;
+    // e.mouse_button_down.y_pos = p.y;
     break;
 
   case NSEventTypeRightMouseUp:
+    // NSPoint p =
+    //   [ns_event locationInWindow];
+    
+    e.event_type = MAC_EVENT_TYPE_MOUSE_BUTTON_UP;
+    e.mouse_button_up.button = BUTTON_1;
+    
+    // e.mouse_button_up.x_pos = p.x;
+    // e.mouse_button_up.y_pos = p.y;
+    break;
     break;
 
   case NSEventTypeScrollWheel:
+    e.event_type = MAC_EVENT_TYPE_SCROLL_WHEEL;
+    e.scroll_wheel.delta_x = (f32)([ns_event deltaX]);
+    e.scroll_wheel.delta_y = (f32)([ns_event deltaY]);
     break;
 
   default:
@@ -564,22 +654,37 @@ static void process_event(MacEvent* e) {
     break;
 
   case MAC_EVENT_TYPE_WINDOW_RESIZED:
-    // MTRACE("Window Resized: (%i, %i)", e->window_resized.width, e->window_resized.height);
+    MTRACE_CORE("Window Resized: (%i, %i)", e->window_resized.width, e->window_resized.height);
     break;
     
   case MAC_EVENT_TYPE_KEY_DOWN:
     input_process_key(e->key_down.keycode, TRUE);
-    MTRACE("Keydown: %d", e->key_down.keycode);
+    MTRACE_CORE("Keydown: %d", e->key_down.keycode);
     break;
 
   case MAC_EVENT_TYPE_KEY_UP:
     input_process_key(e->key_up.keycode, FALSE);
-    MTRACE("Keyup: %d", e->key_up.keycode);
+    MTRACE_CORE("Keyup: %d", e->key_up.keycode);
+    break;
+
+  case MAC_EVENT_TYPE_MOUSE_BUTTON_DOWN:
+    input_process_button(e->mouse_button_down.button, TRUE);
+    MTRACE_CORE("Button down: %d", e->mouse_button_down.button);
+    break;
+
+  case MAC_EVENT_TYPE_MOUSE_BUTTON_UP:
+    input_process_button(e->mouse_button_up.button, FALSE);
+    MTRACE_CORE("Button up: %d", e->mouse_button_up.button);
     break;
 
   case MAC_EVENT_TYPE_MOUSE_MOVED:
-    // input_process_mouse_moved(,);
-    // MTRACE("Mouse moved: (%f, %f)", e->mouse_moved.x_pos, e->mouse_moved.y_pos);
+    input_process_mouse_moved(e->mouse_moved.x_pos, e->mouse_moved.y_pos);
+    MTRACE_CORE("Mouse moved: (%f, %f)", e->mouse_moved.x_pos, e->mouse_moved.y_pos);
+    break;
+
+  case MAC_EVENT_TYPE_SCROLL_WHEEL:
+    input_process_mouse_wheel(e->scroll_wheel.delta_x, e->scroll_wheel.delta_y);
+    MTRACE_CORE("Mouse Wheel: (%f, %f)", e->scroll_wheel.delta_x, e->scroll_wheel.delta_y);
     break;
 
   default:

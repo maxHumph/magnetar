@@ -222,15 +222,15 @@ MGAPI b8 button_up_prev(Buttons button);
 
 /**
  * @brief Gets the current position of the mouse.
- * @return The mouse position as a Vec2i16.
+ * @return The mouse position as a Vec2f32.
  */
-MGAPI Vec2i16 mouse_pos();
+MGAPI Vec2f32 mouse_pos();
 
 /**
  * @brief Gets the position of the mouse on the previous frame.
- * @return The previous mouse position as a Vec2i16.
+ * @return The previous mouse position as a Vec2f32.
  */
-MGAPI Vec2i16 mouse_pos_prev();
+MGAPI Vec2f32 mouse_pos_prev();
 
 /**
  * @brief Used in platform specific code to send button input data to the engine.
@@ -244,7 +244,7 @@ void input_process_button(Buttons button, b8 is_pressed);
  * @param x The x position of the mouse.
  * @param y The y position of the mouse.
  */
-void input_process_mouse_moved(i16 x, i16 y);
+void input_process_mouse_moved(f32 x, f32 y);
 
 /**
  * @brief Used in platform specific code to send mouse wheel input data to the engine.
@@ -253,4 +253,4 @@ void input_process_mouse_moved(i16 x, i16 y);
  * Mouse wheel input can currently only be obtained through the Event subsystem hence why there are
  * no mouse wheel polling functions.
  */
-void imput_process_mouse_wheel(i8 delta);
+void input_process_mouse_wheel(f32 delta_x, f32 delta_y);

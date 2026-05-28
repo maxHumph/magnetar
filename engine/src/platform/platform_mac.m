@@ -26,26 +26,26 @@
  * @brief Event type specifier for sruct MacEvent.
  */
 typedef enum MacEventType {
-
+  
   MAC_EVENT_TYPE_NONE = 0,
-
+  
   MAC_EVENT_TYPE_QUIT,
-
+  
   MAC_EVENT_TYPE_WINDOW_RESIZED,
   MAC_EVENT_TYPE_WINDOW_MINIMIZED,
   MAC_EVENT_TYPE_WINDOW_RESTORED,
-
+  
   MAC_EVENT_TYPE_FOCUS_GAINED,
   MAC_EVENT_TYPE_FOCUS_LOST,
-
+  
   MAC_EVENT_TYPE_KEY_DOWN,
   MAC_EVENT_TYPE_KEY_UP,
-
+  
   MAC_EVENT_TYPE_MOUSE_MOVED,
-
+  
   MAC_EVENT_TYPE_MOUSE_BUTTON_DOWN,
   MAC_EVENT_TYPE_MOUSE_BUTTON_UP,
-
+  
   MAC_EVENT_TYPE_SCROLL_WHEEL,
   
 } MacEventType;
@@ -89,9 +89,9 @@ typedef struct MacEventScrollWheel {
  * @brief Generic type for handling mac events since mac uses NSEvents for input and NSNotifications for window events.
  */
 typedef struct MacEvent {
-
+  
   MacEventType event_type;
-
+  
   union {
     MacEventWindowResized window_resized;
     MacEventKeyDown key_down;
@@ -101,7 +101,7 @@ typedef struct MacEvent {
     MacEventMouseButtonUp mouse_button_up;
     MacEventScrollWheel scroll_wheel;
   };
-
+  
 } MacEvent;
 
 /**
@@ -125,13 +125,13 @@ b8 platform_startup(PlatformState* platform_state, const char* application_name,
   [NSApplication sharedApplication];
   [NSApp setActivationPolicy:
 	   NSApplicationActivationPolicyRegular];
-
-
-
+  
+  
+  
   platform_state->internal_state = malloc(sizeof(InternalState));
   InternalState *state = (InternalState *)platform_state->internal_state;
   NSRect frame = NSMakeRect(x_pos, y_pos, width, height);
-
+  
   NSWindow* window =
     [[NSWindow alloc] initWithContentRect:frame
 				styleMask:(NSWindowStyleMaskTitled |
@@ -139,26 +139,26 @@ b8 platform_startup(PlatformState* platform_state, const char* application_name,
 					   NSWindowStyleMaskResizable)
 				  backing:NSBackingStoreBuffered
 				    defer:NO];
-
+  
   NSString *nsTitle =
     [NSString stringWithUTF8String:application_name ? application_name : "Window"];
-
+  
   [window setTitle:nsTitle];
-
+  
   state->ns_window = window;
-
+  
   state->window_delegate =
     [[WindowDelegate alloc] init];
-
+  
   [state->ns_window
       setDelegate:state->window_delegate];
-
+  
   [state->ns_window makeKeyAndOrderFront:nil];
-
+  
   [NSApp finishLaunching];
-
+  
   [NSApp activateIgnoringOtherApps:YES];
-
+  
   return TRUE;
 }
 
@@ -166,7 +166,7 @@ void platform_shutdown(PlatformState* platform_state) {
   InternalState *state = (InternalState *)platform_state->internal_state;
   [state->ns_window close];
   state->ns_window = nil;
-
+  
   free(state);
 }
 
@@ -175,7 +175,7 @@ static void process_event(MacEvent* e); // implemented fiurther down.
 
 b8 platform_pump_messages(PlatformState* platform_state) {
   NSEvent* ns_event;
-
+  
   while ((ns_event =
 	  [NSApp nextEventMatchingMask:NSEventMaskAny
 			     untilDate:nil
@@ -183,12 +183,12 @@ b8 platform_pump_messages(PlatformState* platform_state) {
 			       dequeue:YES]))
     {
       MacEvent e = translate_ns_event(ns_event);
-
+      
       if (e.event_type != MAC_EVENT_TYPE_NONE)
-      {
-	process_event(&e);
-      }
-
+	{
+	  process_event(&e);
+	}
+      
       [NSApp sendEvent:ns_event];
     }
   return TRUE;
@@ -226,28 +226,28 @@ void platform_print_error(const char* message, u8 colour) {
 f64 platform_get_time_abs() {
   static mach_timebase_info_data_t timebase;
   static i32 initialized = 0;
-
+  
   if (!initialized) {
     mach_timebase_info(&timebase);
     initialized = 1;
   }
-
+  
   u64 time = mach_absolute_time();
-
+  
   f64 nanos =
     (f64)time *
     (f64)timebase.numer /
     (f64)timebase.denom;
-
+  
   return nanos / 1e9;
 }
 
 void platform_sleep(u64 ms)
 {
-    struct timespec ts;
-    ts.tv_sec = ms / 1000;
-    ts.tv_nsec = (ms % 1000) * 1000000;
-    nanosleep(&ts, NULL);
+  struct timespec ts;
+  ts.tv_sec = ms / 1000;
+  ts.tv_nsec = (ms % 1000) * 1000000;
+  nanosleep(&ts, NULL);
 }
 
 
@@ -264,31 +264,31 @@ void platform_sleep(u64 ms)
 
 - (void)windowWillClose:(NSNotification *)notification
 {
-    MacEvent e;
-    e.event_type = MAC_EVENT_TYPE_QUIT;
-
-    process_event(&e);
+  MacEvent e;
+  e.event_type = MAC_EVENT_TYPE_QUIT;
+  
+  process_event(&e);
 }
 
 - (void)windowDidResize:(NSNotification *)notification
 {
-    NSWindow* window =
-        (NSWindow*)[notification object];
-
-    NSRect frame = [window contentRectForFrameRect:
-        [window frame]];
-
-    MacEvent e;
-
-    e.event_type = MAC_EVENT_TYPE_WINDOW_RESIZED;
-
-    e.window_resized.width =
-        (int)frame.size.width;
-
-    e.window_resized.height =
-        (int)frame.size.height;
-
-    process_event(&e);
+  NSWindow* window =
+    (NSWindow*)[notification object];
+  
+  NSRect frame = [window contentRectForFrameRect:
+			   [window frame]];
+  
+  MacEvent e;
+  
+  e.event_type = MAC_EVENT_TYPE_WINDOW_RESIZED;
+  
+  e.window_resized.width =
+    (int)frame.size.width;
+  
+  e.window_resized.height =
+    (int)frame.size.height;
+  
+  process_event(&e);
 }
 
 
@@ -349,7 +349,7 @@ static Keys translate_mac_keycode(NSEvent* ns_event) {
     return KEY_Y;
   case kVK_ANSI_Z:
     return KEY_Z;
-
+    
   case kVK_ANSI_1:
     return  KEY_1;
   case kVK_ANSI_2:
@@ -370,9 +370,9 @@ static Keys translate_mac_keycode(NSEvent* ns_event) {
     return  KEY_9;
   case kVK_ANSI_0:
     return  KEY_0;
-
+    
     // Moving around thingys
-
+    
   case kVK_Space:
     return KEY_SPACE; 
   case kVK_Delete:
@@ -383,9 +383,9 @@ static Keys translate_mac_keycode(NSEvent* ns_event) {
     return KEY_TAB;
   case kVK_Escape:
     return KEY_ESCAPE;
-
+    
     // Modifiers and arrows
-
+    
   case kVK_CapsLock:
     return KEY_CAPS_LOCK;
   case kVK_Shift:
@@ -412,13 +412,13 @@ static Keys translate_mac_keycode(NSEvent* ns_event) {
     return KEY_LEFT_ARROW;
   case kVK_RightArrow:
     return KEY_RIGHT_ARROW;
-
+    
     // Symbols
   case kVK_ANSI_Minus:
     return KEY_MINUS;
   case kVK_ANSI_Equal:
     return KEY_EQUALS;
-
+    
   case kVK_ANSI_Backslash:
     return KEY_BSLASH;
   case kVK_ANSI_Slash:
@@ -431,17 +431,17 @@ static Keys translate_mac_keycode(NSEvent* ns_event) {
     return KEY_SEMICOL;
   case kVK_ANSI_Quote:
     return KEY_APOSTROPHY;
-  //   case kVK_?
-  // KEY_HASH = 0x26,
+    //   case kVK_?
+    // KEY_HASH = 0x26,
   case kVK_ANSI_Comma:
     return KEY_COMMA;
   case kVK_ANSI_Period:
     return KEY_PERIOD;
   case kVK_ANSI_Grave:
     return KEY_GRAVE;
-
+    
     // Func keys 
-
+    
   case kVK_F1:
     return KEY_F1;
   case kVK_F2:
@@ -484,12 +484,12 @@ static Keys translate_mac_keycode(NSEvent* ns_event) {
     return KEY_F20;
     // Not supported by MacOS
     /*
-  KEY_F21
-  KEY_F22
-  KEY_F23
-  KEY_F24
+      KEY_F21
+      KEY_F22
+      KEY_F23
+      KEY_F24
     */
-
+    
   default:
     return SILLY_KEY;
   }
@@ -565,22 +565,22 @@ static MacEvent translate_ns_event(NSEvent* ns_event) {
     e.event_type = MAC_EVENT_TYPE_KEY_DOWN;
     e.key_down.keycode = translate_mac_keycode(ns_event);
   } break;
-
+    
   case NSEventTypeKeyUp: {
     e.event_type = MAC_EVENT_TYPE_KEY_UP;
     e.key_up.keycode = translate_mac_keycode(ns_event);
   } break;
-
+    
   case NSEventTypeMouseMoved: {
     NSPoint p =
       [ns_event locationInWindow];
-
+    
     e.event_type = MAC_EVENT_TYPE_MOUSE_MOVED;
-
+    
     e.mouse_moved.x_pos = (f32)p.x;
     e.mouse_moved.y_pos = (f32)p.y;
   } break;
-
+    
   case NSEventTypeLeftMouseDown: {
     // NSPoint p =
     //   [ns_event locationInWindow];
@@ -592,7 +592,7 @@ static MacEvent translate_ns_event(NSEvent* ns_event) {
     // e.mouse_button_down.y_pos = p.y;
     
   } break;
-
+    
   case NSEventTypeLeftMouseUp:
     // NSPoint p =
     //   [ns_event locationInWindow];
@@ -603,7 +603,7 @@ static MacEvent translate_ns_event(NSEvent* ns_event) {
     // e.mouse_button_up.x_pos = p.x;
     // e.mouse_button_up.y_pos = p.y;
     break;
-
+    
   case NSEventTypeRightMouseDown:
     // NSPoint p =
     //   [ns_event locationInWindow];
@@ -614,7 +614,7 @@ static MacEvent translate_ns_event(NSEvent* ns_event) {
     // e.mouse_button_down.x_pos = p.x;
     // e.mouse_button_down.y_pos = p.y;
     break;
-
+    
   case NSEventTypeRightMouseUp:
     // NSPoint p =
     //   [ns_event locationInWindow];
@@ -626,13 +626,13 @@ static MacEvent translate_ns_event(NSEvent* ns_event) {
     // e.mouse_button_up.y_pos = p.y;
     break;
     break;
-
+    
   case NSEventTypeScrollWheel:
     e.event_type = MAC_EVENT_TYPE_SCROLL_WHEEL;
     e.scroll_wheel.delta_x = (f32)([ns_event deltaX]);
     e.scroll_wheel.delta_y = (f32)([ns_event deltaY]);
     break;
-
+    
   default:
     break;
   }
@@ -652,7 +652,7 @@ static void process_event(MacEvent* e) {
     platform_sleep(100);
     exit(0);
     break;
-
+    
   case MAC_EVENT_TYPE_WINDOW_RESIZED:
     MTRACE_CORE("Window Resized: (%i, %i)", e->window_resized.width, e->window_resized.height);
     break;
@@ -661,36 +661,36 @@ static void process_event(MacEvent* e) {
     input_process_key(e->key_down.keycode, TRUE);
     MTRACE_CORE("Keydown: %d", e->key_down.keycode);
     break;
-
+    
   case MAC_EVENT_TYPE_KEY_UP:
     input_process_key(e->key_up.keycode, FALSE);
     MTRACE_CORE("Keyup: %d", e->key_up.keycode);
     break;
-
+    
   case MAC_EVENT_TYPE_MOUSE_BUTTON_DOWN:
     input_process_button(e->mouse_button_down.button, TRUE);
     MTRACE_CORE("Button down: %d", e->mouse_button_down.button);
     break;
-
+    
   case MAC_EVENT_TYPE_MOUSE_BUTTON_UP:
     input_process_button(e->mouse_button_up.button, FALSE);
     MTRACE_CORE("Button up: %d", e->mouse_button_up.button);
     break;
-
+    
   case MAC_EVENT_TYPE_MOUSE_MOVED:
     input_process_mouse_moved(e->mouse_moved.x_pos, e->mouse_moved.y_pos);
     MTRACE_CORE("Mouse moved: (%f, %f)", e->mouse_moved.x_pos, e->mouse_moved.y_pos);
     break;
-
+    
   case MAC_EVENT_TYPE_SCROLL_WHEEL:
     input_process_mouse_wheel(e->scroll_wheel.delta_x, e->scroll_wheel.delta_y);
     MTRACE_CORE("Mouse Wheel: (%f, %f)", e->scroll_wheel.delta_x, e->scroll_wheel.delta_y);
     break;
-
+    
   default:
     break;
   }
-
+  
 }
 
 

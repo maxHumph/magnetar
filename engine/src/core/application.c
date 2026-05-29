@@ -85,7 +85,12 @@ MGAPI b8 application_run() {
   clock_start(&s_application_state.clock);
   f64 delta_time = 0;
   s_application_state.last_time = s_application_state.clock.elapsed_time;
+
+  f64 frame_target_time = 1.0f / 60.0f;
+
   while (s_application_state.is_running) {
+    f64 frame_start_time = platform_get_time_abs();
+
     clock_update(&s_application_state.clock);
     delta_time = s_application_state.clock.elapsed_time - s_application_state.last_time;
     s_application_state.last_time = s_application_state.clock.elapsed_time;
@@ -107,6 +112,13 @@ MGAPI b8 application_run() {
         MFATAL_CORE("on_render failed, EXITING PROCESS.");
         s_application_state.is_running = FALSE;
         break;
+      }
+
+      f64 frame_end_time = platform_get_time_abs();
+      f64 frame_time = frame_end_time - frame_start_time;
+
+      if (frame_time < frame_target_time) {
+        platform_sleep(1000 * (frame_target_time - frame_time));
       }
 
       input_update(delta_time);

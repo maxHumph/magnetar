@@ -1,5 +1,6 @@
 #include "application.h"
 
+#include "core/clock.h"
 #include "core/events.h"
 #include "core/input.h"
 #include "core/log.h"
@@ -17,6 +18,8 @@ typedef struct ApplicationState {
 
   i16 width;
   i16 height;
+
+  Clock clock;
   f64 last_time;
 
 } ApplicationState;
@@ -79,27 +82,34 @@ MGAPI b8 application_create(Game* game_instance) {
 }
 
 MGAPI b8 application_run() {
+  clock_start(&s_application_state.clock);
+  f64 delta_time = 0;
+  s_application_state.last_time = s_application_state.clock.elapsed_time;
   while (s_application_state.is_running) {
+    clock_update(&s_application_state.clock);
+    delta_time = s_application_state.clock.elapsed_time - s_application_state.last_time;
+    s_application_state.last_time = s_application_state.clock.elapsed_time;
+
     if (!platform_pump_messages(&s_application_state.platform_state)) {
       s_application_state.is_running = FALSE;
     }
 
     if (!s_application_state.is_suspended) {
       if (!s_application_state.game_instance->on_update(s_application_state.game_instance,
-                                                        (f32)0)) {
+                                                        (f32)delta_time)) {
         MFATAL_CORE("on_update failed, EXITING PROCESS.");
         s_application_state.is_running = FALSE;
         break;
       }
 
       if (!s_application_state.game_instance->on_render(s_application_state.game_instance,
-                                                        (f32)0)) {
+                                                        (f32)delta_time)) {
         MFATAL_CORE("on_render failed, EXITING PROCESS.");
         s_application_state.is_running = FALSE;
         break;
       }
 
-      input_update(0);
+      input_update(delta_time);
     }
   }
   s_application_state.is_running = FALSE;
@@ -110,6 +120,8 @@ MGAPI b8 application_run() {
 
   input_shutdown();
   event_shutdown();
+
+  clock_stop(&s_application_state.clock);
 
   platform_shutdown(&s_application_state.platform_state);
 

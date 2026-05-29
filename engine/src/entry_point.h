@@ -1,5 +1,8 @@
 /**
  * @file entry_point.h
+ * @brief Contains the main method.
+ *
+ * IMPORTANT: b8 create_game(Game*) must be defined in the game code.
  */
 
 #pragma once

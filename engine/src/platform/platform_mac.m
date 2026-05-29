@@ -141,7 +141,7 @@ b8 platform_startup(PlatformState* platform_state, const char* application_name,
 				    defer:NO];
   
   NSString *nsTitle =
-    [NSString stringWithUTF8String:application_name ? application_name : "Window"];
+    [NSString stringWithUTF8String:(application_name ? application_name : "Window")];
   
   [window setTitle:nsTitle];
   

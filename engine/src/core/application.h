@@ -6,6 +6,7 @@
 #pragma once
 
 #include "define.h"
+#include "renderer/renderer_backend.h"
 
 struct Game;
 
@@ -17,6 +18,8 @@ typedef struct ApplicationInfo {
   i16 start_y_pos;
   i16 start_width;
   i16 start_height;
+
+  RendererAPI renderer_api;
 
   char* start_title;
 

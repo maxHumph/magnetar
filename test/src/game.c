@@ -9,14 +9,14 @@ b8 game_initalize(Game* game_instance) {
   return TRUE;
 }
 
-b8 on_update(Game* game_instance, f32 delta_time) {
+b8 on_update(Game* game_instance, f64 delta_time) {
   /* MDEBUG("on_update() was called"); */
   return TRUE;
 }
 
-b8 on_render(Game* game_instance, f32 delta_time) {
+b8 on_render(Game* game_instance, f64 delta_time) {
   /* MDEBUG("on_render() was called"); */
   return TRUE;
 }
 
-void on_resize(Game* game_instance, u32 width, u32 height) { MDEBUG("on_resize() was called"); }
+void on_resize(Game* game_instance, u16 width, u16 height) { MDEBUG("on_resize() was called"); }

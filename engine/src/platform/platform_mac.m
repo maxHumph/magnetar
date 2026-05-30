@@ -216,7 +216,19 @@ void* platform_mem_set(void* block, i32 val, u64 size) {
 }
 
 void platform_print(const char* message, u8 colour) {
-  printf("%s", message);
+  if (colour == 0 || colour == 1) {
+    printf("\x1b[37;41m%s\x1b[0m", message);
+  } else if (colour == 2 || colour == 3) {
+    printf("\x1b[31m%s\x1b[0m", message);
+  } else if (colour == 4 || colour == 5) {
+    printf("\x1b[33m%s\x1b[0m", message);
+  } else if (colour == 6 || colour == 7) {
+    printf("\x1b[35m%s\x1b[0m", message);
+  } else if (colour == 8 || colour == 9) {
+    printf("\x1b[37m%s\x1b[0m", message);
+  } else if (colour == 10 || colour == 11) {
+    printf("\x1b[36m%s\x1b[0m", message);
+  }
 }
 
 void platform_print_error(const char* message, u8 colour) {

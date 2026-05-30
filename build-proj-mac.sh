@@ -4,6 +4,10 @@
 set -e
 set -x   # optional: trace commands
 
+if [[ "$1" == "-debug" ]] then
+   echo "Debug enabled"
+fi
+
 echo "Building project.."
 
 pushd engine >/dev/null

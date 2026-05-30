@@ -1,6 +1,7 @@
 #include "log.h"
 
 #include "core/asserts.h"
+#include "platform/platform.h"
 
 // temp
 #include <stdarg.h>
@@ -32,7 +33,7 @@ void log_output(LogLevel level, const char* message, ...) {
   char out_message[32000];
   sprintf(out_message, "%s%s\n", level_strings[level], out_buffer);
 
-  printf("%s", out_message);
+  platform_print(out_message, level);
 }
 
 void report_assertion_failure(const char* expression, const char* message, const char* file,

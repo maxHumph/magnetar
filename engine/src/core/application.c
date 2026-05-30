@@ -7,6 +7,7 @@
 #include "game_interface.h"
 #include "log.h"
 #include "platform/platform.h"
+#include "renderer/renderer_frontend.h"
 
 typedef struct ApplicationState {
   Game* game_instance;
@@ -49,6 +50,10 @@ MGAPI b8 application_create(Game* game_instance) {
   if (!input_initialize()) {
     MERROR_CORE("Input subsystem failed to init.");
     return FALSE;
+  }
+
+  if (!renderer_init(game_instance)) {
+    MFATAL_CORE("Renderer failed to init.");
   }
 
   s_application_state.is_running = TRUE;
@@ -107,6 +112,11 @@ MGAPI b8 application_run() {
         break;
       }
 
+      // temporary for testing. 
+      renderer_start_frame(delta_time);
+      renderer_end_frame(delta_time);
+      renderer_draw_frame();
+
       if (!s_application_state.game_instance->on_render(s_application_state.game_instance,
                                                         (f32)delta_time)) {
         MFATAL_CORE("on_render failed, EXITING PROCESS.");
@@ -130,6 +140,7 @@ MGAPI b8 application_run() {
   event_unregister(EVENT_CODE_KEY_DOWN, 0, application_on_key);
   event_unregister(EVENT_CODE_KEY_UP, 0, application_on_key);
 
+  renderer_shutdown();
   input_shutdown();
   event_shutdown();
 

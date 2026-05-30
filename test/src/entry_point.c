@@ -1,6 +1,7 @@
 #include <core/mmemory.h>
 #include <entry_point.h>
 #include <platform/platform.h>
+#include <renderer/renderer_backend.h>
 
 #include "game.h"
 
@@ -10,6 +11,7 @@ b8 create_game(Game* out_game) {
   out_game->application_info.start_width = 1280;
   out_game->application_info.start_height = 720;
   out_game->application_info.start_title = "Magnetar Engine Test Application";
+  out_game->application_info.renderer_api = RENDERER_API_VULKAN;
 
   // Assign function pointers.
   out_game->initialize = game_initalize;

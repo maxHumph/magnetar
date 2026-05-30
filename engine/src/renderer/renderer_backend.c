@@ -7,13 +7,12 @@
 b8 renderer_backend_create(RendererAPI api, const char* application_name,
                            RendererBackend* backend) {
   switch (api) {
-    case RENDERER_API_VULKAN: {
+    case RENDERER_API_VULKAN:
       backend->init = vulkan_backend_init;
       backend->shutdown = vulkan_backend_shutdown;
       backend->start_frame = vulkan_backend_start_frame;
       backend->end_frame = vulkan_backend_end_frame;
       backend->resized = vulkan_backend_resized;
-    }
       return TRUE;
   }
 }

@@ -10,7 +10,7 @@ b8 game_initalize(Game* game_instance) {
 }
 
 b8 on_update(Game* game_instance, f64 delta_time) {
-  /* MDEBUG("on_update() was called"); */
+  /* MTRACE("on_update() was called"); */
   return TRUE;
 }
 

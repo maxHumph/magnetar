@@ -7,6 +7,16 @@
 #include "define.h"
 #include "renderer/renderer_backend.h"
 
+#if defined(MPLATFORM_APPLE)
+#define MVK_EXTENSION_NAMES {VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME}
+#define MVK_EXTENSION_COUNT 1
+#define MVK_INSTANCE_CREATE_FLAGS VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR
+#else
+#define MVK_EXTENSION_NAMES
+#define MVK_EXTENSION_COUNT 0
+#define MVK_INSTANCE_CREATE_FLAGS
+#endif
+
 /**
  * @brief Creates the vulkan instance and sets up needed layers and extensions. (Called by the
  * renderer frontend via function pointers in a RendererBackend object.)

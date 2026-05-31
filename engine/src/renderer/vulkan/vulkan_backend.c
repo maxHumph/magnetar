@@ -21,20 +21,19 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   application_info.pEngineName = "Magnetar Engine";
 
   // Set vulkan instance create info
-  const char* const extension_names = {VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME};
-  u32 extension_count = 1;
   VkInstanceCreateInfo create_info = {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
+  const char* const extension_names = MVK_EXTENSION_NAMES;
   create_info.pApplicationInfo = &application_info;
-  create_info.enabledExtensionCount = extension_count;
+  create_info.enabledExtensionCount = MVK_EXTENSION_COUNT;
   create_info.enabledLayerCount = 0;
   create_info.ppEnabledExtensionNames = &extension_names;
   create_info.ppEnabledLayerNames = NULL_PTR;
-  VkInstanceCreateFlags instance_create_flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-  create_info.flags = instance_create_flags;
+  create_info.flags = MVK_INSTANCE_CREATE_FLAGS;
 
   VkResult res_create_instance =
       vkCreateInstance(&create_info, vulkan_context.allocator, &vulkan_context.instance);
 
+  // Check for instance creation errors
   if (res_create_instance == VK_SUCCESS) {
     MINFO_CORE("Created VkInstance");
     u32 api_version = application_info.apiVersion;

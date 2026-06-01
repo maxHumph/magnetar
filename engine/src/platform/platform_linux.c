@@ -4,6 +4,7 @@
 
 #include <xcb/xproto.h>
 
+#include "core/input.h"
 #include "define.h"
 #include "platform.h"
 
@@ -126,6 +127,9 @@ void platform_shutdown(PlatformState* platform_state) {
   xcb_destroy_window(state->connection, state->window);
 }
 
+// Delared further down.
+Keys translate_keycode(KeySym key_sym);
+
 b8 platform_pump_messages(PlatformState* platform_state) {
   InternalState* state = (InternalState*)platform_state->internal_state;
 
@@ -143,9 +147,16 @@ b8 platform_pump_messages(PlatformState* platform_state) {
 
     switch (event->response_type & ~0x80) {
       case XCB_KEY_PRESS:
-        break;
       case XCB_KEY_RELEASE:
+        xcb_key_press_event_t* kb_event = (xcb_key_press_event_t*)event;
+        b8 is_pressed = event->response_type == XCB_KEY_PRESS;
+        xcb_keycode_t keycode = kb_event->detail;
+        KeySym key_sym =
+            XkbKeycodeToKeysym(state->display, (KeyCode)keycode, 0, keycode & ShiftMask ? 1 : 0);
+        Keys key = translate_keycode(key_sym);
+        input_process_key(key, is_pressed);
         break;
+
       case XCB_BUTTON_PRESS:
         break;
       case XCB_BUTTON_RELEASE:
@@ -213,6 +224,201 @@ void platform_sleep(u64 ms) {
   }
   usleep((ms % 1000) * 1000);
 #endif
+}
+
+Keys translate_keycode(KeySym key_sym) {
+  switch (key_sym) {
+    return SILLY_KEY;
+
+    case XK_space:
+      return KEY_SPACE;
+    case XK_BackSpace:
+      return KEY_BACKSPACE;
+    case XK_Return:
+      return KEY_RETURN;
+    case XK_Tab:
+      return KEY_TAB;
+    case XK_Escape:
+      return KEY_ESCAPE;
+
+    case XK_Caps_Lock:
+      return KEY_CAPS_LOCK;
+    case XK_Shift_L:
+      return KEY_LSHIFT;
+    case XK_Shift_R:
+      return KEY_RSHIFT;
+    case XK_Control_L:
+      return KEY_LCTRL;
+    case XK_Control_R:
+      return KEY_RCTRL;
+    case XK_Meta_L:
+      return KEY_LMETA;
+    case XK_Meta_R:
+      return KEY_RMETA;
+    case XK_Super_L:
+      return KEY_LSUPER;
+    case XK_Super_R:
+      return KEY_RSUPER;
+    case XK_Up:
+      return KEY_UP_ARROW;
+    case XK_Down:
+      return KEY_DOWN_ARROW;
+    case XK_Left:
+      return KEY_LEFT_ARROW;
+    case XK_Right:
+      return KEY_RIGHT_ARROW;
+
+    case XK_backslash:
+      return KEY_BSLASH;
+    case XK_slash:
+      return KEY_FSLASH;
+    case XK_bracketleft:
+      return KEY_OPEN_SQUARE;
+    case XK_bracketright:
+      return KEY_CLOSE_SQUARE;
+    case XK_semicolon:
+      return KEY_SEMICOL;
+    case XK_apostrophe:
+      return KEY_APOSTROPHY;
+    case XK_numbersign:
+      return KEY_HASH;
+    case XK_comma:
+      return KEY_COMMA;
+    case XK_period:
+      return KEY_PERIOD;
+
+    // The one below escape and left of 1
+    case XK_grave:
+      return KEY_GRAVE;
+
+    case XK_1:
+      return KEY_1;
+    case XK_2:
+      return KEY_2;
+    case XK_3:
+      return KEY_3;
+    case XK_4:
+      return KEY_4;
+    case XK_5:
+      return KEY_5;
+    case XK_6:
+      return KEY_6;
+    case XK_7:
+      return KEY_7;
+    case XK_8:
+      return KEY_8;
+    case XK_9:
+      return KEY_9;
+    case XK_0:
+      return KEY_0;
+
+    case XK_minus:
+      return KEY_MINUS;
+    case XK_equal:
+      return KEY_EQUALS;
+
+    case XK_a:
+      return KEY_A;
+    case XK_b:
+      return KEY_B;
+    case XK_c:
+      return KEY_C;
+    case XK_d:
+      return KEY_D;
+    case XK_e:
+      return KEY_E;
+    case XK_f:
+      return KEY_F;
+    case XK_g:
+      return KEY_G;
+    case XK_h:
+      return KEY_H;
+    case XK_i:
+      return KEY_I;
+    case XK_j:
+      return KEY_J;
+    case XK_k:
+      return KEY_K;
+    case XK_l:
+      return KEY_L;
+    case XK_m:
+      return KEY_M;
+    case XK_n:
+      return KEY_N;
+    case XK_o:
+      return KEY_O;
+    case XK_p:
+      return KEY_P;
+    case XK_q:
+      return KEY_Q;
+    case XK_r:
+      return KEY_R;
+    case XK_s:
+      return KEY_S;
+    case XK_t:
+      return KEY_T;
+    case XK_u:
+      return KEY_U;
+    case XK_v:
+      return KEY_V;
+    case XK_w:
+      return KEY_W;
+    case XK_x:
+      return KEY_X;
+    case XK_y:
+      return KEY_Y;
+    case XK_z:
+      return KEY_Z;
+
+    case XK_F1:
+      return KEY_F1;
+    case XK_F2:
+      return KEY_F2;
+    case XK_F3:
+      return KEY_F3;
+    case XK_F4:
+      return KEY_F4;
+    case XK_F5:
+      return KEY_F5;
+    case XK_F6:
+      return KEY_F6;
+    case XK_F7:
+      return KEY_F7;
+    case XK_F8:
+      return KEY_F8;
+    case XK_F9:
+      return KEY_F9;
+    case XK_F10:
+      return KEY_F10;
+    case XK_F11:
+      return KEY_F11;
+    case XK_F12:
+      return KEY_F12;
+    case XK_F13:
+      return KEY_F13;
+    case XK_F14:
+      return KEY_F14;
+    case XK_F15:
+      return KEY_F15;
+    case XK_F16:
+      return KEY_F16;
+    case XK_F17:
+      return KEY_F17;
+    case XK_F18:
+      return KEY_F18;
+    case XK_F19:
+      return KEY_F19;
+    case XK_F20:
+      return KEY_F20;
+    case XK_F21:
+      return KEY_F21;
+    case XK_F22:
+      return KEY_F22;
+    case XK_F23:
+      return KEY_F23;
+    case XK_F24:
+      return KEY_F24;
+  }
 }
 
 #endif

@@ -26,8 +26,13 @@ typedef int b32;
 
 #define TRUE 1
 #define FALSE 0
+
 #define NULL_PTR (void*)0
+
 #define HANDLED 1
+
+#define ENDL '\n'
+#define NULL_TERM '\0'
 
 // Define static assertions
 
@@ -59,7 +64,7 @@ STATIC_ASSERT(sizeof(b32) == 4, "Expected b32 = 4 bytes.");
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #define MPLATFORM_WINDOWS 1
-#ifndef _WIN65
+#ifndef _WIN64
 #error "Requires a 64 bit windows version."
 #endif
 

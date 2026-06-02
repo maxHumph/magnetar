@@ -147,22 +147,44 @@ b8 platform_pump_messages(PlatformState* platform_state) {
 
     switch (event->response_type & ~0x80) {
       case XCB_KEY_PRESS:
-      case XCB_KEY_RELEASE:
+      case XCB_KEY_RELEASE:;
         xcb_key_press_event_t* kb_event = (xcb_key_press_event_t*)event;
-        b8 is_pressed = event->response_type == XCB_KEY_PRESS;
+        b8 key_is_pressed = event->response_type == XCB_KEY_PRESS;
         xcb_keycode_t keycode = kb_event->detail;
         KeySym key_sym =
             XkbKeycodeToKeysym(state->display, (KeyCode)keycode, 0, keycode & ShiftMask ? 1 : 0);
         Keys key = translate_keycode(key_sym);
-        input_process_key(key, is_pressed);
+        input_process_key(key, key_is_pressed);
         break;
 
       case XCB_BUTTON_PRESS:
+      case XCB_BUTTON_RELEASE:;
+        xcb_button_press_event_t* bt_event = (xcb_button_press_event_t*)event;
+        b8 button_is_pressed = event->response_type == XCB_BUTTON_PRESS;
+        xcb_button_t buttoncode = bt_event->detail;
+
+        switch (buttoncode) {
+          case XCB_BUTTON_INDEX_1:
+            input_process_button(BUTTON_0, button_is_pressed);
+          case XCB_BUTTON_INDEX_2:
+            input_process_button(BUTTON_1, button_is_pressed);
+          case XCB_BUTTON_INDEX_3:
+            input_process_button(BUTTON_2, button_is_pressed);
+          case XCB_BUTTON_INDEX_4:
+            input_process_button(BUTTON_3, button_is_pressed);
+          case XCB_BUTTON_INDEX_5:
+            input_process_button(BUTTON_4, button_is_pressed);
+        }
+
         break;
-      case XCB_BUTTON_RELEASE:
+      case XCB_MOTION_NOTIFY:;  // mouse movement
+        xcb_motion_notify_event_t* mn_event = (xcb_motion_notify_event_t*)event;
+        f32 mouse_x = (f32)mn_event->event_x;
+        f32 mouse_y = (f32)mn_event->event_y;
+        input_process_mouse_moved(mouse_x, mouse_y);
+        MTRACE_CORE("x mouse moved: (%f, %f)", mouse_x, mouse_y);
         break;
-      case XCB_MOTION_NOTIFY:  // mouse movement
-        break;
+
       case XCB_CONFIGURE_NOTIFY:  // resizing
         break;
       case XCB_CLIENT_MESSAGE:
@@ -418,6 +440,9 @@ Keys translate_keycode(KeySym key_sym) {
       return KEY_F23;
     case XK_F24:
       return KEY_F24;
+
+    default:
+      return SILLY_KEY;
   }
 }
 

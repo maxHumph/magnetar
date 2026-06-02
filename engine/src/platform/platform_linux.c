@@ -157,6 +157,7 @@ b8 platform_pump_messages(PlatformState* platform_state) {
         input_process_key(key, key_is_pressed);
         break;
 
+        // This includes mouse wheel events
       case XCB_BUTTON_PRESS:
       case XCB_BUTTON_RELEASE:;
         xcb_button_press_event_t* bt_event = (xcb_button_press_event_t*)event;
@@ -166,39 +167,39 @@ b8 platform_pump_messages(PlatformState* platform_state) {
         switch (buttoncode) {
           case XCB_BUTTON_INDEX_1:
             input_process_button(BUTTON_0, button_is_pressed);
-            MTRACE_CORE("Left click");
+            /* MTRACE_CORE("Left click"); */
             break;
           case XCB_BUTTON_INDEX_3:
             input_process_button(BUTTON_1, button_is_pressed);
-            MTRACE_CORE("Right click");
+            /* MTRACE_CORE("Right click"); */
             break;
           case XCB_BUTTON_INDEX_2:
             input_process_button(BUTTON_2, button_is_pressed);
-            MTRACE_CORE("Middle click");
+            /* MTRACE_CORE("Middle click"); */
             break;
           case XCB_BUTTON_INDEX_4:
             input_process_mouse_wheel(0.0f, 1.0f);
-            MTRACE_CORE("Wheel UP");
+            /* MTRACE_CORE("Wheel UP"); */
             break;
           case XCB_BUTTON_INDEX_5:
             input_process_mouse_wheel(0.0f, -1.0f);
-            MTRACE_CORE("Wheel DOWN");
+            /* MTRACE_CORE("Wheel DOWN"); */
             break;
           case 6:
             input_process_mouse_wheel(-1.0f, 0.0f);
-            MTRACE_CORE("Wheel LEFT");
+            /* MTRACE_CORE("Wheel LEFT"); */
             break;
           case 7:
             input_process_mouse_wheel(1.0f, 0.0f);
-            MTRACE_CORE("Wheel RIGHT");
+            /* MTRACE_CORE("Wheel RIGHT"); */
             break;
           case 8:
             input_process_button(BUTTON_3, button_is_pressed);
-            MTRACE_CORE("4 click");
+            /* MTRACE_CORE("4 click"); */
             break;
           case 9:
             input_process_button(BUTTON_4, button_is_pressed);
-            MTRACE_CORE("5 click");
+            /* MTRACE_CORE("5 click"); */
             break;
         }
 
@@ -209,7 +210,7 @@ b8 platform_pump_messages(PlatformState* platform_state) {
         f32 mouse_y = (f32)mn_event->event_y;
 
         input_process_mouse_moved(mouse_x, mouse_y);
-        MTRACE_CORE("x mouse moved: (%f, %f)", mouse_x, mouse_y);
+        /* MTRACE_CORE("x mouse moved: (%f, %f)", mouse_x, mouse_y); */
         break;
 
       case XCB_CONFIGURE_NOTIFY:  // resizing

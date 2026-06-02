@@ -4,7 +4,6 @@
 
 #include "core/log.h"
 #include "core/mmemory.h"
-#include "data_structures/darray.h"
 #include "define.h"
 #include "vulkan/vulkan_core.h"
 #include "vulkan_defines.h"
@@ -74,7 +73,9 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   VkPhysicalDeviceProperties physical_device_properties;
   for (u32 i = 0; i < physical_device_count; i++) {
     vkGetPhysicalDeviceProperties(physical_devices[i], &physical_device_properties);
-    MDEBUG_CORE("%u. Physical Device: %s", i + 1, physical_device_properties.deviceName);
+    MDEBUG_CORE("%u. Physical Device: %s, %s", i + 1,
+                string_VkPhysicalDeviceType(physical_device_properties.deviceType),
+                physical_device_properties.deviceName);
   }
 
   mfree(physical_devices, physical_device_count * sizeof(VkPhysicalDevice), MEMORY_TAG_RENDERER);

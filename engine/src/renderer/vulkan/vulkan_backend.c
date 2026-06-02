@@ -70,12 +70,24 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   }
 
   // List physical devices
-  VkPhysicalDeviceProperties physical_device_properties;
+  // TODO: Select most suitable device
+  VkPhysicalDeviceProperties targeted_physical_device_properties;
+  VkPhysicalDeviceProperties suitable_physical_device_properties;
+  VkPhysicalDevice suitable_device = physical_devices[0];
   for (u32 i = 0; i < physical_device_count; i++) {
-    vkGetPhysicalDeviceProperties(physical_devices[i], &physical_device_properties);
+    vkGetPhysicalDeviceProperties(physical_devices[i], &targeted_physical_device_properties);
+    vkGetPhysicalDeviceProperties(suitable_device, &suitable_physical_device_properties);
     MDEBUG_CORE("%u. Physical Device: %s, %s", i + 1,
-                string_VkPhysicalDeviceType(physical_device_properties.deviceType),
-                physical_device_properties.deviceName);
+                string_VkPhysicalDeviceType(targeted_physical_device_properties.deviceType),
+                targeted_physical_device_properties.deviceName);
+    if (targeted_physical_device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+      suitable_device = physical_devices[i];
+    } else if (targeted_physical_device_properties.deviceType ==
+                   VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU &&
+               suitable_physical_device_properties.deviceType !=
+                   VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+      suitable_device = physical_devices[i];
+    }
   }
 
   // Set logical device create info
@@ -88,7 +100,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   device_create_info.ppEnabledExtensionNames = NULL_PTR;
 
   // Create logical device
-  VkResult create_device_result = vkCreateDevice(physical_devices[0], &device_create_info,
+  // TODO: select most suistable physical device
+  VkResult create_device_result = vkCreateDevice(suitable_device, &device_create_info,
                                                  vulkan_context.allocator, &vulkan_context.device);
   if (create_device_result == VK_SUCCESS) {
     MINFO_CORE("Vulkan logical device created");
@@ -104,6 +117,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
 }
 
 void vulkan_backend_shutdown(RendererBackend* renderer_backend) {
+  vkDeviceWaitIdle(vulkan_context.device);
+  vkDestroyDevice(vulkan_context.device, vulkan_context.allocator);
   vkDestroyInstance(vulkan_context.instance, vulkan_context.allocator);
 }
 

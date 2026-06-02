@@ -78,6 +78,26 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
                 physical_device_properties.deviceName);
   }
 
+  // Set logical device create info
+  VkDeviceCreateInfo device_create_info = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
+  device_create_info.queueCreateInfoCount = 0;
+  device_create_info.pQueueCreateInfos = NULL_PTR;
+  device_create_info.pEnabledFeatures = NULL_PTR;
+  // Might need to mess with these for macos
+  device_create_info.enabledExtensionCount = 0;
+  device_create_info.ppEnabledExtensionNames = NULL_PTR;
+
+  // Create logical device
+  VkResult create_device_result = vkCreateDevice(physical_devices[0], &device_create_info,
+                                                 vulkan_context.allocator, &vulkan_context.device);
+  if (create_device_result == VK_SUCCESS) {
+    MINFO_CORE("Vulkan logical device created");
+  } else {
+    MERROR_CORE("Failed to create vulkan logical device: %s",
+                string_VkResult(create_device_result));
+    return FALSE;
+  }
+
   mfree(physical_devices, physical_device_count * sizeof(VkPhysicalDevice), MEMORY_TAG_RENDERER);
 
   return TRUE;

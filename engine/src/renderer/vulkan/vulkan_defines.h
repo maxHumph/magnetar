@@ -8,5 +8,6 @@
 
 typedef struct VulkanContext {
   VkInstance instance;
+  VkDevice device;
   VkAllocationCallbacks* allocator;
 } VulkanContext;

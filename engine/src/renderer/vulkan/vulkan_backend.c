@@ -26,13 +26,13 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
 
   // Set vulkan instance create info
   VkInstanceCreateInfo create_info = {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
-  const char* const extension_names = MVK_EXTENSION_NAMES;
-  const char* const layer_names = MVK_LAYER_NAMES;
+  const char* const instance_extension_names[] = MVK_INSTANCE_EXTENSION_NAMES;
+  const char* const layer_names[] = MVK_LAYER_NAMES;
   create_info.pApplicationInfo = &application_info;
-  create_info.enabledExtensionCount = MVK_EXTENSION_COUNT;
+  create_info.enabledExtensionCount = MVK_INSTANCE_EXTENSION_COUNT;
   create_info.enabledLayerCount = MVK_LAYER_COUNT;
-  create_info.ppEnabledExtensionNames = &extension_names;
-  create_info.ppEnabledLayerNames = &layer_names;
+  create_info.ppEnabledExtensionNames = instance_extension_names;
+  create_info.ppEnabledLayerNames = layer_names;
   create_info.flags = MVK_INSTANCE_CREATE_FLAGS;
 
   VkResult res_create_instance =
@@ -110,7 +110,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   }
 
   // List physical devices and select suitable device to use
-  // TODO: Select most suitable device more accurately
+  // @TODO: Select most suitable device more accurately
   VkPhysicalDeviceProperties targeted_physical_device_properties;
   VkPhysicalDeviceProperties suitable_physical_device_properties;
   VkPhysicalDevice suitable_device = physical_devices[0];
@@ -130,19 +130,41 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
     }
   }
 
+  // Check available device extensions (for debugging)
+  /* u32 device_extension_property_count = 0; */
+  /* vkEnumerateDeviceExtensionProperties(suitable_device, NULL_PTR,
+   * &device_extension_property_count, */
+  /*                                      NULL_PTR); */
+  /* VkExtensionProperties device_extension_properties[device_extension_property_count]; */
+  /* vkEnumerateDeviceExtensionProperties(suitable_device, NULL_PTR,
+   * &device_extension_property_count, */
+  /*                                      device_extension_properties); */
+  /* MTRACE_CORE("Available device extensions:"); */
+  /* for (u32 i = 0; i < device_extension_property_count; i++) { */
+  /*   MTRACE_CORE("%u: %s", i + 1, device_extension_properties[i].extensionName); */
+  /* } */
+
   // SETUP LOGICAL DEVICE ----------
+  // Set queue create info
+  f32 temp_priority = 1.0f;
+  VkDeviceQueueCreateInfo device_queue_create_info = {VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
+  device_queue_create_info.queueFamilyIndex = 0;
+  device_queue_create_info.queueCount = 1;
+  device_queue_create_info.pQueuePriorities = &temp_priority;
+
   // Set logical device create info
+  const char* const device_extension_names[] = MVK_DEVICE_EXTENSION_NAMES;
   VkDeviceCreateInfo device_create_info = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
-  device_create_info.queueCreateInfoCount = ZERO;
-  device_create_info.pQueueCreateInfos = NULL_PTR;
+  device_create_info.queueCreateInfoCount = 1;
+  device_create_info.pQueueCreateInfos = &device_queue_create_info;
   device_create_info.pEnabledFeatures = NULL_PTR;
-  // Might need to mess with these for macos
-  device_create_info.enabledExtensionCount = ZERO;
-  device_create_info.ppEnabledExtensionNames = NULL_PTR;
+  device_create_info.enabledExtensionCount = MVK_DEVICE_EXTENSION_COUNT;
+  device_create_info.ppEnabledExtensionNames = device_extension_names;
 
   // Create logical device
   VkResult create_device_result = vkCreateDevice(suitable_device, &device_create_info,
                                                  vulkan_context.allocator, &vulkan_context.device);
+
   if (create_device_result == VK_SUCCESS) {
     MINFO_CORE("Vulkan logical device created");
   } else {
@@ -151,19 +173,6 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
     return FALSE;
   }
 
-  // Do queue stuff
-  u32 queue_family_property_count = 0;
-  vkGetPhysicalDeviceQueueFamilyProperties(suitable_device, &queue_family_property_count, NULL_PTR);
-  VkQueueFamilyProperties* queue_family_properties =
-      mallocate(queue_family_property_count * sizeof(VkQueueFamilyProperties), MEMORY_TAG_RENDERER);
-  vkGetPhysicalDeviceQueueFamilyProperties(suitable_device, &queue_family_property_count,
-                                           queue_family_properties);
-  for (u32 i = 0; i < queue_family_property_count; i++) {
-    MDEBUG_CORE("%d", queue_family_properties->queueCount);
-  }
-
-  mfree(queue_family_properties, queue_family_property_count * sizeof(VkQueueFamilyProperties),
-        MEMORY_TAG_RENDERER);
   mfree(physical_devices, physical_device_count * sizeof(VkPhysicalDevice), MEMORY_TAG_RENDERER);
 
   return TRUE;

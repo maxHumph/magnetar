@@ -6,15 +6,25 @@
 
 #include "define.h"
 #include "renderer/renderer_backend.h"
+#include "vulkan/vulkan_core.h"
+#include "vulkan_defines.h"
 
 #if defined(MPLATFORM_APPLE)
-#define MVK_EXTENSION_NAMES {VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME}
-#define MVK_EXTENSION_COUNT 1
+#define MVK_EXTENSION_NAMES \
+  {VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_EXTENSION_NAME}
+#define MVK_EXTENSION_COUNT 2
 #define MVK_INSTANCE_CREATE_FLAGS VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR
 #else
-#define MVK_EXTENSION_NAMES NULL_PTR
-#define MVK_EXTENSION_COUNT 0
-#define MVK_INSTANCE_CREATE_FLAGS 0
+#define MVK_EXTENSION_NAMES {VK_EXT_DEBUG_UTILS_EXTENSION_NAME}
+#define MVK_EXTENSION_COUNT 1
+#define MVK_INSTANCE_CREATE_FLAGS ZERO
+#endif
+
+#define MVK_LAYER_NAMES {"VK_LAYER_KHRONOS_validation"}
+#define MVK_LAYER_COUNT 1
+#if MRELEASE == 1
+#define MVK_LAYER_NAMES NULL_PTR
+#define MVK_LAYER_COUNT ZERO
 #endif
 
 /**
@@ -40,3 +50,8 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
 b8 vulkan_backend_end_frame(RendererBackend* renderer_backend, f64 delta_time);
 
 void vulkan_backend_resized(RendererBackend* renderer_backend, u16 width, u16 height);
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL
+vulkan_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+                      VkDebugUtilsMessageTypeFlagsEXT message_types,
+                      const VkDebugUtilsMessengerCallbackDataEXT* callback_data, void* user_data);

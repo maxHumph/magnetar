@@ -176,28 +176,105 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
 
   // Create surface
   if (!vulkan_create_platform_surface(&vulkan_context, platform_state)) {
-    MERROR("Failed to create vulkan platform surface");
+    MERROR_CORE("Failed to create vulkan platform surface");
     return FALSE;
   }
 
-  // Create swapchain
-  VkExtent2D swapchain_image_extent;
-  swapchain_image_extent.height = (u32)start_height;
-  swapchain_image_extent.width = (u32)start_width;
+  // Get surface extent
+  VkSurfaceCapabilitiesKHR surface_capabilities;
+  VkResult get_physical_device_surface_capabilities_result =
+      vkGetPhysicalDeviceSurfaceCapabilitiesKHR(suitable_device, vulkan_context.surface,
+                                                &surface_capabilities);
 
+  VkExtent2D swapchain_image_extent;
+
+  if (get_physical_device_surface_capabilities_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to get physical device surface capabilities: %s",
+                string_VkResult(get_physical_device_surface_capabilities_result));
+    return FALSE;
+  }
+
+  // Sets the image extent to an acceptable value
+  if (surface_capabilities.currentExtent.width != UINT32_MAX) {  // Surface provides specific size
+    swapchain_image_extent = surface_capabilities.currentExtent;
+  } else {  // Application can provide size
+    // Set width within acceptable Image Extent range
+    if ((u32)start_width > surface_capabilities.maxImageExtent.width) {
+      swapchain_image_extent.width = surface_capabilities.maxImageExtent.width;
+    } else if ((u32)start_width < surface_capabilities.minImageExtent.width) {
+      swapchain_image_extent.width = surface_capabilities.minImageExtent.width;
+    } else {
+      swapchain_image_extent.width = (u32)start_width;
+    }
+
+    // Set width within acceptable Image Extent range
+    if ((u32)start_height > surface_capabilities.maxImageExtent.height) {
+      swapchain_image_extent.height = surface_capabilities.maxImageExtent.height;
+    } else if ((u32)start_height < surface_capabilities.minImageExtent.height) {
+      swapchain_image_extent.height = surface_capabilities.minImageExtent.height;
+    } else {
+      swapchain_image_extent.height = (u32)start_height;
+    }
+  }
+
+  // Get surface formats
+  u32 surface_format_count = 0;
+  VkResult get_physical_device_surface_formats_count_result = vkGetPhysicalDeviceSurfaceFormatsKHR(
+      suitable_device, vulkan_context.surface, &surface_format_count, NULL_PTR);
+  if (get_physical_device_surface_formats_count_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to get vulkan physical device surface format count: %s",
+                string_VkResult(get_physical_device_surface_formats_count_result));
+    return FALSE;
+  }
+  VkSurfaceFormatKHR surface_formats[surface_format_count];
+  VkResult get_physical_device_surface_formats_result = vkGetPhysicalDeviceSurfaceFormatsKHR(
+      suitable_device, vulkan_context.surface, &surface_format_count, surface_formats);
+  if (get_physical_device_surface_formats_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to get vulkan physical device surface formats: %s",
+                string_VkResult(get_physical_device_surface_capabilities_result));
+    return FALSE;
+  }
+
+  MTRACE_CORE("Surface formats:");
+  for (u32 i = 0; i < surface_format_count; i++) {
+    MTRACE_CORE("%u: Format: %s, Colour space: %s", i + 1,
+                string_VkFormat(surface_formats[i].format),
+                string_VkColorSpaceKHR(surface_formats[i].colorSpace));
+  }
+  // The index in surface_formats to be used in swapchain creation
+  const u32 selected_format = 0;  // @TODO: Maybe implement some sort of seletion algorithm?
+
+  // Create swapchain
   VkImageUsageFlags image_usage_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
   VkSwapchainCreateInfoKHR swapchain_create_info = {VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR};
   swapchain_create_info.pNext = NULL_PTR;
   swapchain_create_info.surface = vulkan_context.surface;
   swapchain_create_info.minImageCount = 4;  // @TODO: Add this as a setting in user code. (Maybe)
-  // @TODO: Use vkGetPhysicalDeviceSurfaceFomatsKHR to select the stuff below.
-  swapchain_create_info.imageFormat = VK_FORMAT_R8G8B8A8_SRGB;  // @TODO: Look this up
-  swapchain_create_info.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+  swapchain_create_info.imageFormat = surface_formats[selected_format].format;
+  swapchain_create_info.imageColorSpace = surface_formats[selected_format].colorSpace;
   swapchain_create_info.imageExtent = swapchain_image_extent;
   swapchain_create_info.imageArrayLayers = 1;  // @MAGIC_NUMBER
   swapchain_create_info.imageUsage = image_usage_flags;
+  swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  swapchain_create_info.queueFamilyIndexCount = ZERO;
+  swapchain_create_info.pQueueFamilyIndices = NULL_PTR;
+  swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+  swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
   swapchain_create_info.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+  swapchain_create_info.clipped = VK_TRUE;
+  swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
+
+  VkResult create_swapchain_result =
+      vkCreateSwapchainKHR(vulkan_context.device, &swapchain_create_info, vulkan_context.allocator,
+                           &vulkan_context.swapchain);
+
+  if (create_swapchain_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to create Vulkan swapchain: %s", string_VkResult(create_swapchain_result));
+    return FALSE;
+  } else {
+    MINFO_CORE("Created Vulkan swapchain");
+  }
 
   mfree(physical_devices, physical_device_count * sizeof(VkPhysicalDevice), MEMORY_TAG_RENDERER);
 

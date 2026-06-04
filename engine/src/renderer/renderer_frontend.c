@@ -8,7 +8,7 @@
 
 static RendererBackend* renderer_backend = NULL_PTR;
 
-b8 renderer_init(Game* game_instance) {
+b8 renderer_init(Game* game_instance, PlatformState* platform_state) {
   renderer_backend = mallocate(sizeof(RendererBackend), MEMORY_TAG_RENDERER);
 
   if (!renderer_backend_create(game_instance->application_info.renderer_api,
@@ -18,7 +18,7 @@ b8 renderer_init(Game* game_instance) {
   }
 
   if (!renderer_backend->init(renderer_backend, game_instance->application_info.start_title,
-                              game_instance->state)) {
+                              platform_state)) {
     MERROR_CORE("Failed to init renderer backend");
     return FALSE;
   }

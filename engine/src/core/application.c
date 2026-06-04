@@ -52,10 +52,6 @@ MGAPI b8 application_create(Game* game_instance) {
     return FALSE;
   }
 
-  if (!renderer_init(game_instance)) {
-    MFATAL_CORE("Renderer failed to init.");
-  }
-
   s_application_state.is_running = TRUE;
   s_application_state.is_suspended = FALSE;
 
@@ -70,6 +66,10 @@ MGAPI b8 application_create(Game* game_instance) {
           game_instance->application_info.start_width,
           game_instance->application_info.start_height)) {
     return FALSE;
+  }
+
+  if (!renderer_init(game_instance, &s_application_state.platform_state)) {
+    MFATAL_CORE("Renderer failed to init.");
   }
 
   // Initialize game.
@@ -112,7 +112,7 @@ MGAPI b8 application_run() {
         break;
       }
 
-      // temporary for testing. 
+      // temporary for testing.
       renderer_start_frame(delta_time);
       renderer_end_frame(delta_time);
       renderer_draw_frame();

@@ -7,6 +7,7 @@
 #include "define.h"
 #include "vulkan/vulkan_core.h"
 #include "vulkan_defines.h"
+#include "vulkan_wsi.h"
 
 static VulkanContext vulkan_context;
 
@@ -170,6 +171,12 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   } else {
     MERROR_CORE("Failed to create vulkan logical device: %s",
                 string_VkResult(create_device_result));
+    return FALSE;
+  }
+
+  // Create surface
+  if (!vulkan_create_platform_surface(&vulkan_context, platform_state)) {
+    MERROR("Failed to create vulkan platform surface");
     return FALSE;
   }
 

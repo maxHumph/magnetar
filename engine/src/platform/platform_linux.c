@@ -18,6 +18,7 @@
 #include <xcb/xcb.h>
 
 #include "core/log.h"
+#include "platform/platform_linux_types.h"
 
 #if _POSIX_C_SOURCE >= 199309L
 #include <time.h>  //nanosleep
@@ -28,15 +29,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-typedef struct InternalState {
-  Display* display;
-  xcb_connection_t* connection;
-  xcb_window_t window;
-  xcb_screen_t* screen;
-  xcb_atom_t wm_protocols;
-  xcb_atom_t wm_delete_win;
-} InternalState;
 
 b8 platform_startup(PlatformState* platform_state, const char* application_name, i32 x_pos,
                     i32 y_pos, i32 width, i32 height) {

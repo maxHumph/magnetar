@@ -9,13 +9,24 @@
 #include "vulkan/vulkan_core.h"
 #include "vulkan_defines.h"
 
+// MacOS Extensions
 #if defined(MPLATFORM_APPLE)
 #define MVK_INSTANCE_EXTENSION_NAMES                                                 \
   {VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, \
    VK_KHR_SURFACE_EXTENSION_NAME}
 #define MVK_INSTANCE_EXTENSION_COUNT 3
 #define MVK_INSTANCE_CREATE_FLAGS VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR
-#else
+// Linux Extensions
+#elif MPLATFORM_LINUX
+#include <X11/Xlib-xcb.h>  // @TODO: Move all xcb headers to a platform specific file
+#include <vulkan/vulkan_xcb.h>
+#define MVK_INSTANCE_EXTENSION_NAMES                                 \
+  {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME, \
+   VK_KHR_XCB_SURFACE_EXTENSION_NAME}
+#define MVK_INSTANCE_EXTENSION_COUNT 3
+#define MVK_INSTANCE_CREATE_FLAGS ZERO
+// Windows Extensions
+#elif MPLATFORM_WINDOWS
 #define MVK_INSTANCE_EXTENSION_NAMES \
   {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_KHR_SURFACE_EXTENSION_NAME}
 #define MVK_INSTANCE_EXTENSION_COUNT 2

@@ -6,8 +6,9 @@
 
 #include "define.h"
 #include "game_interface.h"
+#include "platform/platform.h"
 
-b8 renderer_init(Game* game_instance);
+b8 renderer_init(Game* game_instance, PlatformState* platform_state);
 
 void renderer_shutdown();
 

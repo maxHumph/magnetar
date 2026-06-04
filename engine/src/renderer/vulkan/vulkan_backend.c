@@ -12,7 +12,7 @@
 static VulkanContext vulkan_context;
 
 b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* application_name,
-                       PlatformState* platform_state) {
+                       i16 start_width, i16 start_height, PlatformState* platform_state) {
   vulkan_context.allocator = NULL_PTR;
   vulkan_context.debug_messenger = NULL_PTR;
 
@@ -149,8 +149,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   // Set queue create info
   f32 temp_priority = 1.0f;
   VkDeviceQueueCreateInfo device_queue_create_info = {VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
-  device_queue_create_info.queueFamilyIndex = 0;
-  device_queue_create_info.queueCount = 1;
+  device_queue_create_info.queueFamilyIndex = 0;  // @MAGIC_NUMBER
+  device_queue_create_info.queueCount = 1;        // @MAGIC_NUMBER
   device_queue_create_info.pQueuePriorities = &temp_priority;
 
   // Set logical device create info
@@ -179,6 +179,25 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
     MERROR("Failed to create vulkan platform surface");
     return FALSE;
   }
+
+  // Create swapchain
+  VkExtent2D swapchain_image_extent;
+  swapchain_image_extent.height = (u32)start_height;
+  swapchain_image_extent.width = (u32)start_width;
+
+  VkImageUsageFlags image_usage_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+  VkSwapchainCreateInfoKHR swapchain_create_info = {VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR};
+  swapchain_create_info.pNext = NULL_PTR;
+  swapchain_create_info.surface = vulkan_context.surface;
+  swapchain_create_info.minImageCount = 4;  // @TODO: Add this as a setting in user code. (Maybe)
+  // @TODO: Use vkGetPhysicalDeviceSurfaceFomatsKHR to select the stuff below.
+  swapchain_create_info.imageFormat = VK_FORMAT_R8G8B8A8_SRGB;  // @TODO: Look this up
+  swapchain_create_info.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+  swapchain_create_info.imageExtent = swapchain_image_extent;
+  swapchain_create_info.imageArrayLayers = 1;  // @MAGIC_NUMBER
+  swapchain_create_info.imageUsage = image_usage_flags;
+  swapchain_create_info.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
 
   mfree(physical_devices, physical_device_count * sizeof(VkPhysicalDevice), MEMORY_TAG_RENDERER);
 

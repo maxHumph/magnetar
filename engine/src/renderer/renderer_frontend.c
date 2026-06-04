@@ -18,7 +18,8 @@ b8 renderer_init(Game* game_instance, PlatformState* platform_state) {
   }
 
   if (!renderer_backend->init(renderer_backend, game_instance->application_info.start_title,
-                              platform_state)) {
+                              game_instance->application_info.start_width,
+                              game_instance->application_info.start_height, platform_state)) {
     MERROR_CORE("Failed to init renderer backend");
     return FALSE;
   }

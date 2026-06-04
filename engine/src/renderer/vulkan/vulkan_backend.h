@@ -52,7 +52,7 @@
  * @return TRUE if vulkan initialized successfully, otherwise FALSE.
  */
 b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* application_name,
-                       PlatformState* platform_state);
+                       i16 start_width, i16 start_height, PlatformState* platform_state);
 
 /**
  * @brief Destroys the VkInstance and other things that need to be banished to the shadow realm.

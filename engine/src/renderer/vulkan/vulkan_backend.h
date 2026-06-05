@@ -65,6 +65,8 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
 
 b8 vulkan_backend_end_frame(RendererBackend* renderer_backend, f64 delta_time);
 
+b8 vulkan_backend_draw_frame(RendererBackend* renderer_backend);
+
 void vulkan_backend_resized(RendererBackend* renderer_backend, u16 width, u16 height);
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL

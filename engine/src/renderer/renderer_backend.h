@@ -23,6 +23,8 @@ typedef struct RendererBackend {
 
   b8 (*end_frame)(struct RendererBackend* renderer_backend, f64 delta_time);
 
+  b8 (*draw_frame)(struct RendererBackend* renderer_backend);
+
   void (*resized)(struct RendererBackend* renderer_backend, u16 width, u16 height);
 
 } RendererBackend;

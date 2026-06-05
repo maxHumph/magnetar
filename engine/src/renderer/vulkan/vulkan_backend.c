@@ -690,11 +690,43 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
 
   VkRenderingInfo rendering_info = {VK_STRUCTURE_TYPE_RENDERING_INFO};
   rendering_info.renderArea = render_area;
+  rendering_info.layerCount = 1;
+  rendering_info.colorAttachmentCount = 1;
+  rendering_info.pColorAttachments = &rendering_attachment_info;
+
+  // Start rendering
+  vkCmdBeginRendering(vulkan_context.command_buffer, &rendering_info);
+  vkCmdBindPipeline(vulkan_context.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    vulkan_context.graphics_pipeline);
+
+  // Set viewport as scissor values
+  VkViewport viewport = {.x = 0.0f,
+                         .y = 0.0f,
+                         .width = (f32)vulkan_context.swapchain_extent.width,
+                         .height = (f32)vulkan_context.swapchain_extent.height,
+                         .minDepth = 0.0f,
+                         .maxDepth = 1.0f};
+
+  vkCmdSetViewport(vulkan_context.command_buffer, 0, 1, &viewport);
+
+  VkRect2D scissor = {.offset = {.x = 0, .y = 0}, .extent = vulkan_context.swapchain_extent};
+
+  vkCmdSetScissor(vulkan_context.command_buffer, 0, 1, &scissor);
+
+  vkCmdDraw(vulkan_context.command_buffer, 3, 1, 0, 0);
 
   return TRUE;
 }
 
 b8 vulkan_backend_end_frame(RendererBackend* renderer_backend, f64 delta_time) {
+  // End rendering
+  vkCmdEndRendering(vulkan_context.command_buffer);
+
+  transition_image_layout(
+      vulkan_context.current_image_index, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+      VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, ZERO,
+      VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT);
+
   // End command buffer recording
   VkResult end_command_buffer_result = vkEndCommandBuffer(vulkan_context.command_buffer);
   if (end_command_buffer_result != VK_SUCCESS) {
@@ -704,6 +736,11 @@ b8 vulkan_backend_end_frame(RendererBackend* renderer_backend, f64 delta_time) {
   }
   return TRUE;
 }
+
+b8 vulkan_backend_draw_frame(RendererBackend* renderer_backend) {
+
+  return TRUE;
+}  
 
 void vulkan_backend_resized(RendererBackend* renderer_backend, u16 width, u16 height) {}
 

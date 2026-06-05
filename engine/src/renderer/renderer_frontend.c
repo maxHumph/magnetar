@@ -48,4 +48,10 @@ b8 renderer_end_frame(f64 delta_time) {
   return TRUE;
 }
 
-b8 renderer_draw_frame(/* RenderData */) { return TRUE; }
+b8 renderer_draw_frame(/* RenderData */) {
+  if (!renderer_backend->draw_frame(renderer_backend)) {
+    MERROR_CORE("Renderer backend failed to draw frame");
+    return FALSE;
+  }
+  return TRUE;
+}

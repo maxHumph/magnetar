@@ -369,11 +369,13 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
                           vulkan_context.allocator, &vulkan_context.swapchain_image_views[i]);
 
     if (create_image_view_result != VK_SUCCESS) {
-      MERROR("Failed to create vulkan swapchain image view: %s",
-             string_VkResult(create_image_view_result));
+      MERROR_CORE("Failed to create vulkan swapchain image view: %s",
+                  string_VkResult(create_image_view_result));
       return FALSE;
     }
   }
+
+  // Create graphics pipeline
 
   mfree(physical_devices, physical_device_count * sizeof(VkPhysicalDevice), MEMORY_TAG_RENDERER);
 

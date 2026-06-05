@@ -569,10 +569,9 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   graphics_pipeline_create_info.renderPass = NULL_PTR;
 
   // Create graphics pipeline
-  VkPipeline graphics_pipeline;
   VkResult create_graphics_pipelines_result = vkCreateGraphicsPipelines(
       vulkan_context.logical_device, NULL_PTR, 1, &graphics_pipeline_create_info,
-      vulkan_context.allocator, &graphics_pipeline);
+      vulkan_context.allocator, &vulkan_context.graphics_pipeline);
 
   if (create_graphics_pipelines_result != VK_SUCCESS) {
     MERROR_CORE("Failed to create vulkan graphics pipeline: %s",

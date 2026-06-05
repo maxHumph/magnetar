@@ -26,4 +26,6 @@ typedef struct VulkanContext {
   VkImage* swapchain_images;
   VkImageView* swapchain_image_views;
 
+  VkPipeline graphics_pipeline;
+
 } VulkanContext;

@@ -410,6 +410,30 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   }
 
   mfree(shader_bin, shader_bin_size * sizeof(u8), MEMORY_TAG_RENDERER);
+
+  // Create vertex shader stage create info
+  VkPipelineShaderStageCreateInfo vert_pipeline_shader_stage_create_info = {
+      VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
+  vert_pipeline_shader_stage_create_info.pNext = NULL_PTR;
+  vert_pipeline_shader_stage_create_info.flags = ZERO;
+  vert_pipeline_shader_stage_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+  vert_pipeline_shader_stage_create_info.module = shader_module;
+  vert_pipeline_shader_stage_create_info.pName = "vertMain";
+  vert_pipeline_shader_stage_create_info.pSpecializationInfo = NULL_PTR;
+
+  // Create fragment shader stage create info
+  VkPipelineShaderStageCreateInfo frag_pipeline_shader_stage_create_info = {
+      VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
+  frag_pipeline_shader_stage_create_info.pNext = NULL_PTR;
+  frag_pipeline_shader_stage_create_info.flags = ZERO;
+  frag_pipeline_shader_stage_create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+  frag_pipeline_shader_stage_create_info.module = shader_module;
+  frag_pipeline_shader_stage_create_info.pName = "fragMain";
+  frag_pipeline_shader_stage_create_info.pSpecializationInfo = NULL_PTR;
+
+  VkPipelineShaderStageCreateInfo shader_stage_create_infos[] = {
+      vert_pipeline_shader_stage_create_info, frag_pipeline_shader_stage_create_info};
+
   return TRUE;
 }
 

@@ -12,7 +12,7 @@
 
 static VulkanContext vulkan_context;
 
-// @TODO: Split this up into functions.
+// @TODO: Split this up into functions comments in CAPS roughly outline different functions.
 b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* application_name,
                        i16 start_width, i16 start_height, PlatformState* platform_state) {
   vulkan_context.allocator = NULL_PTR;
@@ -199,10 +199,16 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES};
   physical_device_vulkan_11_features.shaderDrawParameters = VK_TRUE;
 
+  // Enable vulkan13 features
+  VkPhysicalDeviceVulkan13Features physical_device_vulkan_13_features = {
+      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
+  physical_device_vulkan_13_features.pNext = &physical_device_vulkan_11_features;
+  physical_device_vulkan_13_features.dynamicRendering = VK_TRUE;
+
   // Set logical device create info
   const char* const device_extension_names[] = MVK_DEVICE_EXTENSION_NAMES;
   VkDeviceCreateInfo device_create_info = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
-  device_create_info.pNext = &physical_device_vulkan_11_features;
+  device_create_info.pNext = &physical_device_vulkan_13_features;
   device_create_info.queueCreateInfoCount = 1;
   device_create_info.pQueueCreateInfos = &device_queue_create_info;
   device_create_info.pEnabledFeatures = NULL_PTR;
@@ -289,7 +295,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   const u32 selected_format = 0;  // @MAGIC_NUMBER
   vulkan_context.surface_format = surface_formats[selected_format];
 
-  // Create swapchain
+  // CREATE SWAPCHAIN
   VkImageUsageFlags image_usage_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
   VkSwapchainCreateInfoKHR swapchain_create_info = {VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR};
@@ -433,6 +439,146 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
 
   VkPipelineShaderStageCreateInfo shader_stage_create_infos[] = {
       vert_pipeline_shader_stage_create_info, frag_pipeline_shader_stage_create_info};
+
+  // Set dynamic states
+  VkDynamicState dynamic_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+  VkPipelineDynamicStateCreateInfo dynamic_state_create_info = {
+      VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
+  dynamic_state_create_info.pNext = NULL_PTR;
+  dynamic_state_create_info.dynamicStateCount = sizeof(dynamic_states) / sizeof(VkDynamicState);
+  dynamic_state_create_info.pDynamicStates = dynamic_states;
+
+  // Set vertex input state create info @TODO: Set this up
+  VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info = {
+      VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
+
+  // Set input assembly state create info
+  VkPipelineInputAssemblyStateCreateInfo input_assembly_state_create_info = {
+      VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
+  input_assembly_state_create_info.pNext = NULL_PTR;
+  input_assembly_state_create_info.primitiveRestartEnable = VK_FALSE;
+  input_assembly_state_create_info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+  // Create viewport
+  VkViewport viewport;
+  viewport.x = 0.0f;
+  viewport.y = 0.0f;
+  viewport.width = swapchain_image_extent.width;
+  viewport.height = swapchain_image_extent.height;
+  viewport.minDepth = 0.0f;
+  viewport.maxDepth = 1.0f;
+
+  // Specify scissor rect
+  VkOffset2D scissor_rect_offset;
+  scissor_rect_offset.x = 0;
+  scissor_rect_offset.y = 0;
+
+  VkRect2D scissor_rect;
+  scissor_rect.offset = scissor_rect_offset;
+  scissor_rect.extent = swapchain_image_extent;
+
+  VkPipelineViewportStateCreateInfo viewport_state_create_info = {
+      VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
+  viewport_state_create_info.pNext = NULL_PTR;
+  viewport_state_create_info.viewportCount = 1;  // @MAGIC_NUMBER
+  /* viewport_state_create_info.pViewports = &viewport; */
+  viewport_state_create_info.scissorCount = 1;  //@MAGIC_NUMBER
+  /* viewport_state_create_info.pScissors = &scissor_rect; */
+
+  // Set rasteriser create info
+  VkCullModeFlags cull_mode_flags = VK_CULL_MODE_BACK_BIT;
+
+  VkPipelineRasterizationStateCreateInfo rasterization_state_create_info = {
+      VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
+  rasterization_state_create_info.pNext = NULL_PTR;
+  rasterization_state_create_info.depthClampEnable = VK_FALSE;
+  rasterization_state_create_info.rasterizerDiscardEnable = VK_FALSE;
+  rasterization_state_create_info.polygonMode = VK_POLYGON_MODE_FILL;
+  rasterization_state_create_info.cullMode = cull_mode_flags;
+  rasterization_state_create_info.frontFace = VK_FRONT_FACE_CLOCKWISE;
+  rasterization_state_create_info.depthBiasEnable = VK_FALSE;
+  rasterization_state_create_info.lineWidth = 1.0f;  // @MAGIC_NUMBER
+
+  // Set multisampling opts
+  VkPipelineMultisampleStateCreateInfo multisample_state_create_info = {
+      VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
+  multisample_state_create_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+  multisample_state_create_info.sampleShadingEnable = VK_FALSE;
+
+  // Specify colour blending options
+  VkColorComponentFlags color_component_flags = VK_COLOR_COMPONENT_R_BIT |
+                                                VK_COLOR_COMPONENT_G_BIT |
+                                                VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+  VkPipelineColorBlendAttachmentState color_blend_attachment_state;
+  color_blend_attachment_state.blendEnable = VK_TRUE;
+  color_blend_attachment_state.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+  color_blend_attachment_state.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+  color_blend_attachment_state.colorBlendOp = VK_BLEND_OP_ADD;
+  color_blend_attachment_state.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+  color_blend_attachment_state.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+  color_blend_attachment_state.alphaBlendOp = VK_BLEND_OP_ADD;
+  color_blend_attachment_state.colorWriteMask = color_component_flags;
+
+  VkPipelineColorBlendStateCreateInfo color_blend_state_create_info = {
+      VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};
+  color_blend_state_create_info.logicOpEnable = VK_FALSE;
+  color_blend_state_create_info.logicOp = VK_LOGIC_OP_COPY;
+  color_blend_state_create_info.attachmentCount = 1;  // @MAGIC_NUMBER
+  color_blend_state_create_info.pAttachments = &color_blend_attachment_state;
+
+  // Create pipeline layout
+  VkPipelineLayoutCreateInfo pipeline_layout_create_info = {
+      VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
+  pipeline_layout_create_info.pNext = NULL_PTR;
+  pipeline_layout_create_info.setLayoutCount = 0;
+  pipeline_layout_create_info.pushConstantRangeCount = 0;
+
+  VkPipelineLayout pipeline_layout;
+  VkResult create_pipeline_layout_result =
+      vkCreatePipelineLayout(vulkan_context.logical_device, &pipeline_layout_create_info,
+                             vulkan_context.allocator, &pipeline_layout);
+  if (create_pipeline_layout_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to create vulkan pipeline layout: %s",
+                string_VkResult(create_pipeline_layout_result));
+    return FALSE;
+  }
+
+  // Set graphics pipeline create info
+  VkPipelineRenderingCreateInfo pipeline_rendering_create_info = {
+      VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};
+  pipeline_rendering_create_info.pNext = NULL_PTR;
+  pipeline_rendering_create_info.colorAttachmentCount = 1;
+  pipeline_rendering_create_info.pColorAttachmentFormats = &vulkan_context.surface_format.format;
+
+  VkGraphicsPipelineCreateInfo graphics_pipeline_create_info = {
+      VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
+  graphics_pipeline_create_info.pNext = &pipeline_rendering_create_info;
+  graphics_pipeline_create_info.stageCount = 2;  // @MAGIC_NUMBER
+  graphics_pipeline_create_info.pStages = shader_stage_create_infos;
+  graphics_pipeline_create_info.pVertexInputState = &vertex_input_state_create_info;
+  graphics_pipeline_create_info.pInputAssemblyState = &input_assembly_state_create_info;
+  graphics_pipeline_create_info.pTessellationState = NULL_PTR;
+  graphics_pipeline_create_info.pViewportState = &viewport_state_create_info;
+  graphics_pipeline_create_info.pRasterizationState = &rasterization_state_create_info;
+  graphics_pipeline_create_info.pMultisampleState = &multisample_state_create_info;
+  graphics_pipeline_create_info.pDepthStencilState = NULL_PTR;
+  graphics_pipeline_create_info.pColorBlendState = &color_blend_state_create_info;
+  graphics_pipeline_create_info.pDynamicState = &dynamic_state_create_info;
+  graphics_pipeline_create_info.layout = pipeline_layout;
+  graphics_pipeline_create_info.renderPass = NULL_PTR;
+
+  // Create graphics pipeline
+  VkPipeline graphics_pipeline;
+  VkResult create_graphics_pipelines_result = vkCreateGraphicsPipelines(
+      vulkan_context.logical_device, NULL_PTR, 1, &graphics_pipeline_create_info,
+      vulkan_context.allocator, &graphics_pipeline);
+
+  if (create_graphics_pipelines_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to create vulkan graphics pipeline: %s",
+                string_VkResult(create_graphics_pipelines_result));
+    return FALSE;
+  }
 
   return TRUE;
 }

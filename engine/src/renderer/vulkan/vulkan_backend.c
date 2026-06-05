@@ -204,6 +204,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
   physical_device_vulkan_13_features.pNext = &physical_device_vulkan_11_features;
   physical_device_vulkan_13_features.dynamicRendering = VK_TRUE;
+  physical_device_vulkan_13_features.synchronization2 = VK_TRUE;
 
   // Set logical device create info
   const char* const device_extension_names[] = MVK_DEVICE_EXTENSION_NAMES;
@@ -234,8 +235,6 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
       vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkan_context.physical_device,
                                                 vulkan_context.surface, &surface_capabilities);
 
-  VkExtent2D swapchain_image_extent;
-
   if (get_physical_device_surface_capabilities_result != VK_SUCCESS) {
     MERROR_CORE("Failed to get physical device surface capabilities: %s",
                 string_VkResult(get_physical_device_surface_capabilities_result));
@@ -244,24 +243,24 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
 
   // Sets the image extent to an acceptable value
   if (surface_capabilities.currentExtent.width != UINT32_MAX) {  // Surface provides specific size
-    swapchain_image_extent = surface_capabilities.currentExtent;
+    vulkan_context.swapchain_extent = surface_capabilities.currentExtent;
   } else {  // Application can provide size
     // Set width within acceptable Image Extent range
     if ((u32)start_width > surface_capabilities.maxImageExtent.width) {
-      swapchain_image_extent.width = surface_capabilities.maxImageExtent.width;
+      vulkan_context.swapchain_extent.width = surface_capabilities.maxImageExtent.width;
     } else if ((u32)start_width < surface_capabilities.minImageExtent.width) {
-      swapchain_image_extent.width = surface_capabilities.minImageExtent.width;
+      vulkan_context.swapchain_extent.width = surface_capabilities.minImageExtent.width;
     } else {
-      swapchain_image_extent.width = (u32)start_width;
+      vulkan_context.swapchain_extent.width = (u32)start_width;
     }
 
     // Set width within acceptable Image Extent range
     if ((u32)start_height > surface_capabilities.maxImageExtent.height) {
-      swapchain_image_extent.height = surface_capabilities.maxImageExtent.height;
+      vulkan_context.swapchain_extent.height = surface_capabilities.maxImageExtent.height;
     } else if ((u32)start_height < surface_capabilities.minImageExtent.height) {
-      swapchain_image_extent.height = surface_capabilities.minImageExtent.height;
+      vulkan_context.swapchain_extent.height = surface_capabilities.minImageExtent.height;
     } else {
-      swapchain_image_extent.height = (u32)start_height;
+      vulkan_context.swapchain_extent.height = (u32)start_height;
     }
   }
 
@@ -304,7 +303,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   swapchain_create_info.minImageCount = 4;  // @TODO: Add this as a setting in user code. (Maybe)
   swapchain_create_info.imageFormat = vulkan_context.surface_format.format;
   swapchain_create_info.imageColorSpace = vulkan_context.surface_format.colorSpace;
-  swapchain_create_info.imageExtent = swapchain_image_extent;
+  swapchain_create_info.imageExtent = vulkan_context.swapchain_extent;
   swapchain_create_info.imageArrayLayers = 1;  // @MAGIC_NUMBER
   swapchain_create_info.imageUsage = image_usage_flags;
   swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -463,8 +462,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   VkViewport viewport;
   viewport.x = 0.0f;
   viewport.y = 0.0f;
-  viewport.width = swapchain_image_extent.width;
-  viewport.height = swapchain_image_extent.height;
+  viewport.width = vulkan_context.swapchain_extent.width;
+  viewport.height = vulkan_context.swapchain_extent.height;
   viewport.minDepth = 0.0f;
   viewport.maxDepth = 1.0f;
 
@@ -475,7 +474,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
 
   VkRect2D scissor_rect;
   scissor_rect.offset = scissor_rect_offset;
-  scissor_rect.extent = swapchain_image_extent;
+  scissor_rect.extent = vulkan_context.swapchain_extent;
 
   VkPipelineViewportStateCreateInfo viewport_state_create_info = {
       VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
@@ -598,10 +597,35 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
     return FALSE;
   }
 
+  // ALLOC COMMAND BUFFER
+  VkCommandBufferAllocateInfo command_buffer_alloc_info = {
+      VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+  command_buffer_alloc_info.pNext = NULL_PTR;
+  command_buffer_alloc_info.commandPool = vulkan_context.command_pool;
+  command_buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  command_buffer_alloc_info.commandBufferCount = 1;
+
+  VkResult alloc_command_buffers_result = vkAllocateCommandBuffers(
+      vulkan_context.logical_device, &command_buffer_alloc_info, &vulkan_context.command_buffer);
+
+  if (alloc_command_buffers_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to allocate vulkan command buffers: %s",
+                string_VkResult(alloc_command_buffers_result));
+    return FALSE;
+  }
+
+  vulkan_context.current_image_index = 0;
   return TRUE;
 }
 
 void vulkan_backend_shutdown(RendererBackend* renderer_backend) {
+  vkDestroyCommandPool(vulkan_context.logical_device, vulkan_context.command_pool,
+                       vulkan_context.allocator);
+  vkDestroyPipeline(vulkan_context.logical_device, vulkan_context.graphics_pipeline,
+                    vulkan_context.allocator);
+  vkDestroySwapchainKHR(vulkan_context.logical_device, vulkan_context.swapchain,
+                        vulkan_context.allocator);
+
   mfree(vulkan_context.swapchain_image_views,
         vulkan_context.swapchain_image_count * sizeof(VkImageView), MEMORY_TAG_RENDERER);
   mfree(vulkan_context.swapchain_images, vulkan_context.swapchain_image_count * sizeof(VkImage),
@@ -620,9 +644,66 @@ void vulkan_backend_shutdown(RendererBackend* renderer_backend) {
   vkDestroyInstance(vulkan_context.instance, vulkan_context.allocator);
 }
 
-b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time) { return TRUE; }
+b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time) {
+  // Begin command buffer recording
+  VkCommandBufferBeginInfo command_buffer_begin_info = {
+      VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+  command_buffer_begin_info.flags = ZERO;
+  command_buffer_begin_info.pInheritanceInfo = NULL_PTR;
 
-b8 vulkan_backend_end_frame(RendererBackend* renderer_backend, f64 delta_time) { return TRUE; }
+  VkResult begin_command_buffer_result =
+      vkBeginCommandBuffer(vulkan_context.command_buffer, &command_buffer_begin_info);
+  if (begin_command_buffer_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to begin vulkan command buffer: %s",
+                string_VkResult(begin_command_buffer_result));
+    return FALSE;
+  }
+
+  transition_image_layout(vulkan_context.current_image_index, VK_IMAGE_LAYOUT_UNDEFINED,
+                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, ZERO,
+                          VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                          VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                          VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
+
+  VkClearColorValue clear_color_value = {.float32 = {0.0f, 0.0f, 0.0f, 1.0f}};
+  VkClearValue clear_color;
+  clear_color.color = clear_color_value;
+
+  VkRenderingAttachmentInfo rendering_attachment_info = {
+      VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
+  rendering_attachment_info.imageView =
+      vulkan_context.swapchain_image_views[vulkan_context.current_image_index];
+  rendering_attachment_info.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+  rendering_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  rendering_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+  rendering_attachment_info.clearValue = clear_color;
+
+  VkOffset2D render_area_offset;
+  render_area_offset.x = 0;
+  render_area_offset.y = 0;
+
+  VkExtent2D render_extent;
+
+  VkRect2D render_area;
+  render_area.offset = render_area_offset;
+  render_area.extent = vulkan_context.swapchain_extent;
+
+  VkRenderingInfo rendering_info = {VK_STRUCTURE_TYPE_RENDERING_INFO};
+  rendering_info.renderArea = render_area;
+
+  return TRUE;
+}
+
+b8 vulkan_backend_end_frame(RendererBackend* renderer_backend, f64 delta_time) {
+  // End command buffer recording
+  VkResult end_command_buffer_result = vkEndCommandBuffer(vulkan_context.command_buffer);
+  if (end_command_buffer_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to end vulkan command buffer: %s",
+                string_VkResult(end_command_buffer_result));
+    return FALSE;
+  }
+  return TRUE;
+}
 
 void vulkan_backend_resized(RendererBackend* renderer_backend, u16 width, u16 height) {}
 
@@ -658,4 +739,36 @@ vulkan_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
   }
 
   return VK_FALSE;
+}
+
+static void transition_image_layout(u32 image_index, VkImageLayout old_layout,
+                                    VkImageLayout new_layout, VkAccessFlags2 src_access_mask,
+                                    VkAccessFlags2 dst_access_mask,
+                                    VkPipelineStageFlags2 src_stage_mask,
+                                    VkPipelineStageFlags2 dst_stage_mask) {
+  VkImageSubresourceRange subresource_range;
+  subresource_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  subresource_range.baseMipLevel = 0;
+  subresource_range.levelCount = 1;
+  subresource_range.baseArrayLayer = 0;
+  subresource_range.layerCount = 1;
+
+  VkImageMemoryBarrier2 image_memory_barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
+  image_memory_barrier.srcStageMask = src_stage_mask;
+  image_memory_barrier.dstStageMask = dst_stage_mask;
+  image_memory_barrier.srcAccessMask = src_access_mask;
+  image_memory_barrier.dstAccessMask = dst_access_mask;
+  image_memory_barrier.oldLayout = old_layout;
+  image_memory_barrier.newLayout = new_layout;
+  image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  image_memory_barrier.image = vulkan_context.swapchain_images[image_index];
+  image_memory_barrier.subresourceRange = subresource_range;
+
+  VkDependencyInfo dependency_info = {VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
+  dependency_info.dependencyFlags = ZERO;
+  dependency_info.imageMemoryBarrierCount = 1;
+  dependency_info.pImageMemoryBarriers = &image_memory_barrier;
+
+  vkCmdPipelineBarrier2(vulkan_context.command_buffer, &dependency_info);
 }

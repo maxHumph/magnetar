@@ -71,3 +71,9 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL
 vulkan_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                       VkDebugUtilsMessageTypeFlagsEXT message_types,
                       const VkDebugUtilsMessengerCallbackDataEXT* callback_data, void* user_data);
+
+static void transition_image_layout(u32 image_index, VkImageLayout old_layout,
+                                    VkImageLayout new_layout, VkAccessFlags2 src_access_mask,
+                                    VkAccessFlags2 dst_access_mask,
+                                    VkPipelineStageFlags2 src_stage_mask,
+                                    VkPipelineStageFlags2 dst_stage_mask);

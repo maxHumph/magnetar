@@ -25,9 +25,12 @@ typedef struct VulkanContext {
   u32 swapchain_image_count;
   VkImage* swapchain_images;
   VkImageView* swapchain_image_views;
+  u32 current_image_index;
+  VkExtent2D swapchain_extent;
 
   VkPipeline graphics_pipeline;
 
   VkCommandPool command_pool;
+  VkCommandBuffer command_buffer;
 
 } VulkanContext;

@@ -133,6 +133,12 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   }
   vulkan_context.physical_device = suitable_device;
 
+  // Create surface
+  if (!vulkan_create_platform_surface(&vulkan_context, platform_state)) {
+    MERROR_CORE("Failed to create vulkan platform surface");
+    return FALSE;
+  }
+
   // Check available device extensions (for debugging)
   /* u32 device_extension_property_count = 0; */
   /* vkEnumerateDeviceExtensionProperties(suitable_device, NULL_PTR,
@@ -148,11 +154,41 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   /* } */
 
   // SETUP LOGICAL DEVICE ----------
+  // Select suitable queue family index for graphics
+  u32 queue_family_properties_count = 0;
+  vkGetPhysicalDeviceQueueFamilyProperties(vulkan_context.physical_device,
+                                           &queue_family_properties_count, NULL_PTR);
+  VkQueueFamilyProperties queue_family_properties[queue_family_properties_count];
+  vkGetPhysicalDeviceQueueFamilyProperties(vulkan_context.physical_device,
+                                           &queue_family_properties_count, queue_family_properties);
+
+  VkBool32 queue_family_supported = VK_FALSE;
+  for (u32 i = 0; i < queue_family_properties_count; i++) {
+    VkResult get_physical_device_surface_support_result = vkGetPhysicalDeviceSurfaceSupportKHR(
+        vulkan_context.physical_device, i, vulkan_context.surface, &queue_family_supported);
+
+    if (get_physical_device_surface_support_result != VK_SUCCESS) {
+      MERROR_CORE("Failed to get vulkan physical device surface support: %s",
+                  string_VkResult(get_physical_device_surface_support_result));
+      return FALSE;
+    }
+
+    if ((queue_family_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) && queue_family_supported) {
+      vulkan_context.graphics_queue_family_index = i;
+      break;
+    }
+  }
+  if (queue_family_supported == VK_FALSE) {
+    MERROR_CORE("Failed to find suitable queue family on vulkan physical device.");
+    return FALSE;
+  }
+
   // Set queue create info
-  f32 temp_priority = 1.0f;
+
+  f32 temp_priority = 1.0f;  // @MAGIC_NUMBER
   VkDeviceQueueCreateInfo device_queue_create_info = {VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
-  device_queue_create_info.queueFamilyIndex = 0;  // @MAGIC_NUMBER
-  device_queue_create_info.queueCount = 1;        // @MAGIC_NUMBER
+  device_queue_create_info.queueFamilyIndex = vulkan_context.graphics_queue_family_index;
+  device_queue_create_info.queueCount = 1;  // @MAGIC_NUMBER
   device_queue_create_info.pQueuePriorities = &temp_priority;
 
   // Set logical device create info
@@ -174,12 +210,6 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   } else {
     MERROR_CORE("Failed to create vulkan logical device: %s",
                 string_VkResult(create_device_result));
-    return FALSE;
-  }
-
-  // Create surface
-  if (!vulkan_create_platform_surface(&vulkan_context, platform_state)) {
-    MERROR_CORE("Failed to create vulkan platform surface");
     return FALSE;
   }
 
@@ -248,6 +278,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   // The index in surface_formats to be used in swapchain creation
   //@TODO: Maybe implement some sort of seletion algorithm?
   const u32 selected_format = 0;  // @MAGIC_NUMBER
+  vulkan_context.surface_format = surface_formats[selected_format];
 
   // Create swapchain
   VkImageUsageFlags image_usage_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -256,8 +287,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   swapchain_create_info.pNext = NULL_PTR;
   swapchain_create_info.surface = vulkan_context.surface;
   swapchain_create_info.minImageCount = 4;  // @TODO: Add this as a setting in user code. (Maybe)
-  swapchain_create_info.imageFormat = surface_formats[selected_format].format;
-  swapchain_create_info.imageColorSpace = surface_formats[selected_format].colorSpace;
+  swapchain_create_info.imageFormat = vulkan_context.surface_format.format;
+  swapchain_create_info.imageColorSpace = vulkan_context.surface_format.colorSpace;
   swapchain_create_info.imageExtent = swapchain_image_extent;
   swapchain_create_info.imageArrayLayers = 1;  // @MAGIC_NUMBER
   swapchain_create_info.imageUsage = image_usage_flags;
@@ -281,12 +312,80 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
     MINFO_CORE("Created Vulkan swapchain");
   }
 
+  // Get swapchain images
+  vulkan_context.swapchain_image_count = 0;
+  VkResult get_swapchain_image_count_result =
+      vkGetSwapchainImagesKHR(vulkan_context.logical_device, vulkan_context.swapchain,
+                              &vulkan_context.swapchain_image_count, NULL_PTR);
+  if (get_swapchain_image_count_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to get vulkan swapchain image count: %s",
+                string_VkResult(get_swapchain_image_count_result));
+    return FALSE;
+  }
+  vulkan_context.swapchain_images =
+      mallocate(vulkan_context.swapchain_image_count * sizeof(VkImage), MEMORY_TAG_RENDERER);
+  VkResult get_swapchain_images_result = vkGetSwapchainImagesKHR(
+      vulkan_context.logical_device, vulkan_context.swapchain,
+      &vulkan_context.swapchain_image_count, vulkan_context.swapchain_images);
+  if (get_swapchain_images_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to get vulkan swapchain images: %s",
+                string_VkResult(get_swapchain_images_result));
+    return FALSE;
+  }
+
+  // Create image views
+  vulkan_context.swapchain_image_views =
+      mallocate(vulkan_context.swapchain_image_count * sizeof(VkImageView), MEMORY_TAG_RENDERER);
+  for (u32 i = 0; i < vulkan_context.swapchain_image_count; i++) {
+    VkImageViewCreateFlags image_view_create_flags = ZERO;
+
+    VkComponentMapping component_mapping;
+    component_mapping.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    component_mapping.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    component_mapping.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    component_mapping.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+    VkImageAspectFlags image_aspect_flags = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    VkImageSubresourceRange image_subresource_range;
+    image_subresource_range.aspectMask = image_aspect_flags;
+    // @TODO: Figure out wwhat this means
+    image_subresource_range.levelCount = 1;      // @MAGIC_NUMBER
+    image_subresource_range.baseMipLevel = 0;    // @MAGIC_NUMBER (Very magic number)
+    image_subresource_range.layerCount = 1;      // @MAGIC_NUMBER
+    image_subresource_range.baseArrayLayer = 0;  // @MAGIC_NUMBER (Very magic number)
+
+    VkImageViewCreateInfo image_view_create_info = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+    image_view_create_info.pNext = NULL_PTR;
+    image_view_create_info.flags = image_view_create_flags;
+    image_view_create_info.image = vulkan_context.swapchain_images[i];
+    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_create_info.format = vulkan_context.surface_format.format;
+    image_view_create_info.components = component_mapping;
+    image_view_create_info.subresourceRange = image_subresource_range;
+
+    VkResult create_image_view_result =
+        vkCreateImageView(vulkan_context.logical_device, &image_view_create_info,
+                          vulkan_context.allocator, &vulkan_context.swapchain_image_views[i]);
+
+    if (create_image_view_result != VK_SUCCESS) {
+      MERROR("Failed to create vulkan swapchain image view: %s",
+             string_VkResult(create_image_view_result));
+      return FALSE;
+    }
+  }
+
   mfree(physical_devices, physical_device_count * sizeof(VkPhysicalDevice), MEMORY_TAG_RENDERER);
 
   return TRUE;
 }
 
 void vulkan_backend_shutdown(RendererBackend* renderer_backend) {
+  mfree(vulkan_context.swapchain_image_views,
+        vulkan_context.swapchain_image_count * sizeof(VkImageView), MEMORY_TAG_RENDERER);
+  mfree(vulkan_context.swapchain_images, vulkan_context.swapchain_image_count * sizeof(VkImage),
+        MEMORY_TAG_RENDERER);
+
   mfree(vulkan_context.debug_messenger, sizeof(VkDebugUtilsMessengerEXT), MEMORY_TAG_RENDERER);
 
   PFN_vkDestroyDebugUtilsMessengerEXT fp_vkDestroyDebugUtilsMessengerEXT =

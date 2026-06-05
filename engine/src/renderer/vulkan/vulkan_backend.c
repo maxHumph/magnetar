@@ -5,6 +5,7 @@
 #include "core/log.h"
 #include "core/mmemory.h"
 #include "define.h"
+#include "renderer/vulkan/vulkan_helper.h"
 #include "vulkan/vulkan_core.h"
 #include "vulkan_defines.h"
 #include "vulkan_wsi.h"
@@ -133,6 +134,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   }
   vulkan_context.physical_device = suitable_device;
 
+  mfree(physical_devices, physical_device_count * sizeof(VkPhysicalDevice), MEMORY_TAG_RENDERER);
+
   // Create surface
   if (!vulkan_create_platform_surface(&vulkan_context, platform_state)) {
     MERROR_CORE("Failed to create vulkan platform surface");
@@ -191,9 +194,15 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   device_queue_create_info.queueCount = 1;  // @MAGIC_NUMBER
   device_queue_create_info.pQueuePriorities = &temp_priority;
 
+  // Enable vulkan11 features
+  VkPhysicalDeviceVulkan11Features physical_device_vulkan_11_features = {
+      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES};
+  physical_device_vulkan_11_features.shaderDrawParameters = VK_TRUE;
+
   // Set logical device create info
   const char* const device_extension_names[] = MVK_DEVICE_EXTENSION_NAMES;
   VkDeviceCreateInfo device_create_info = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
+  device_create_info.pNext = &physical_device_vulkan_11_features;
   device_create_info.queueCreateInfoCount = 1;
   device_create_info.pQueueCreateInfos = &device_queue_create_info;
   device_create_info.pEnabledFeatures = NULL_PTR;
@@ -375,10 +384,32 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
     }
   }
 
-  // Create graphics pipeline
+  // CREATE GRAPHICS PIPELINE
+  // Read shader byte code
+  u8* shader_bin = NULL_PTR;
+  u64 shader_bin_size = 0;
+  vulkan_read_shader_binary("../engine/src/renderer/vulkan/shaders/hello_triangle.spv",
+                            &shader_bin_size, &shader_bin);
 
-  mfree(physical_devices, physical_device_count * sizeof(VkPhysicalDevice), MEMORY_TAG_RENDERER);
+  // Create shader module
+  VkShaderModuleCreateInfo shader_module_create_info = {
+      VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
+  shader_module_create_info.pNext = NULL_PTR;
+  shader_module_create_info.codeSize = shader_bin_size;
+  shader_module_create_info.pCode = (u32*)shader_bin;
 
+  VkShaderModule shader_module;
+
+  VkResult create_shader_module_result =
+      vkCreateShaderModule(vulkan_context.logical_device, &shader_module_create_info,
+                           vulkan_context.allocator, &shader_module);
+  if (create_shader_module_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to create vulkan shader module: %s",
+                string_VkResult(create_shader_module_result));
+    return FALSE;
+  }
+
+  mfree(shader_bin, shader_bin_size * sizeof(u8), MEMORY_TAG_RENDERER);
   return TRUE;
 }
 

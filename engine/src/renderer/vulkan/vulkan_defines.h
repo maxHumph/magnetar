@@ -8,7 +8,8 @@
 
 typedef struct VulkanContext {
   VkInstance instance;
-  VkDevice device;
+  VkPhysicalDevice physical_device;
+  VkDevice logical_device;
   VkSurfaceKHR surface;
   VkSwapchainKHR swapchain;
   VkAllocationCallbacks* allocator;

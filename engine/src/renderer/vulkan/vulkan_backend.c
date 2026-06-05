@@ -11,6 +11,7 @@
 
 static VulkanContext vulkan_context;
 
+// @TODO: Split this up into functions.
 b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* application_name,
                        i16 start_width, i16 start_height, PlatformState* platform_state) {
   vulkan_context.allocator = NULL_PTR;
@@ -74,7 +75,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   PFN_vkCreateDebugUtilsMessengerEXT fp_vkCreateDebugUtilsMessengerEXT =
       (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(vulkan_context.instance,
                                                                 "vkCreateDebugUtilsMessengerEXT");
-
+  // Create debug messenger
   vulkan_context.debug_messenger = mallocate(sizeof(VkDebugUtilsMessengerEXT), MEMORY_TAG_RENDERER);
   VkResult create_debug_utils_messenger_result =
       fp_vkCreateDebugUtilsMessengerEXT(vulkan_context.instance, &debug_messenger_create_info,
@@ -114,7 +115,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   // @TODO: Select most suitable device more accurately
   VkPhysicalDeviceProperties targeted_physical_device_properties;
   VkPhysicalDeviceProperties suitable_physical_device_properties;
-  VkPhysicalDevice suitable_device = physical_devices[0];
+  VkPhysicalDevice suitable_device = physical_devices[0];  // @TODO: Add this to vulkan_context
   for (u32 i = 0; i < physical_device_count; i++) {
     vkGetPhysicalDeviceProperties(physical_devices[i], &targeted_physical_device_properties);
     vkGetPhysicalDeviceProperties(suitable_device, &suitable_physical_device_properties);
@@ -130,6 +131,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
       suitable_device = physical_devices[i];
     }
   }
+  vulkan_context.physical_device = suitable_device;
 
   // Check available device extensions (for debugging)
   /* u32 device_extension_property_count = 0; */
@@ -163,8 +165,9 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   device_create_info.ppEnabledExtensionNames = device_extension_names;
 
   // Create logical device
-  VkResult create_device_result = vkCreateDevice(suitable_device, &device_create_info,
-                                                 vulkan_context.allocator, &vulkan_context.device);
+  VkResult create_device_result =
+      vkCreateDevice(vulkan_context.physical_device, &device_create_info, vulkan_context.allocator,
+                     &vulkan_context.logical_device);
 
   if (create_device_result == VK_SUCCESS) {
     MINFO_CORE("Vulkan logical device created");
@@ -183,8 +186,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   // Get surface extent
   VkSurfaceCapabilitiesKHR surface_capabilities;
   VkResult get_physical_device_surface_capabilities_result =
-      vkGetPhysicalDeviceSurfaceCapabilitiesKHR(suitable_device, vulkan_context.surface,
-                                                &surface_capabilities);
+      vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkan_context.physical_device,
+                                                vulkan_context.surface, &surface_capabilities);
 
   VkExtent2D swapchain_image_extent;
 
@@ -220,15 +223,16 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   // Get surface formats
   u32 surface_format_count = 0;
   VkResult get_physical_device_surface_formats_count_result = vkGetPhysicalDeviceSurfaceFormatsKHR(
-      suitable_device, vulkan_context.surface, &surface_format_count, NULL_PTR);
+      vulkan_context.physical_device, vulkan_context.surface, &surface_format_count, NULL_PTR);
   if (get_physical_device_surface_formats_count_result != VK_SUCCESS) {
     MERROR_CORE("Failed to get vulkan physical device surface format count: %s",
                 string_VkResult(get_physical_device_surface_formats_count_result));
     return FALSE;
   }
   VkSurfaceFormatKHR surface_formats[surface_format_count];
-  VkResult get_physical_device_surface_formats_result = vkGetPhysicalDeviceSurfaceFormatsKHR(
-      suitable_device, vulkan_context.surface, &surface_format_count, surface_formats);
+  VkResult get_physical_device_surface_formats_result =
+      vkGetPhysicalDeviceSurfaceFormatsKHR(vulkan_context.physical_device, vulkan_context.surface,
+                                           &surface_format_count, surface_formats);
   if (get_physical_device_surface_formats_result != VK_SUCCESS) {
     MERROR_CORE("Failed to get vulkan physical device surface formats: %s",
                 string_VkResult(get_physical_device_surface_capabilities_result));
@@ -242,7 +246,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
                 string_VkColorSpaceKHR(surface_formats[i].colorSpace));
   }
   // The index in surface_formats to be used in swapchain creation
-  const u32 selected_format = 0;  // @TODO: Maybe implement some sort of seletion algorithm?
+  //@TODO: Maybe implement some sort of seletion algorithm?
+  const u32 selected_format = 0;  // @MAGIC_NUMBER
 
   // Create swapchain
   VkImageUsageFlags image_usage_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -266,8 +271,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
 
   VkResult create_swapchain_result =
-      vkCreateSwapchainKHR(vulkan_context.device, &swapchain_create_info, vulkan_context.allocator,
-                           &vulkan_context.swapchain);
+      vkCreateSwapchainKHR(vulkan_context.logical_device, &swapchain_create_info,
+                           vulkan_context.allocator, &vulkan_context.swapchain);
 
   if (create_swapchain_result != VK_SUCCESS) {
     MERROR_CORE("Failed to create Vulkan swapchain: %s", string_VkResult(create_swapchain_result));
@@ -290,8 +295,8 @@ void vulkan_backend_shutdown(RendererBackend* renderer_backend) {
   fp_vkDestroyDebugUtilsMessengerEXT(vulkan_context.instance, *vulkan_context.debug_messenger,
                                      vulkan_context.allocator);
 
-  vkDeviceWaitIdle(vulkan_context.device);
-  vkDestroyDevice(vulkan_context.device, vulkan_context.allocator);
+  vkDeviceWaitIdle(vulkan_context.logical_device);
+  vkDestroyDevice(vulkan_context.logical_device, vulkan_context.allocator);
   vkDestroyInstance(vulkan_context.instance, vulkan_context.allocator);
 }
 

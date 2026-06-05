@@ -28,4 +28,6 @@ typedef struct VulkanContext {
 
   VkPipeline graphics_pipeline;
 
+  VkCommandPool command_pool;
+
 } VulkanContext;

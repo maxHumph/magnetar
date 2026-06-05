@@ -579,6 +579,25 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
     return FALSE;
   }
 
+  // CREATE COMMAND POOL
+  VkCommandPoolCreateFlags command_pool_create_flags =
+      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+  VkCommandPoolCreateInfo command_pool_create_info = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+  command_pool_create_info.pNext = NULL_PTR;
+  command_pool_create_info.flags = command_pool_create_flags;
+  command_pool_create_info.queueFamilyIndex = vulkan_context.graphics_queue_family_index;
+
+  VkResult create_command_pool_result =
+      vkCreateCommandPool(vulkan_context.logical_device, &command_pool_create_info,
+                          vulkan_context.allocator, &vulkan_context.command_pool);
+
+  if (create_command_pool_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to create vulkan command pool: %s",
+                string_VkResult(create_command_pool_result));
+    return FALSE;
+  }
+
   return TRUE;
 }
 

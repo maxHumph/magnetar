@@ -708,6 +708,13 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
     return FALSE;
   }
 
+  VkResult reset_command_buffer_result = vkResetCommandBuffer(vulkan_context.command_buffer, ZERO);
+  if (reset_command_buffer_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to reset vulkan command buffer: %s",
+                string_VkResult(reset_command_buffer_result));
+    return FALSE;
+  }
+
   VkResult acquire_next_image_result =
       vkAcquireNextImageKHR(vulkan_context.logical_device, vulkan_context.swapchain, UINT64_MAX,
                             vulkan_context.present_complete_semaphore, VK_NULL_HANDLE,

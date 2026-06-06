@@ -10,7 +10,7 @@
 #include "vulkan_defines.h"
 #include "vulkan_wsi.h"
 
-static VulkanContext vulkan_context;
+static VulkanContext vulkan_context = {};
 
 // @TODO: Split this up into functions comments in CAPS roughly outline different functions.
 b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* application_name,
@@ -603,10 +603,10 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   command_buffer_alloc_info.pNext = NULL_PTR;
   command_buffer_alloc_info.commandPool = vulkan_context.command_pool;
   command_buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-  command_buffer_alloc_info.commandBufferCount = 1;
+  command_buffer_alloc_info.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
 
   VkResult alloc_command_buffers_result = vkAllocateCommandBuffers(
-      vulkan_context.logical_device, &command_buffer_alloc_info, &vulkan_context.command_buffer);
+      vulkan_context.logical_device, &command_buffer_alloc_info, vulkan_context.command_buffers);
 
   if (alloc_command_buffers_result != VK_SUCCESS) {
     MERROR_CORE("Failed to allocate vulkan command buffers: %s",
@@ -615,6 +615,10 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   }
 
   // CREATE SYNC PRIMS
+
+  vulkan_context.render_complete_semaphores =
+      mallocate(vulkan_context.swapchain_image_count * sizeof(VkSemaphore), MEMORY_TAG_RENDERER);
+
   VkSemaphoreCreateInfo present_complete_semaphore_create_info = {
       VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
   present_complete_semaphore_create_info.pNext = NULL_PTR;
@@ -627,33 +631,39 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   draw_fence_create_info.pNext = NULL_PTR;
   draw_fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-  VkResult present_complete_create_semaphore_result =
-      vkCreateSemaphore(vulkan_context.logical_device, &present_complete_semaphore_create_info,
-                        vulkan_context.allocator, &vulkan_context.present_complete_semaphore);
+  for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    VkResult present_complete_create_semaphore_result =
+        vkCreateSemaphore(vulkan_context.logical_device, &present_complete_semaphore_create_info,
+                          vulkan_context.allocator, &vulkan_context.present_complete_semaphores[i]);
 
-  if (present_complete_create_semaphore_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to create present complete vulkan semaphore: %s",
-                string_VkResult(present_complete_create_semaphore_result));
-    return FALSE;
+    if (present_complete_create_semaphore_result != VK_SUCCESS) {
+      MERROR_CORE("Failed to create present complete vulkan semaphore: %s",
+                  string_VkResult(present_complete_create_semaphore_result));
+      return FALSE;
+    }
   }
 
-  VkResult render_complete_create_semaphore_result =
-      vkCreateSemaphore(vulkan_context.logical_device, &render_complete_semaphore_create_info,
-                        vulkan_context.allocator, &vulkan_context.render_complete_semaphore);
+  for (u32 i = 0; i < vulkan_context.swapchain_image_count; i++) {
+    VkResult render_complete_create_semaphore_result =
+        vkCreateSemaphore(vulkan_context.logical_device, &render_complete_semaphore_create_info,
+                          vulkan_context.allocator, &vulkan_context.render_complete_semaphores[i]);
 
-  if (render_complete_create_semaphore_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to create render complete vulkan semaphore: %s",
-                string_VkResult(render_complete_create_semaphore_result));
-    return FALSE;
+    if (render_complete_create_semaphore_result != VK_SUCCESS) {
+      MERROR_CORE("Failed to create render complete vulkan semaphore: %s",
+                  string_VkResult(render_complete_create_semaphore_result));
+      return FALSE;
+    }
   }
 
-  VkResult draw_create_fence_result =
-      vkCreateFence(vulkan_context.logical_device, &draw_fence_create_info,
-                    vulkan_context.allocator, &vulkan_context.draw_fence);
-  if (draw_create_fence_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to create draw vulkan fence: %s",
-                string_VkResult(draw_create_fence_result));
-    return FALSE;
+  for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    VkResult draw_create_fence_result =
+        vkCreateFence(vulkan_context.logical_device, &draw_fence_create_info,
+                      vulkan_context.allocator, &vulkan_context.draw_fences[i]);
+    if (draw_create_fence_result != VK_SUCCESS) {
+      MERROR_CORE("Failed to create draw vulkan fence: %s",
+                  string_VkResult(draw_create_fence_result));
+      return FALSE;
+    }
   }
 
   // Get device queue
@@ -662,10 +672,14 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
                    &vulkan_context.queue);
 
   vulkan_context.current_image_index = 0;
+  vulkan_context.current_frame_index = 0;
   return TRUE;
 }
 
 void vulkan_backend_shutdown(RendererBackend* renderer_backend) {
+  mfree(vulkan_context.render_complete_semaphores,
+        vulkan_context.swapchain_image_count * sizeof(VkSemaphore), MEMORY_TAG_RENDERER);
+
   vkDestroyCommandPool(vulkan_context.logical_device, vulkan_context.command_pool,
                        vulkan_context.allocator);
   vkDestroyPipeline(vulkan_context.logical_device, vulkan_context.graphics_pipeline,
@@ -692,8 +706,9 @@ void vulkan_backend_shutdown(RendererBackend* renderer_backend) {
 }
 
 b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time) {
-  VkResult wait_for_fence_result = vkWaitForFences(vulkan_context.logical_device, 1,
-                                                   &vulkan_context.draw_fence, VK_TRUE, UINT64_MAX);
+  VkResult wait_for_fence_result = vkWaitForFences(
+      vulkan_context.logical_device, 1,
+      &vulkan_context.draw_fences[vulkan_context.current_frame_index], VK_TRUE, UINT64_MAX);
 
   if (wait_for_fence_result != VK_SUCCESS) {
     MERROR_CORE("Failed to wait for vulkan draw fence: %s", string_VkResult(wait_for_fence_result));
@@ -701,24 +716,26 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
   }
 
   VkResult reset_fence_result =
-      vkResetFences(vulkan_context.logical_device, 1, &vulkan_context.draw_fence);
+      vkResetFences(vulkan_context.logical_device, 1,
+                    &vulkan_context.draw_fences[vulkan_context.current_frame_index]);
 
   if (reset_fence_result != VK_SUCCESS) {
     MERROR_CORE("Failed to reset vulkan draw fence: %s", string_VkResult(reset_fence_result));
     return FALSE;
   }
 
-  VkResult reset_command_buffer_result = vkResetCommandBuffer(vulkan_context.command_buffer, ZERO);
+  VkResult reset_command_buffer_result = vkResetCommandBuffer(
+      vulkan_context.command_buffers[vulkan_context.current_frame_index], ZERO);
   if (reset_command_buffer_result != VK_SUCCESS) {
     MERROR_CORE("Failed to reset vulkan command buffer: %s",
                 string_VkResult(reset_command_buffer_result));
     return FALSE;
   }
 
-  VkResult acquire_next_image_result =
-      vkAcquireNextImageKHR(vulkan_context.logical_device, vulkan_context.swapchain, UINT64_MAX,
-                            vulkan_context.present_complete_semaphore, VK_NULL_HANDLE,
-                            &vulkan_context.current_image_index);
+  VkResult acquire_next_image_result = vkAcquireNextImageKHR(
+      vulkan_context.logical_device, vulkan_context.swapchain, UINT64_MAX,
+      vulkan_context.present_complete_semaphores[vulkan_context.current_frame_index],
+      VK_NULL_HANDLE, &vulkan_context.current_image_index);
 
   if (acquire_next_image_result != VK_SUCCESS) {
     MERROR_CORE("Failed to acquire next image on vulkan swapchain: %s",
@@ -733,7 +750,8 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
   command_buffer_begin_info.pInheritanceInfo = NULL_PTR;
 
   VkResult begin_command_buffer_result =
-      vkBeginCommandBuffer(vulkan_context.command_buffer, &command_buffer_begin_info);
+      vkBeginCommandBuffer(vulkan_context.command_buffers[vulkan_context.current_frame_index],
+                           &command_buffer_begin_info);
   if (begin_command_buffer_result != VK_SUCCESS) {
     MERROR_CORE("Failed to begin vulkan command buffer: %s",
                 string_VkResult(begin_command_buffer_result));
@@ -776,9 +794,10 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
   rendering_info.pColorAttachments = &rendering_attachment_info;
 
   // Start rendering
-  vkCmdBeginRendering(vulkan_context.command_buffer, &rendering_info);
-  vkCmdBindPipeline(vulkan_context.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    vulkan_context.graphics_pipeline);
+  vkCmdBeginRendering(vulkan_context.command_buffers[vulkan_context.current_frame_index],
+                      &rendering_info);
+  vkCmdBindPipeline(vulkan_context.command_buffers[vulkan_context.current_frame_index],
+                    VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_context.graphics_pipeline);
 
   // Set viewport as scissor values
   VkViewport viewport = {.x = 0.0f,
@@ -788,20 +807,22 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
                          .minDepth = 0.0f,
                          .maxDepth = 1.0f};
 
-  vkCmdSetViewport(vulkan_context.command_buffer, 0, 1, &viewport);
+  vkCmdSetViewport(vulkan_context.command_buffers[vulkan_context.current_frame_index], 0, 1,
+                   &viewport);
 
   VkRect2D scissor = {.offset = {.x = 0, .y = 0}, .extent = vulkan_context.swapchain_extent};
 
-  vkCmdSetScissor(vulkan_context.command_buffer, 0, 1, &scissor);
+  vkCmdSetScissor(vulkan_context.command_buffers[vulkan_context.current_frame_index], 0, 1,
+                  &scissor);
 
-  vkCmdDraw(vulkan_context.command_buffer, 3, 1, 0, 0);
+  vkCmdDraw(vulkan_context.command_buffers[vulkan_context.current_frame_index], 3, 1, 0, 0);
 
   return TRUE;
 }
 
 b8 vulkan_backend_end_frame(RendererBackend* renderer_backend, f64 delta_time) {
   // End rendering
-  vkCmdEndRendering(vulkan_context.command_buffer);
+  vkCmdEndRendering(vulkan_context.command_buffers[vulkan_context.current_frame_index]);
 
   transition_image_layout(
       vulkan_context.current_image_index, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -809,7 +830,8 @@ b8 vulkan_backend_end_frame(RendererBackend* renderer_backend, f64 delta_time) {
       VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT);
 
   // End command buffer recording
-  VkResult end_command_buffer_result = vkEndCommandBuffer(vulkan_context.command_buffer);
+  VkResult end_command_buffer_result =
+      vkEndCommandBuffer(vulkan_context.command_buffers[vulkan_context.current_frame_index]);
   if (end_command_buffer_result != VK_SUCCESS) {
     MERROR_CORE("Failed to end vulkan command buffer: %s",
                 string_VkResult(end_command_buffer_result));
@@ -821,15 +843,19 @@ b8 vulkan_backend_end_frame(RendererBackend* renderer_backend, f64 delta_time) {
   VkSubmitInfo command_buffer_submit_info = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
   command_buffer_submit_info.pNext = NULL_PTR;
   command_buffer_submit_info.waitSemaphoreCount = 1;
-  command_buffer_submit_info.pWaitSemaphores = &vulkan_context.present_complete_semaphore;
+  command_buffer_submit_info.pWaitSemaphores =
+      &vulkan_context.present_complete_semaphores[vulkan_context.current_frame_index];
   command_buffer_submit_info.pWaitDstStageMask = &wait_dst_stage_flags;
   command_buffer_submit_info.commandBufferCount = 1;
-  command_buffer_submit_info.pCommandBuffers = &vulkan_context.command_buffer;
+  command_buffer_submit_info.pCommandBuffers =
+      &vulkan_context.command_buffers[vulkan_context.current_frame_index];
   command_buffer_submit_info.signalSemaphoreCount = 1;
-  command_buffer_submit_info.pSignalSemaphores = &vulkan_context.render_complete_semaphore;
+  command_buffer_submit_info.pSignalSemaphores =
+      &vulkan_context.render_complete_semaphores[vulkan_context.current_image_index];
 
-  VkResult queue_submit_restult = vkQueueSubmit(
-      vulkan_context.queue, 1, &command_buffer_submit_info, vulkan_context.draw_fence);
+  VkResult queue_submit_restult =
+      vkQueueSubmit(vulkan_context.queue, 1, &command_buffer_submit_info,
+                    vulkan_context.draw_fences[vulkan_context.current_frame_index]);
 
   if (queue_submit_restult != VK_SUCCESS) {
     MERROR_CORE("Failed to sumbit to vulkan queue: %s", string_VkResult(queue_submit_restult));
@@ -842,7 +868,8 @@ b8 vulkan_backend_end_frame(RendererBackend* renderer_backend, f64 delta_time) {
 b8 vulkan_backend_draw_frame(RendererBackend* renderer_backend) {
   VkPresentInfoKHR present_info = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
   present_info.waitSemaphoreCount = 1;
-  present_info.pWaitSemaphores = &vulkan_context.render_complete_semaphore;
+  present_info.pWaitSemaphores =
+      &vulkan_context.render_complete_semaphores[vulkan_context.current_image_index];
   present_info.swapchainCount = 1;
   present_info.pSwapchains = &vulkan_context.swapchain;
   present_info.pImageIndices = &vulkan_context.current_image_index;
@@ -853,6 +880,9 @@ b8 vulkan_backend_draw_frame(RendererBackend* renderer_backend) {
                 string_VkResult(present_swapchain_result));
     return FALSE;
   }
+
+  vulkan_context.current_frame_index =
+      (vulkan_context.current_frame_index + 1) % MAX_FRAMES_IN_FLIGHT;
 
   return TRUE;
 }
@@ -922,5 +952,6 @@ static void transition_image_layout(u32 image_index, VkImageLayout old_layout,
   dependency_info.imageMemoryBarrierCount = 1;
   dependency_info.pImageMemoryBarriers = &image_memory_barrier;
 
-  vkCmdPipelineBarrier2(vulkan_context.command_buffer, &dependency_info);
+  vkCmdPipelineBarrier2(vulkan_context.command_buffers[vulkan_context.current_frame_index],
+                        &dependency_info);
 }

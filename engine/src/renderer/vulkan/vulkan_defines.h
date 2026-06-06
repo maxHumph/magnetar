@@ -8,6 +8,8 @@
 
 #include "define.h"
 
+#define MAX_FRAMES_IN_FLIGHT 2
+
 typedef struct VulkanContext {
   VkInstance instance;
   VkPhysicalDevice physical_device;
@@ -33,10 +35,12 @@ typedef struct VulkanContext {
   VkPipeline graphics_pipeline;
 
   VkCommandPool command_pool;
-  VkCommandBuffer command_buffer;
+  VkCommandBuffer command_buffers[MAX_FRAMES_IN_FLIGHT];
 
-  VkSemaphore present_complete_semaphore;
-  VkSemaphore render_complete_semaphore;
-  VkFence draw_fence;
+  u32 current_frame_index;
+
+  VkSemaphore present_complete_semaphores[MAX_FRAMES_IN_FLIGHT];
+  VkSemaphore* render_complete_semaphores;
+  VkFence draw_fences[MAX_FRAMES_IN_FLIGHT];
 
 } VulkanContext;

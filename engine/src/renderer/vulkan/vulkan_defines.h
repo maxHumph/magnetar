@@ -13,6 +13,8 @@ typedef struct VulkanContext {
   VkPhysicalDevice physical_device;
   VkDevice logical_device;
 
+  VkQueue queue;
+
   VkSurfaceKHR surface;
   VkSwapchainKHR swapchain;
   VkSurfaceFormatKHR surface_format;
@@ -32,5 +34,9 @@ typedef struct VulkanContext {
 
   VkCommandPool command_pool;
   VkCommandBuffer command_buffer;
+
+  VkSemaphore present_complete_semaphore;
+  VkSemaphore render_complete_semaphore;
+  VkFence draw_fence;
 
 } VulkanContext;

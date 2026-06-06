@@ -16,6 +16,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
                        i16 start_width, i16 start_height, PlatformState* platform_state) {
   vulkan_context.allocator = NULL_PTR;
   vulkan_context.debug_messenger = NULL_PTR;
+  vulkan_context.swapchain_extent.width = start_width;
+  vulkan_context.swapchain_extent.height = start_height;
 
   // CREATE INSTANCE ----------
   if (!vulkan_create_instance(application_name)) {
@@ -36,7 +38,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   }
 
   // GET SURFACE
-  if (!vulkan_get_surface(platform_state, start_width, start_height)) {
+  if (!vulkan_get_surface(platform_state)) {
     MERROR_CORE("Vulkan Init: Failed to create surface.");
     return FALSE;
   }
@@ -48,7 +50,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   }
 
   // CREATE SWAPCHAIN
-  if (!vulkan_create_swapchain()) {
+  if (!vulkan_create_swapchain(VK_NULL_HANDLE)) {
     MERROR_CORE("Vulkan Init: Failed to create swapchain.");
     return FALSE;
   }
@@ -165,7 +167,9 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
       vulkan_context.present_complete_semaphores[vulkan_context.current_frame_index],
       VK_NULL_HANDLE, &vulkan_context.current_image_index);
 
-  if (acquire_next_image_result != VK_SUCCESS) {
+  if (acquire_next_image_result == VK_SUBOPTIMAL_KHR) {
+    MWARN_CORE("Vulkan acquire next image result: %s", string_VkResult(acquire_next_image_result));
+  } else if (acquire_next_image_result != VK_SUCCESS) {
     MERROR_CORE("Failed to acquire next image on vulkan swapchain: %s",
                 string_VkResult(acquire_next_image_result));
     return FALSE;
@@ -303,7 +307,9 @@ b8 vulkan_backend_draw_frame(RendererBackend* renderer_backend) {
   present_info.pImageIndices = &vulkan_context.current_image_index;
 
   VkResult present_swapchain_result = vkQueuePresentKHR(vulkan_context.queue, &present_info);
-  if (present_swapchain_result != VK_SUCCESS) {
+  if (present_swapchain_result == VK_SUBOPTIMAL_KHR) {
+    MWARN_CORE("Vulkan present swapchain result: %s", string_VkResult(present_swapchain_result));
+  } else if (present_swapchain_result != VK_SUCCESS) {
     MERROR_CORE("Failed to present vulkan swapchain: %s",
                 string_VkResult(present_swapchain_result));
     return FALSE;
@@ -315,7 +321,14 @@ b8 vulkan_backend_draw_frame(RendererBackend* renderer_backend) {
   return TRUE;
 }
 
-void vulkan_backend_resized(RendererBackend* renderer_backend, u16 width, u16 height) {}
+b8 vulkan_backend_on_resize(RendererBackend* renderer_backend, u16 width, u16 height) {
+  /* MTRACE_CORE("vk resize: (%u, %u)", width, height); */
+  if (!vulkan_recreate_swapchain(width, height)) {
+    MERROR_CORE("Vulkan On Resize: Failed to recreate swapchain.");
+    return FALSE;
+  }
+  return TRUE;
+}
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL
 vulkan_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
@@ -472,12 +485,51 @@ static b8 vulkan_select_physical_device() {
   return TRUE;
 }
 
-static b8 vulkan_get_surface(PlatformState* platform_state, i16 width, i16 height) {
+static b8 vulkan_get_surface(PlatformState* platform_state) {
   if (!vulkan_create_platform_surface(&vulkan_context, platform_state)) {
     MERROR_CORE("Failed to create vulkan platform surface");
     return FALSE;
   }
 
+  if (!vulkan_set_surface_extent(vulkan_context.swapchain_extent.width,
+                                 vulkan_context.swapchain_extent.height)) {
+    MERROR_CORE("Vulkan Get Surface: Failed to set surface extent.");
+    return FALSE;
+  }
+
+  // Get surface formats
+  u32 surface_format_count = 0;
+  VkResult get_physical_device_surface_formats_count_result = vkGetPhysicalDeviceSurfaceFormatsKHR(
+      vulkan_context.physical_device, vulkan_context.surface, &surface_format_count, NULL_PTR);
+  if (get_physical_device_surface_formats_count_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to get vulkan physical device surface format count: %s",
+                string_VkResult(get_physical_device_surface_formats_count_result));
+    return FALSE;
+  }
+  VkSurfaceFormatKHR surface_formats[surface_format_count];
+  VkResult get_physical_device_surface_formats_result =
+      vkGetPhysicalDeviceSurfaceFormatsKHR(vulkan_context.physical_device, vulkan_context.surface,
+                                           &surface_format_count, surface_formats);
+  if (get_physical_device_surface_formats_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to get vulkan physical device surface formats: %s",
+                string_VkResult(get_physical_device_surface_formats_result));
+    return FALSE;
+  }
+
+  MTRACE_CORE("Surface formats:");
+  for (u32 i = 0; i < surface_format_count; i++) {
+    MTRACE_CORE("%u: Format: %s, Colour space: %s", i + 1,
+                string_VkFormat(surface_formats[i].format),
+                string_VkColorSpaceKHR(surface_formats[i].colorSpace));
+  }
+  // The index in surface_formats to be used in swapchain creation
+  //@TODO: Maybe implement some sort of seletion algorithm?
+  const u32 selected_format = 0;  // @MAGIC_NUMBER
+  vulkan_context.surface_format = surface_formats[selected_format];
+  return TRUE;
+}
+
+static b8 vulkan_set_surface_extent(i16 width, i16 height) {
   VkSurfaceCapabilitiesKHR surface_capabilities;
   VkResult get_physical_device_surface_capabilities_result =
       vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkan_context.physical_device,
@@ -511,36 +563,6 @@ static b8 vulkan_get_surface(PlatformState* platform_state, i16 width, i16 heigh
       vulkan_context.swapchain_extent.height = (u32)height;
     }
   }
-
-  // Get surface formats
-  u32 surface_format_count = 0;
-  VkResult get_physical_device_surface_formats_count_result = vkGetPhysicalDeviceSurfaceFormatsKHR(
-      vulkan_context.physical_device, vulkan_context.surface, &surface_format_count, NULL_PTR);
-  if (get_physical_device_surface_formats_count_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to get vulkan physical device surface format count: %s",
-                string_VkResult(get_physical_device_surface_formats_count_result));
-    return FALSE;
-  }
-  VkSurfaceFormatKHR surface_formats[surface_format_count];
-  VkResult get_physical_device_surface_formats_result =
-      vkGetPhysicalDeviceSurfaceFormatsKHR(vulkan_context.physical_device, vulkan_context.surface,
-                                           &surface_format_count, surface_formats);
-  if (get_physical_device_surface_formats_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to get vulkan physical device surface formats: %s",
-                string_VkResult(get_physical_device_surface_capabilities_result));
-    return FALSE;
-  }
-
-  MTRACE_CORE("Surface formats:");
-  for (u32 i = 0; i < surface_format_count; i++) {
-    MTRACE_CORE("%u: Format: %s, Colour space: %s", i + 1,
-                string_VkFormat(surface_formats[i].format),
-                string_VkColorSpaceKHR(surface_formats[i].colorSpace));
-  }
-  // The index in surface_formats to be used in swapchain creation
-  //@TODO: Maybe implement some sort of seletion algorithm?
-  const u32 selected_format = 0;  // @MAGIC_NUMBER
-  vulkan_context.surface_format = surface_formats[selected_format];
   return TRUE;
 }
 
@@ -618,7 +640,7 @@ static b8 vulkan_create_logical_device() {
   return TRUE;
 }
 
-static b8 vulkan_create_swapchain() {
+static b8 vulkan_create_swapchain(VkSwapchainKHR old_swapchain) {
   VkImageUsageFlags image_usage_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
   VkSwapchainCreateInfoKHR swapchain_create_info = {VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR};
@@ -637,7 +659,7 @@ static b8 vulkan_create_swapchain() {
   swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
   swapchain_create_info.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
   swapchain_create_info.clipped = VK_TRUE;
-  swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
+  swapchain_create_info.oldSwapchain = old_swapchain;
 
   VkResult create_swapchain_result =
       vkCreateSwapchainKHR(vulkan_context.logical_device, &swapchain_create_info,
@@ -647,7 +669,7 @@ static b8 vulkan_create_swapchain() {
     MERROR_CORE("Failed to create Vulkan swapchain: %s", string_VkResult(create_swapchain_result));
     return FALSE;
   } else {
-    MINFO_CORE("Created Vulkan swapchain");
+    /* MINFO_CORE("Created Vulkan swapchain"); */
   }
   return TRUE;
 }
@@ -1003,19 +1025,46 @@ static b8 vulkan_create_sync_primatives() {
   return TRUE;
 }
 
-/* static b8 vulkan_recreate_swapchain() { */
-/*   VkResult queue_wait_idle_result = vkQueueWaitIdle(vulkan_context.queue); */
-/*   if (queue_wait_idle_result != VK_SUCCESS) { */
-/*     MWARN_CORE("Failed to wait for queue idle while recreating vulkan swapchain: %s", */
-/*                string_VkResult(queue_wait_idle_result)); */
-/*   } */
+static b8 vulkan_recreate_swapchain(u16 width, u16 height) {
+  VkResult queue_wait_idle_result = vkQueueWaitIdle(vulkan_context.queue);
+  if (queue_wait_idle_result != VK_SUCCESS) {
+    MWARN_CORE("Failed to wait for queue idle while recreating vulkan swapchain: %s",
+               string_VkResult(queue_wait_idle_result));
+  }
 
-/*   return TRUE; */
-/* } */
+  if (!vulkan_set_surface_extent(width, height)) {
+    MERROR_CORE("Failed to set surface extent while recreating vulkan swapchain");
+    return FALSE;
+  }
 
-/* static b8 vulkan_cleanup_swapchain() { */
+  VkSwapchainKHR old_swapchain = vulkan_context.swapchain;
 
-/*   return TRUE; } */
+  if (!vulkan_create_swapchain(old_swapchain)) {
+    MERROR_CORE("Failed to create swapchain");
+    return FALSE;
+  }
+
+  for (u32 i = 0; i < vulkan_context.swapchain_image_count; i++) {
+    vkDestroyImageView(vulkan_context.logical_device, vulkan_context.swapchain_image_views[i],
+                       vulkan_context.allocator);
+  }
+
+  vkDestroySwapchainKHR(vulkan_context.logical_device, old_swapchain, vulkan_context.allocator);
+
+  if (!vulkan_get_swapchain_images()) {
+    MERROR_CORE("Failed to get swapchain images");
+    return FALSE;
+  }
+
+  if (!vulkan_create_image_views()) {
+    MERROR_CORE("Failed to create image views");
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+static b8 vulkan_cleanup_swapchain() { return TRUE; }
 
 static void transition_image_layout(u32 image_index, VkImageLayout old_layout,
                                     VkImageLayout new_layout, VkAccessFlags2 src_access_mask,

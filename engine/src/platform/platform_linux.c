@@ -4,6 +4,7 @@
 
 #include <xcb/xproto.h>
 
+#include "core/events.h"
 #include "core/input.h"
 #include "define.h"
 #include "platform.h"
@@ -205,7 +206,12 @@ b8 platform_pump_messages(PlatformState* platform_state) {
         /* MTRACE_CORE("x mouse moved: (%f, %f)", mouse_x, mouse_y); */
         break;
 
-      case XCB_CONFIGURE_NOTIFY:  // resizing
+      case XCB_CONFIGURE_NOTIFY:;  // resizing
+        xcb_configure_notify_event_t* cn_event = (xcb_configure_notify_event_t*)event;
+        EventData event_data;
+        event_data.data.u16[0] = cn_event->width;
+        event_data.data.u16[1] = cn_event->height;
+        fire_event(EVENT_CODE_WINDOW_RESIZED, 0, event_data);
         break;
       case XCB_CLIENT_MESSAGE:
         if (cm->data.data32[0] == state->wm_delete_win) {

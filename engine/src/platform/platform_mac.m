@@ -666,6 +666,7 @@ static void process_event(MacEvent* e) {
     break;
     
   case MAC_EVENT_TYPE_WINDOW_RESIZED:
+    
     // MTRACE_CORE("Window Resized: (%i, %i)", e->window_resized.width, e->window_resized.height);
     break;
     

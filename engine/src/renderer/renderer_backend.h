@@ -25,7 +25,7 @@ typedef struct RendererBackend {
 
   b8 (*draw_frame)(struct RendererBackend* renderer_backend);
 
-  void (*resized)(struct RendererBackend* renderer_backend, u16 width, u16 height);
+  b8 (*on_resize)(struct RendererBackend* renderer_backend, u16 width, u16 height);
 
 } RendererBackend;
 

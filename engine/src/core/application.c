@@ -56,6 +56,7 @@ MGAPI b8 application_create(Game* game_instance) {
   s_application_state.is_suspended = FALSE;
 
   event_register(EVENT_CODE_APPLICATION_QUIT, 0, application_on_event);
+  event_register(EVENT_CODE_WINDOW_RESIZED, 0, application_on_event);
   event_register(EVENT_CODE_KEY_DOWN, 0, application_on_key);
   event_register(EVENT_CODE_KEY_UP, 0, application_on_key);
 
@@ -157,6 +158,9 @@ b8 application_on_event(u16 code, void* sender, void* listener, EventData event_
       MINFO_CORE("Application QUIT");
       s_application_state.is_running = FALSE;
       return TRUE;
+    }
+    case EVENT_CODE_WINDOW_RESIZED: {
+      renderer_on_resize(event_data.data.u16[0], event_data.data.u16[1]);
     }
   }
 

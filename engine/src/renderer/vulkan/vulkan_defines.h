@@ -21,6 +21,9 @@ typedef struct VulkanContext {
   VkSwapchainKHR swapchain;
   VkSurfaceFormatKHR surface_format;
 
+  i16 height;
+  i16 width;
+
   VkAllocationCallbacks* allocator;
   VkDebugUtilsMessengerEXT* debug_messenger;
 

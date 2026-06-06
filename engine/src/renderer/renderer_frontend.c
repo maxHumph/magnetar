@@ -55,3 +55,11 @@ b8 renderer_draw_frame(/* RenderData */) {
   }
   return TRUE;
 }
+
+b8 renderer_on_resize(u16 width, u16 height) {
+  if (!renderer_backend->on_resize(renderer_backend, width, height)) {
+    MERROR_CORE("Renderer failed to resize");
+    return FALSE;
+  }
+  return TRUE;
+}

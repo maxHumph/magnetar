@@ -117,3 +117,12 @@ STATIC_ASSERT(sizeof(b32) == 4, "Expected b32 = 4 bytes.");
 #define MGAPI
 #endif
 #endif
+
+// Inlining
+#ifdef _MSC_VER
+#define MGINLINE __forceinline
+#define MGNOINLINE __declspec(noinline)
+#else
+#define MGINLINE static inline
+#define MGNOINLINE
+#endif

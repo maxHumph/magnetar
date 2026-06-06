@@ -5,6 +5,7 @@
 #pragma once
 
 #include "define.h"
+#include "platform/platform.h"
 #include "renderer/renderer_backend.h"
 #include "vulkan/vulkan_core.h"
 #include "vulkan_defines.h"
@@ -69,10 +70,40 @@ b8 vulkan_backend_draw_frame(RendererBackend* renderer_backend);
 
 void vulkan_backend_resized(RendererBackend* renderer_backend, u16 width, u16 height);
 
+// Static functions
+
+static b8 vulkan_create_instance(const char* application_name);
+
+static b8 vulkan_create_debug_messenger();
+
+static b8 vulkan_select_physical_device();
+
+static b8 vulkan_get_surface(PlatformState* platform_state, i16 width, i16 height);
+
+static b8 vulkan_create_logical_device();
+
+static b8 vulkan_create_swapchain();
+
+static b8 vulkan_get_swapchain_images();
+
+static b8 vulkan_create_image_views();
+
+static b8 vulkan_create_graphics_pipeline();
+
+static b8 vulkan_create_command_pool();
+
+static b8 vulkan_allocate_command_buffers();
+
+static b8 vulkan_create_sync_primatives();
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL
 vulkan_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                       VkDebugUtilsMessageTypeFlagsEXT message_types,
                       const VkDebugUtilsMessengerCallbackDataEXT* callback_data, void* user_data);
+
+static b8 vulkan_recreate_swapchain();
+
+static b8 vulkan_cleanup_swapchain();
 
 static void transition_image_layout(u32 image_index, VkImageLayout old_layout,
                                     VkImageLayout new_layout, VkAccessFlags2 src_access_mask,

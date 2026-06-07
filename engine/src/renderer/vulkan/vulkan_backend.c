@@ -95,8 +95,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
     return FALSE;
   }
 
-  // CREATE COMMAND POOL ----------
-  if (!vulkan_create_command_pool()) {
+  // CREATE COMMAND POOLS ----------
+  if (!vulkan_create_command_pools()) {
     MERROR_CORE("Vulkan Init: Failed to create command pool.");
     return FALSE;
   }
@@ -121,7 +121,10 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
 
   // Get device queue for rendering
   vkGetDeviceQueue(vulkan_context.logical_device, vulkan_context.graphics_queue_family_index, 0,
-                   &vulkan_context.queue);
+                   &vulkan_context.graphics_queue);
+
+  vkGetDeviceQueue(vulkan_context.logical_device, vulkan_context.transfer_queue_family_index, 0,
+                   &vulkan_context.transfer_queue);
 
   vulkan_context.current_image_index = 0;
   vulkan_context.current_frame_index = 0;
@@ -129,7 +132,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
 }
 
 void vulkan_backend_shutdown(RendererBackend* renderer_backend) {
-  VkResult queue_wait_idle_result = vkQueueWaitIdle(vulkan_context.queue);
+  VkResult queue_wait_idle_result = vkQueueWaitIdle(vulkan_context.graphics_queue);
   if (queue_wait_idle_result != VK_SUCCESS) {
     MERROR_CORE("Failed to wait for vulkan queue to idle before shutting down: %s",
                 string_VkResult(queue_wait_idle_result));
@@ -138,7 +141,7 @@ void vulkan_backend_shutdown(RendererBackend* renderer_backend) {
   mfree(vulkan_context.render_complete_semaphores,
         vulkan_context.swapchain_image_count * sizeof(VkSemaphore), MEMORY_TAG_RENDERER);
 
-  vkDestroyCommandPool(vulkan_context.logical_device, vulkan_context.command_pool,
+  vkDestroyCommandPool(vulkan_context.logical_device, vulkan_context.graphics_command_pool,
                        vulkan_context.allocator);
   vkDestroyPipeline(vulkan_context.logical_device, vulkan_context.graphics_pipeline,
                     vulkan_context.allocator);
@@ -319,7 +322,7 @@ b8 vulkan_backend_end_frame(RendererBackend* renderer_backend, f64 delta_time) {
       &vulkan_context.render_complete_semaphores[vulkan_context.current_image_index];
 
   VkResult queue_submit_restult =
-      vkQueueSubmit(vulkan_context.queue, 1, &command_buffer_submit_info,
+      vkQueueSubmit(vulkan_context.graphics_queue, 1, &command_buffer_submit_info,
                     vulkan_context.draw_fences[vulkan_context.current_frame_index]);
 
   if (queue_submit_restult != VK_SUCCESS) {
@@ -339,7 +342,8 @@ b8 vulkan_backend_draw_frame(RendererBackend* renderer_backend) {
   present_info.pSwapchains = &vulkan_context.swapchain;
   present_info.pImageIndices = &vulkan_context.current_image_index;
 
-  VkResult present_swapchain_result = vkQueuePresentKHR(vulkan_context.queue, &present_info);
+  VkResult present_swapchain_result =
+      vkQueuePresentKHR(vulkan_context.graphics_queue, &present_info);
   if (present_swapchain_result == VK_SUBOPTIMAL_KHR) {
     MWARN_CORE("Vulkan present swapchain result: %s", string_VkResult(present_swapchain_result));
   } else if (present_swapchain_result != VK_SUCCESS) {
@@ -628,13 +632,57 @@ static b8 vulkan_create_logical_device() {
     return FALSE;
   }
 
+  for (u32 i = 0; i < queue_family_properties_count; i++) {
+    VkQueueFlags flags = queue_family_properties[i].queueFlags;
+
+    // Prefer dedicated transfer queue
+    if ((flags & VK_QUEUE_TRANSFER_BIT) && !(flags & VK_QUEUE_GRAPHICS_BIT)) {
+      vulkan_context.transfer_queue_family_index = i;
+      queue_family_supported = VK_TRUE;
+      break;
+    }
+  }
+
+  /* queue_family_supported = VK_FALSE; */
+  /* for (u32 i = 0; i < queue_family_properties_count; i++) { */
+  /*   VkResult get_physical_device_surface_support_result = vkGetPhysicalDeviceSurfaceSupportKHR(
+   */
+  /*       vulkan_context.physical_device, i, vulkan_context.surface, &queue_family_supported); */
+
+  /*   if (get_physical_device_surface_support_result != VK_SUCCESS) { */
+  /*     MERROR_CORE("Failed to get vulkan physical device surface support: %s", */
+  /*                 string_VkResult(get_physical_device_surface_support_result)); */
+  /*     return FALSE; */
+  /*   } */
+
+  /*   if ((queue_family_properties[i].queueFlags & VK_QUEUE_TRANSFER_BIT) &&
+   * queue_family_supported) { */
+  /*     vulkan_context.transfer_queue_family_index = i; */
+  /*     break; */
+  /*   } */
+  /* } */
+  /* if (queue_family_supported == VK_FALSE) { */
+  /*   MERROR_CORE("Failed to find suitable queue family on vulkan physical device."); */
+  /*   return FALSE; */
+  /* } */
+
   // Set queue create info
 
   f32 temp_priority = 1.0f;  // @MAGIC_NUMBER
-  VkDeviceQueueCreateInfo device_queue_create_info = {VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
-  device_queue_create_info.queueFamilyIndex = vulkan_context.graphics_queue_family_index;
-  device_queue_create_info.queueCount = 1;  // @MAGIC_NUMBER
-  device_queue_create_info.pQueuePriorities = &temp_priority;
+  VkDeviceQueueCreateInfo device_graphics_queue_create_info = {
+      VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
+  device_graphics_queue_create_info.queueFamilyIndex = vulkan_context.graphics_queue_family_index;
+  device_graphics_queue_create_info.queueCount = 1;  // @MAGIC_NUMBER
+  device_graphics_queue_create_info.pQueuePriorities = &temp_priority;
+
+  VkDeviceQueueCreateInfo device_transfer_queue_create_info = {
+      VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
+  device_transfer_queue_create_info.queueFamilyIndex = vulkan_context.transfer_queue_family_index;
+  device_transfer_queue_create_info.queueCount = 1;  // @MAGIC_NUMBER
+  device_transfer_queue_create_info.pQueuePriorities = &temp_priority;
+
+  VkDeviceQueueCreateInfo device_queue_create_infos[] = {device_graphics_queue_create_info,
+                                                         device_transfer_queue_create_info};
 
   // Enable vulkan11 features
   VkPhysicalDeviceVulkan11Features physical_device_vulkan_11_features = {
@@ -652,8 +700,8 @@ static b8 vulkan_create_logical_device() {
   const char* const device_extension_names[] = MVK_DEVICE_EXTENSION_NAMES;
   VkDeviceCreateInfo device_create_info = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
   device_create_info.pNext = &physical_device_vulkan_13_features;
-  device_create_info.queueCreateInfoCount = 1;
-  device_create_info.pQueueCreateInfos = &device_queue_create_info;
+  device_create_info.queueCreateInfoCount = 2;
+  device_create_info.pQueueCreateInfos = device_queue_create_infos;
   device_create_info.pEnabledFeatures = NULL_PTR;
   device_create_info.enabledExtensionCount = MVK_DEVICE_EXTENSION_COUNT;
   device_create_info.ppEnabledExtensionNames = device_extension_names;
@@ -670,6 +718,11 @@ static b8 vulkan_create_logical_device() {
                 string_VkResult(create_device_result));
     return FALSE;
   }
+  vkGetDeviceQueue(vulkan_context.logical_device, vulkan_context.graphics_queue_family_index, 0,
+                   &vulkan_context.graphics_queue);
+
+  vkGetDeviceQueue(vulkan_context.logical_device, vulkan_context.transfer_queue_family_index, 0,
+                   &vulkan_context.transfer_queue);
   return TRUE;
 }
 
@@ -973,89 +1026,87 @@ static b8 vulkan_create_graphics_pipeline() {
   return TRUE;
 }
 
-static b8 vulkan_create_command_pool() {
-  VkCommandPoolCreateFlags command_pool_create_flags =
+static b8 vulkan_create_command_pools() {
+  VkCommandPoolCreateFlags graphics_command_pool_create_flags =
       VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-  VkCommandPoolCreateInfo command_pool_create_info = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
-  command_pool_create_info.pNext = NULL_PTR;
-  command_pool_create_info.flags = command_pool_create_flags;
-  command_pool_create_info.queueFamilyIndex = vulkan_context.graphics_queue_family_index;
+  VkCommandPoolCreateInfo graphics_command_pool_create_info = {
+      VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+  graphics_command_pool_create_info.pNext = NULL_PTR;
+  graphics_command_pool_create_info.flags = graphics_command_pool_create_flags;
+  graphics_command_pool_create_info.queueFamilyIndex = vulkan_context.graphics_queue_family_index;
 
-  VkResult create_command_pool_result =
-      vkCreateCommandPool(vulkan_context.logical_device, &command_pool_create_info,
-                          vulkan_context.allocator, &vulkan_context.command_pool);
+  VkResult create_graphics_command_pool_result =
+      vkCreateCommandPool(vulkan_context.logical_device, &graphics_command_pool_create_info,
+                          vulkan_context.allocator, &vulkan_context.graphics_command_pool);
 
-  if (create_command_pool_result != VK_SUCCESS) {
+  if (create_graphics_command_pool_result != VK_SUCCESS) {
     MERROR_CORE("Failed to create vulkan command pool: %s",
-                string_VkResult(create_command_pool_result));
+                string_VkResult(create_graphics_command_pool_result));
+    return FALSE;
+  }
+  VkCommandPoolCreateFlags transfer_command_pool_create_flags =
+      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+  VkCommandPoolCreateInfo transfer_command_pool_create_info = {
+      VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+  transfer_command_pool_create_info.pNext = NULL_PTR;
+  transfer_command_pool_create_info.flags = transfer_command_pool_create_flags;
+  transfer_command_pool_create_info.queueFamilyIndex = vulkan_context.transfer_queue_family_index;
+
+  VkResult create_transfer_command_pool_result =
+      vkCreateCommandPool(vulkan_context.logical_device, &transfer_command_pool_create_info,
+                          vulkan_context.allocator, &vulkan_context.transfer_command_pool);
+
+  if (create_transfer_command_pool_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to create vulkan command pool: %s",
+                string_VkResult(create_transfer_command_pool_result));
     return FALSE;
   }
   return TRUE;
 }
 
 static b8 vulkan_create_vertex_buffers() {
-  vulkan_context.vertex_buffer = NULL_PTR;
-  vulkan_context.vertex_buffer_memory = NULL_PTR;
+  /* vulkan_context.vertex_buffer = NULL_PTR; */
+  /* vulkan_context.vertex_buffer_memory = NULL_PTR; */
+  /* vulkan_context.staging_buffer = NULL_PTR; */
+  /* vulkan_context.staging_buffer_mem = NULL_PTR; */
 
-  VkBufferCreateInfo vertex_buffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-  vertex_buffer_create_info.size = sizeof(Vertex) * vulkan_context.vertex_count;
-  vertex_buffer_create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-  vertex_buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  VkDeviceSize buffer_size = vulkan_context.vertex_count * sizeof(Vertex);
 
-  VkResult create_vertex_buffer_result =
-      vkCreateBuffer(vulkan_context.logical_device, &vertex_buffer_create_info,
-                     vulkan_context.allocator, &vulkan_context.vertex_buffer);
-
-  if (create_vertex_buffer_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to create vulkan vertex buffer: %s",
-                string_VkResult(create_vertex_buffer_result));
-    return FALSE;
-  }
-
-  VkMemoryRequirements memory_requirements;
-  vkGetBufferMemoryRequirements(vulkan_context.logical_device, vulkan_context.vertex_buffer,
-                                &memory_requirements);
-
-  VkMemoryAllocateInfo memory_allocate_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-  memory_allocate_info.allocationSize = memory_requirements.size;
-  memory_allocate_info.memoryTypeIndex =
-      get_memory_type(memory_requirements.memoryTypeBits,
-                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-  VkResult allocate_vertex_buffer_memory_result =
-      vkAllocateMemory(vulkan_context.logical_device, &memory_allocate_info,
-                       vulkan_context.allocator, &vulkan_context.vertex_buffer_memory);
-
-  if (allocate_vertex_buffer_memory_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to allocate vulkan vertex buffer memory: %s",
-                string_VkResult(allocate_vertex_buffer_memory_result));
-    return FALSE;
-  }
-
-  VkResult bind_buffer_memory_result =
-      vkBindBufferMemory(vulkan_context.logical_device, vulkan_context.vertex_buffer,
-                         vulkan_context.vertex_buffer_memory, 0);
-
-  if (bind_buffer_memory_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to bind vulkan vertex buffer memory: %s",
-                string_VkResult(bind_buffer_memory_result));
+  if (!create_buffer(&vulkan_context.staging_buffer, &vulkan_context.staging_buffer_mem,
+                     buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+    MERROR_CORE("Failed to create staging buffer");
     return FALSE;
   }
 
   void* vertex_data = NULL_PTR;
-  VkResult map_vertex_memory_result =
-      vkMapMemory(vulkan_context.logical_device, vulkan_context.vertex_buffer_memory, 0,
-                  vertex_buffer_create_info.size, ZERO, &vertex_data);
+  VkResult map_staging_mem_res =
+      vkMapMemory(vulkan_context.logical_device, vulkan_context.staging_buffer_mem, 0, buffer_size,
+                  ZERO, &vertex_data);
 
-  if (map_vertex_memory_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to map vulkan vertex buffer memory: %s",
-                string_VkResult(map_vertex_memory_result));
+  if (map_staging_mem_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to map vulkan staging buffer memory: %s",
+                string_VkResult(map_staging_mem_res));
     return FALSE;
   }
 
-  mcopy_memory(vertex_data, vulkan_context.vertices, vertex_buffer_create_info.size);
-  vkUnmapMemory(vulkan_context.logical_device, vulkan_context.vertex_buffer_memory);
+  mcopy_memory(vertex_data, vulkan_context.vertices, buffer_size);
+  vkUnmapMemory(vulkan_context.logical_device, vulkan_context.staging_buffer_mem);
+
+  if (!create_buffer(&vulkan_context.vertex_buffer, &vulkan_context.vertex_buffer_memory,
+                     buffer_size,
+                     VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+    MERROR_CORE("Failed to create vertex buffer");
+    return FALSE;
+  }
+
+  if (!copy_buffer(&vulkan_context.staging_buffer, &vulkan_context.vertex_buffer, buffer_size)) {
+    MERROR_CORE("Failed to copy staging buffer to vertex buffer");
+    return FALSE;
+  }
 
   return TRUE;
 }
@@ -1064,7 +1115,7 @@ static b8 vulkan_allocate_command_buffers() {
   VkCommandBufferAllocateInfo command_buffer_alloc_info = {
       VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
   command_buffer_alloc_info.pNext = NULL_PTR;
-  command_buffer_alloc_info.commandPool = vulkan_context.command_pool;
+  command_buffer_alloc_info.commandPool = vulkan_context.graphics_command_pool;
   command_buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
   command_buffer_alloc_info.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
 
@@ -1133,7 +1184,7 @@ static b8 vulkan_create_sync_primatives() {
 }
 
 static b8 vulkan_recreate_swapchain(u16 width, u16 height) {
-  VkResult queue_wait_idle_result = vkQueueWaitIdle(vulkan_context.queue);
+  VkResult queue_wait_idle_result = vkQueueWaitIdle(vulkan_context.graphics_queue);
   if (queue_wait_idle_result != VK_SUCCESS) {
     MWARN_CORE("Failed to wait for queue idle while recreating vulkan swapchain: %s",
                string_VkResult(queue_wait_idle_result));
@@ -1204,6 +1255,97 @@ static void transition_image_layout(u32 image_index, VkImageLayout old_layout,
 
   vkCmdPipelineBarrier2(vulkan_context.command_buffers[vulkan_context.current_frame_index],
                         &dependency_info);
+}
+
+static b8 create_buffer(VkBuffer* buffer, VkDeviceMemory* device_mem, VkDeviceSize size,
+                        VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags prop_flags) {
+  u32 queue_family_indices[] = {vulkan_context.transfer_queue_family_index,
+                                vulkan_context.graphics_queue_family_index};
+  VkBufferCreateInfo buffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+  buffer_create_info.size = size;
+  buffer_create_info.usage = usage_flags;
+  buffer_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
+  buffer_create_info.queueFamilyIndexCount = 2;
+  buffer_create_info.pQueueFamilyIndices = queue_family_indices;
+
+  VkResult create_buffer_result = vkCreateBuffer(vulkan_context.logical_device, &buffer_create_info,
+                                                 vulkan_context.allocator, buffer);
+
+  if (create_buffer_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to create vulkan buffer: %s", string_VkResult(create_buffer_result));
+    return FALSE;
+  }
+
+  VkMemoryRequirements buffer_mem_requirements;
+  vkGetBufferMemoryRequirements(vulkan_context.logical_device, *buffer, &buffer_mem_requirements);
+
+  VkMemoryAllocateInfo mem_alloc_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+  mem_alloc_info.allocationSize = buffer_mem_requirements.size;
+  mem_alloc_info.memoryTypeIndex =
+      get_memory_type(buffer_mem_requirements.memoryTypeBits, prop_flags);
+
+  VkResult alloc_mem_res = vkAllocateMemory(vulkan_context.logical_device, &mem_alloc_info,
+                                            vulkan_context.allocator, device_mem);
+  if (alloc_mem_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to allocate vulkan device memory: %s", string_VkResult(alloc_mem_res));
+    return FALSE;
+  }
+
+  VkResult bind_buffer_mem =
+      vkBindBufferMemory(vulkan_context.logical_device, *buffer, *device_mem, 0);
+  if (bind_buffer_mem != VK_SUCCESS) {
+    MERROR_CORE("Failed to bind vulkan buffer memory: %s", string_VkResult(bind_buffer_mem));
+  }
+  return TRUE;
+}
+
+static b8 copy_buffer(VkBuffer* src_buffer, VkBuffer* dst_buffer, VkDeviceSize size) {
+  VkCommandBufferAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+  alloc_info.commandPool = vulkan_context.transfer_command_pool;
+  alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  alloc_info.commandBufferCount = 1;
+
+  VkCommandBuffer copy_cmd_buf;
+  VkResult create_cmd_buf_res =
+      vkAllocateCommandBuffers(vulkan_context.logical_device, &alloc_info, &copy_cmd_buf);
+  if (create_cmd_buf_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to create copy command buffer: %s", string_VkResult(create_cmd_buf_res));
+  }
+
+  VkCommandBufferBeginInfo cmd_buf_begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+  cmd_buf_begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+  VkResult begin_cmd_buf_res = vkBeginCommandBuffer(copy_cmd_buf, &cmd_buf_begin_info);
+  if (begin_cmd_buf_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to begin command buffer: %s", string_VkResult(begin_cmd_buf_res));
+    return FALSE;
+  }
+
+  VkBufferCopy buf_copy = {.srcOffset = 0, .dstOffset = 0, .size = size};
+  vkCmdCopyBuffer(copy_cmd_buf, *src_buffer, *dst_buffer, 1, &buf_copy);
+
+  VkResult end_cmd_buf_res = vkEndCommandBuffer(copy_cmd_buf);
+  if (end_cmd_buf_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to end command buffer: %s", string_VkResult(end_cmd_buf_res));
+    return FALSE;
+  }
+  VkSubmitInfo submit_info = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  submit_info.commandBufferCount = 1;
+  submit_info.pCommandBuffers = &copy_cmd_buf;
+
+  VkResult queue_submit_res =
+      vkQueueSubmit(vulkan_context.transfer_queue, 1, &submit_info, NULL_PTR);
+
+  if (queue_submit_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to submit to queue: %s", string_VkResult(queue_submit_res));
+    return FALSE;
+  }
+
+  VkResult wait_idle_res = vkQueueWaitIdle(vulkan_context.transfer_queue);
+  if (wait_idle_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to wait for queue idle: %s", string_VkResult(wait_idle_res));
+    return FALSE;
+  }
+  return TRUE;
 }
 
 static VkVertexInputBindingDescription get_vertex_binding_description() {

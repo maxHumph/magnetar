@@ -27,7 +27,8 @@ typedef struct VulkanContext {
   VkPhysicalDevice physical_device;
   VkDevice logical_device;
 
-  VkQueue queue;
+  VkQueue graphics_queue;
+  VkQueue transfer_queue;
 
   VkSurfaceKHR surface;
   VkSwapchainKHR swapchain;
@@ -40,6 +41,7 @@ typedef struct VulkanContext {
   VkDebugUtilsMessengerEXT* debug_messenger;
 
   u32 graphics_queue_family_index;
+  u32 transfer_queue_family_index;
 
   u32 swapchain_image_count;
   VkImage* swapchain_images;
@@ -49,7 +51,8 @@ typedef struct VulkanContext {
 
   VkPipeline graphics_pipeline;
 
-  VkCommandPool command_pool;
+  VkCommandPool graphics_command_pool;
+  VkCommandPool transfer_command_pool;
   VkCommandBuffer command_buffers[MAX_FRAMES_IN_FLIGHT];
 
   u32 current_frame_index;
@@ -61,6 +64,8 @@ typedef struct VulkanContext {
   u64 vertex_count;
   Vertex* vertices;
   VkVertexInputBindingDescription vertex_binding_description;
+  VkBuffer staging_buffer;
+  VkDeviceMemory staging_buffer_mem;
   VkBuffer vertex_buffer;
   VkDeviceMemory vertex_buffer_memory;
 

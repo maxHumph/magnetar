@@ -196,7 +196,7 @@ static b8 vulkan_create_graphics_pipeline();  // @TODO: Split this into more ato
  *
  * @return TRUE if the command pool was created successfully, otherwise FALSE.
  */
-static b8 vulkan_create_command_pool();
+static b8 vulkan_create_command_pools();
 
 static b8 vulkan_create_vertex_buffers();
 
@@ -243,6 +243,11 @@ static void transition_image_layout(u32 image_index, VkImageLayout old_layout,
                                     VkAccessFlags2 dst_access_mask,
                                     VkPipelineStageFlags2 src_stage_mask,
                                     VkPipelineStageFlags2 dst_stage_mask);
+
+static b8 create_buffer(VkBuffer* buffer, VkDeviceMemory* device_memory, VkDeviceSize size,
+                        VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags prop_flags);
+
+static b8 copy_buffer(VkBuffer* src_buffer, VkBuffer* dst_buffer, VkDeviceSize size);
 
 static VkVertexInputBindingDescription get_vertex_binding_description();
 

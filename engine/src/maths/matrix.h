@@ -5,50 +5,123 @@
 #pragma once
 
 #include "define.h"
+#include "maths/vector.h"
 
-#define MAT2F32_IDEN {.aa = 1.0f, .ab = 0.0f, .ba = 0.0f, .bb = 1.0f}
+// MAT 2
 
-typedef struct Mat2i32 {
-  i32 aa, ab;
-  i32 ba, bb;
-} Mat2i32;
-
-typedef struct Mat2f32 {
-  f32 aa, ab;
-  f32 ba, bb;
+typedef union Mat2f32 {
+  f32 index[4];
+  struct {
+    Vec2f32 r1;
+    Vec2f32 r2;
+  };
+  struct {
+    f32 e11, e12;
+    f32 e21, e22;
+  };
 } Mat2f32;
 
-Mat2f32 mat2_f32_add(Mat2f32 mat_1, Mat2f32 mat_2) {
-  Mat2f32 new_mat;
-  new_mat.aa = mat_1.aa + mat_2.aa;
-  new_mat.ab = mat_1.ab + mat_2.ab;
-  new_mat.ba = mat_1.ba + mat_2.ba;
-  new_mat.bb = mat_1.bb + mat_2.bb;
-  return new_mat;
+typedef Mat2f32 Mat2;
+
+MGINLINE Mat2 mat2_iden() {
+  return (Mat2){1.0f, 0.0f,   // r1
+                0.0f, 1.0f};  // r2
 }
 
-typedef struct Mat3i32 {
-  i32 aa, ab, ac;
-  i32 ba, bb, bc;
-  i32 ca, cb, cc;
-} Mat3i32;
+MGINLINE Mat2 mat2_add(Mat2 mat_1, Mat2 mat_2) {
+  return (Mat2){mat_1.e11 + mat_2.e11, mat_1.e12 + mat_2.e12, mat_1.e21 + mat_2.e21,
+                mat_1.e22 + mat_2.e22};
+}
 
-typedef struct Mat3f32 {
-  f32 aa, ab, ac;
-  f32 ba, bb, bc;
-  f32 ca, cb, cc;
+MGINLINE Mat2 mat2_sub(Mat2 mat_1, Mat2 mat_2) {
+  return (Mat2){mat_1.e11 - mat_2.e11, mat_1.e12 - mat_2.e12, mat_1.e21 - mat_2.e21,
+                mat_1.e22 - mat_2.e22};
+}
+
+// MAT 3
+
+typedef union Mat3f32 {
+  f32 index[9];
+  struct {
+    Vec3f32 r1;
+    Vec3f32 r2;
+    Vec3f32 r3;
+  };
+  struct {
+    f32 e11, e12, e13;
+    f32 e21, e22, e23;
+    f32 e31, e32, e33;
+  };
 } Mat3f32;
 
-typedef struct Mat4i32 {
-  i32 aa, ab, ac, ad;
-  i32 ba, bb, bc, bd;
-  i32 ca, cb, cc, cd;
-  i32 da, db, dc, dd;
-} Mat4i32;
+typedef Mat3f32 Mat3;
 
-typedef struct Mat4f32 {
-  f32 aa, ab, ac, ad;
-  f32 ba, bb, bc, bd;
-  f32 ca, cb, cc, cd;
-  f32 da, db, dc, dd;
+MGINLINE Mat3 mat3_iden() {
+  return (Mat3){1.0f, 0.0f, 0.0f,   // r1
+                0.0f, 1.0f, 0.0f,   // r2
+                0.0f, 0.0f, 1.0f};  // r3
+}
+
+MGINLINE Mat3 mat3_add(Mat3 mat_1, Mat3 mat_2) {
+  return (Mat3){
+      mat_1.e11 + mat_2.e11, mat_1.e12 + mat_2.e12,
+      mat_1.e13 + mat_2.e13,  // r1
+      mat_1.e21 + mat_2.e21, mat_1.e22 + mat_2.e22,
+      mat_1.e23 + mat_2.e23,  // r2
+      mat_1.e31 + mat_2.e31, mat_1.e32 + mat_2.e32,
+      mat_1.e33 + mat_2.e33  // r3
+  };
+}
+
+MGINLINE Mat3 mat3_sub(Mat3 mat_1, Mat3 mat_2) {
+  return (Mat3){
+      mat_1.e11 - mat_2.e11, mat_1.e12 - mat_2.e12,
+      mat_1.e13 - mat_2.e13,  // r1
+      mat_1.e21 - mat_2.e21, mat_1.e22 - mat_2.e22,
+      mat_1.e23 - mat_2.e23,  // r2
+      mat_1.e31 - mat_2.e31, mat_1.e32 - mat_2.e32,
+      mat_1.e33 - mat_2.e33  // r3
+  };
+}
+
+// MAT 4
+
+typedef union Mat4f32 {
+  f32 index[16];
+  struct {
+    Vec4f32 r1;
+    Vec4f32 r2;
+    Vec4f32 r3;
+    Vec4f32 r4;
+  };
+  struct {
+    f32 e11, e12, e13, e14;
+    f32 e21, e22, e23, e24;
+    f32 e31, e32, e33, e34;
+    f32 e41, e42, e43, e44;
+  };
 } Mat4f32;
+
+typedef Mat4f32 Mat4;
+
+MGINLINE Mat4 mat4_iden() {
+  return (Mat4){
+      1.0f, 0.0f, 0.0f, 0.0f,  // r1
+      0.0f, 1.0f, 0.0f, 0.0f,  // r2
+      0.0f, 0.0f, 1.0f, 0.0f,  // r3
+      0.0f, 0.0f, 0.0f, 1.0f,  // r4
+  };
+}
+
+MGINLINE Mat4 mat4_add(Mat4 mat_1, Mat4 mat_2) {
+  return (Mat4){
+      mat_1.e11 + mat_2.e11, mat_1.e12 + mat_2.e12, mat_1.e13 + mat_2.e13,
+      mat_1.e14 + mat_2.e14,  // r1
+      mat_1.e21 + mat_2.e21, mat_1.e22 + mat_2.e22, mat_1.e23 + mat_2.e23,
+      mat_1.e24 + mat_2.e24,  // r2
+      mat_1.e31 + mat_2.e31, mat_1.e32 + mat_2.e32, mat_1.e33 + mat_2.e33,
+      mat_1.e34 + mat_2.e34,  // r3
+      mat_1.e41 + mat_2.e41, mat_1.e42 + mat_2.e42, mat_1.e43 + mat_2.e43,
+      mat_1.e44 + mat_2.e44,  // r4
+  };
+}

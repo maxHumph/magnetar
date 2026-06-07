@@ -7,6 +7,7 @@
 #include <stddef.h>
 
 #include "define.h"
+#include "maths/vector.h"
 #include "platform/platform.h"
 #include "renderer/renderer_backend.h"
 #include "vulkan/vulkan_core.h"
@@ -47,11 +48,14 @@
 #endif
 
 /**
- * @brief Creates the vulkan instance and sets up needed layers and extensions. (Called by the
- * renderer frontend via function pointers in a RendererBackend object.)
- * @param renderer_backend A pointer to the RendererBackend object.
- * @param application_name The name to give the VkInstance.
- * @param platform_state A pointer to the PlatformState object.
+ * @brief Creates and allocates all required vulkan onject to begin rendering.
+ * @note This is called via function pointers in the renderer frontend.
+ *
+ * @param renderer_backend, A pointer to the RendererBackend object.
+ * @param application_name, The name to give the VkInstance.
+ * @param start_width, The starting width of the window.
+ * @param start_height, The starting height of the window.
+ * @param platform_state, A pointer to the PlatformState object.
  * @return TRUE if vulkan initialized successfully, otherwise FALSE.
  */
 b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* application_name,
@@ -59,53 +63,174 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
 
 /**
  * @brief Destroys the VkInstance and other things that need to be banished to the shadow realm.
- * (Called by the renderer frontend via function pointers in a RendererBackend object.)
- * @param renderer_backend A pointer to the RendererBackend object.
+ * @note This is called via function pointers in the renderer frontend.
+ *
+ * @param renderer_backend, A pointer to the RendererBackend object.
  */
 void vulkan_backend_shutdown(RendererBackend* renderer_backend);
 
+/**
+ * @brief Starts the vulkan command buffer recording and rendering.
+ * @note This is called via function pointers in the renderer frontend.
+ *
+ * @param renderer_backend, A pointer to the RendererBackend object.
+ * @param delta_time,
+ * @return TRUE if the process was started successfully, otherwise FALSE.
+ */
 b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time);
 
+/**
+ * @brief Ends the vulkan command buffer recording and rendering, ready to be presented.
+ * @note This is called via function pointers in the renderer frontend.
+ *
+ * @param renderer_backend, A pointer to the RendererBackend object.
+ * @param delta_time,
+ * @return TRUE if the process was ended successfully, otherwise FALSE.
+ */
 b8 vulkan_backend_end_frame(RendererBackend* renderer_backend, f64 delta_time);
 
+/**
+ * @brief Presents the rendered images to the surface.
+ * @note This is called via function pointers in the renderer frontend.
+ *
+ * @param renderer_backend, A pointer to the RendererBackend object.
+ * @return TRUE if the image was presented successfully, otherwise FALSE
+ */
 b8 vulkan_backend_draw_frame(RendererBackend* renderer_backend);
 
+/**
+ * @brief Called by the renderer frontend whenever the window is resized.
+ *
+ * @param renderer_backend, A pointer to the RendererBackend object.
+ * @param width, The width that the window was resized to.
+ * @param height, The height that the window was resized to.
+ * @return TRUE if the vulkan backend handled the resize successfully, otherwise FALSE.
+ */
 b8 vulkan_backend_on_resize(RendererBackend* renderer_backend, u16 width, u16 height);
 
 // STATIC FUNCTIONS
 
 // Init functions
 
+/**
+ * @brief Creates the vulkan instance.
+ *
+ * @param application_name, The name of the application.
+ * @return TRUE if the vulkan instance was created successfully, otherwise FALSE.
+ */
 static b8 vulkan_create_instance(const char* application_name);
 
+/**
+ * @brief Creates the vulkan debug message and assignes the callback used by the validation layer.
+ *
+ * @return TRUE if the setup was successful, otherwise FALSE.
+ */
 static b8 vulkan_create_debug_messenger();
 
+/**
+ * @brief Retrieves physical device information and chooses a suitable one and assigns it to the
+ * vulkan_context.
+ *
+ * @return TRUE if a suitable device was found, otherwise FALSE.
+ */
 static b8 vulkan_select_physical_device();
 
+/**
+ * @brief Connects vulkan to the platform surface setup in platform.h.
+ *
+ * @param platform_state, A pointer to the platform state.
+ * @return TRUE if surface could be retrieved, otherwise FALSE.
+ */
 static b8 vulkan_get_surface(PlatformState* platform_state);
 
+/**
+ * @brief Sets the surface extent to a specified value OR the value provided by the surface handle.
+ * @note width and heigth must be specified but may not be used if the vulkan surface requires
+ * specific values.
+ *
+ * @param width, The desired width of the surface.
+ * @param height, The desired height of the surface.
+ * @return TRUE if the surface extent was set successfully, otherwise FALSE.
+ */
 static b8 vulkan_set_surface_extent(i16 width, i16 height);
 
+/**
+ * @brief Creates the vulkan logical device from the physical device in vulkan_context.
+ *
+ * @return TRUE if the device was created successfully, otherwise FALSE.
+ */
 static b8 vulkan_create_logical_device();
 
+/**
+ * @brief Creates the vulkan swapchain.
+ *
+ * @param old_swapchain, A handle to the previous swapchain if the swapchain is being recreated,
+ * otherwise VK_NULL_HANDLE.
+ * @return TRUE if the swapchain was created successfully, otherwise FALSE.
+ */
 static b8 vulkan_create_swapchain(VkSwapchainKHR old_swapchain);
 
+/**
+ * @brief Retrives the images from the swapchain and stores them in vulkan_context.
+ *
+ * @return TRUE if the images were retrieved successfully, otherwise FALSE.
+ */
 static b8 vulkan_get_swapchain_images();
 
+/**
+ * @brief Creates the vulkan image views.
+ *
+ * @return TRUE if the image views were created successfully, otherwise FALSE.
+ */
 static b8 vulkan_create_image_views();
 
-static b8 vulkan_create_graphics_pipeline();
+/**
+ * @brief Creates the vulkan graphics pipeline.
+ *
+ * @return TRUE if the pipeline was created successfully, otherwise FALSE.
+ */
+static b8 vulkan_create_graphics_pipeline();  // @TODO: Split this into more atomic functions.
 
+/**
+ * @brief Creates the vulkan command pool
+ *
+ * @return TRUE if the command pool was created successfully, otherwise FALSE.
+ */
 static b8 vulkan_create_command_pool();
 
+/**
+ * @brief Allocated required vulkan command buffers.
+ *
+ * @return TRUE if command buffers could be allocated, otherwise FALSE.
+ */
 static b8 vulkan_allocate_command_buffers();
 
+/**
+ * @brief Creates the vulkan semaphores and fences needed for rendering.
+ *
+ * @return TRUE if the objects were created successfully, otherwise FALSE.
+ */
 static b8 vulkan_create_sync_primatives();
 
+/**
+ * @brief Creates a new swapchain based on the new infomation provided by the vulkan surface and
+ * destroys the old swapchain.
+ * @note width and height may not be used depending on the platform surface.
+ *
+ * @param width, The new width of the surface.
+ * @param height, The new height of the surface
+ * @return TRUE if swapchain was recreated successfully, otherwise FALSE.
+ */
 static b8 vulkan_recreate_swapchain(u16 width, u16 height);
 
+/**
+ * Unimplemented
+ */
 static b8 vulkan_cleanup_swapchain();
 
+/**
+ * @brief Translates vulkan debug callbacks to magnetar log messages and outputs them.
+ */
 static VKAPI_ATTR VkBool32 VKAPI_CALL
 vulkan_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                       VkDebugUtilsMessageTypeFlagsEXT message_types,
@@ -116,3 +241,5 @@ static void transition_image_layout(u32 image_index, VkImageLayout old_layout,
                                     VkAccessFlags2 dst_access_mask,
                                     VkPipelineStageFlags2 src_stage_mask,
                                     VkPipelineStageFlags2 dst_stage_mask);
+
+static VkVertexInputBindingDescription get_vertex_binding_description(Vertex vertex);

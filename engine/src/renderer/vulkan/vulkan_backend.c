@@ -1064,7 +1064,7 @@ static b8 vulkan_recreate_swapchain(u16 width, u16 height) {
   return TRUE;
 }
 
-static b8 vulkan_cleanup_swapchain() { return TRUE; }
+/* static b8 vulkan_cleanup_swapchain() { return TRUE; } */
 
 static void transition_image_layout(u32 image_index, VkImageLayout old_layout,
                                     VkImageLayout new_layout, VkAccessFlags2 src_access_mask,
@@ -1097,4 +1097,12 @@ static void transition_image_layout(u32 image_index, VkImageLayout old_layout,
 
   vkCmdPipelineBarrier2(vulkan_context.command_buffers[vulkan_context.current_frame_index],
                         &dependency_info);
+}
+
+static VkVertexInputBindingDescription get_vertex_binding_description(Vertex vertex) {
+  VkVertexInputBindingDescription out;
+  out.binding = 0;
+  out.stride = sizeof(Vertex);
+  out.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+  return out;
 }

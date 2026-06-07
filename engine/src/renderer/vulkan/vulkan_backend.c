@@ -1,5 +1,6 @@
 #include "vulkan_backend.h"
 
+#include <stddef.h>
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "core/log.h"
@@ -18,6 +19,19 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   vulkan_context.debug_messenger = NULL_PTR;
   vulkan_context.swapchain_extent.width = start_width;
   vulkan_context.swapchain_extent.height = start_height;
+
+  // Test vertices
+  vulkan_context.vertex_count = 3;  // @MAGIC_NUMBER
+  vulkan_context.vertices =
+      mallocate(vulkan_context.vertex_count * sizeof(Vertex), MEMORY_TAG_RENDERER);
+
+  vulkan_context.vertices[0].position = (Vec2){0.0f, -0.5f};
+  vulkan_context.vertices[1].position = (Vec2){0.5f, 0.5f};
+  vulkan_context.vertices[2].position = (Vec2){-0.5f, 0.5f};
+
+  vulkan_context.vertices[0].colour = (Vec3){1.0f, 0.0f, 0.0f};
+  vulkan_context.vertices[1].colour = (Vec3){0.0f, 1.0f, 0.0f};
+  vulkan_context.vertices[2].colour = (Vec3){0.0f, 0.0f, 1.0f};
 
   // CREATE INSTANCE ----------
   if (!vulkan_create_instance(application_name)) {
@@ -49,33 +63,39 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
     return FALSE;
   }
 
-  // CREATE SWAPCHAIN
+  // CREATE SWAPCHAIN ----------
   if (!vulkan_create_swapchain(VK_NULL_HANDLE)) {
     MERROR_CORE("Vulkan Init: Failed to create swapchain.");
     return FALSE;
   }
 
-  // GET SWAPCHAIN IMAGES
+  // GET SWAPCHAIN IMAGES ----------
   if (!vulkan_get_swapchain_images()) {
     MERROR_CORE("Vulkan Init: Failed to get swapchain images.");
     return FALSE;
   }
 
-  // CREATE IMAGE VIEWS
+  // CREATE IMAGE VIEWS ----------
   if (!vulkan_create_image_views()) {
     MERROR_CORE("Vulkan Init: Failed to create image views.");
     return FALSE;
   }
 
-  // CREATE GRAPHICS PIPELINE
+  // CREATE GRAPHICS PIPELINE ----------
   if (!vulkan_create_graphics_pipeline()) {
     MERROR_CORE("Vulkan Init: Failed to create graphics pipeline.");
     return FALSE;
   }
 
-  // CREATE COMMAND POOL
+  // CREATE COMMAND POOL ----------
   if (!vulkan_create_command_pool()) {
     MERROR_CORE("Vulkan Init: Failed to create command pool.");
+    return FALSE;
+  }
+
+  // CREATE VERTEX BUFFERS
+  if (!vulkan_create_vertex_buffers()) {
+    MERROR_CORE("Vulkan Init: Failed to create vertex buffers.");
     return FALSE;
   }
 
@@ -247,7 +267,12 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
   vkCmdSetScissor(vulkan_context.command_buffers[vulkan_context.current_frame_index], 0, 1,
                   &scissor);
 
-  vkCmdDraw(vulkan_context.command_buffers[vulkan_context.current_frame_index], 3, 1, 0, 0);
+  VkDeviceSize temp_offsets[] = {0};  // @TODO: stuff
+  vkCmdBindVertexBuffers(vulkan_context.command_buffers[vulkan_context.current_frame_index], 0, 1,
+                         &vulkan_context.vertex_buffer, temp_offsets);
+
+  vkCmdDraw(vulkan_context.command_buffers[vulkan_context.current_frame_index],
+            vulkan_context.vertex_count, 1, 0, 0);
 
   return TRUE;
 }
@@ -745,8 +770,8 @@ static b8 vulkan_create_graphics_pipeline() {
   // Read shader byte code
   u8* shader_bin = NULL_PTR;
   u64 shader_bin_size = 0;
-  vulkan_read_shader_binary("../engine/src/renderer/vulkan/shaders/hello_triangle.spv",
-                            &shader_bin_size, &shader_bin);
+  vulkan_read_shader_binary("../engine/src/renderer/vulkan/shaders/basic.spv", &shader_bin_size,
+                            &shader_bin);
 
   // Create shader module
   VkShaderModuleCreateInfo shader_module_create_info = {
@@ -799,9 +824,17 @@ static b8 vulkan_create_graphics_pipeline() {
   dynamic_state_create_info.dynamicStateCount = sizeof(dynamic_states) / sizeof(VkDynamicState);
   dynamic_state_create_info.pDynamicStates = dynamic_states;
 
-  // Set vertex input state create info @TODO: Set this up
+  // Set vertex input state create info
+  VkVertexInputBindingDescription vertex_binding_description = get_vertex_binding_description();
+  VkVertexInputAttributeDescription* vertex_attribute_descriptions =
+      get_vertex_attribute_descriptions();
+
   VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info = {
       VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
+  vertex_input_state_create_info.vertexBindingDescriptionCount = 1;
+  vertex_input_state_create_info.pVertexBindingDescriptions = &vertex_binding_description;
+  vertex_input_state_create_info.vertexAttributeDescriptionCount = MVK_VERTEX_ATTRIBUTE_COUNT;
+  vertex_input_state_create_info.pVertexAttributeDescriptions = vertex_attribute_descriptions;
 
   // Set input assembly state create info
   VkPipelineInputAssemblyStateCreateInfo input_assembly_state_create_info = {
@@ -953,6 +986,72 @@ static b8 vulkan_create_command_pool() {
   return TRUE;
 }
 
+static b8 vulkan_create_vertex_buffers() {
+  vulkan_context.vertex_buffer = NULL_PTR;
+  vulkan_context.vertex_buffer_memory = NULL_PTR;
+
+  VkBufferCreateInfo vertex_buffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+  vertex_buffer_create_info.size = sizeof(Vertex) * vulkan_context.vertex_count;
+  vertex_buffer_create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+  vertex_buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+  VkResult create_vertex_buffer_result =
+      vkCreateBuffer(vulkan_context.logical_device, &vertex_buffer_create_info,
+                     vulkan_context.allocator, &vulkan_context.vertex_buffer);
+
+  if (create_vertex_buffer_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to create vulkan vertex buffer: %s",
+                string_VkResult(create_vertex_buffer_result));
+    return FALSE;
+  }
+
+  VkMemoryRequirements memory_requirements;
+  vkGetBufferMemoryRequirements(vulkan_context.logical_device, vulkan_context.vertex_buffer,
+                                &memory_requirements);
+
+  VkMemoryAllocateInfo memory_allocate_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+  memory_allocate_info.allocationSize = memory_requirements.size;
+  memory_allocate_info.memoryTypeIndex =
+      get_memory_type(memory_requirements.memoryTypeBits,
+                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+  VkResult allocate_vertex_buffer_memory_result =
+      vkAllocateMemory(vulkan_context.logical_device, &memory_allocate_info,
+                       vulkan_context.allocator, &vulkan_context.vertex_buffer_memory);
+
+  if (allocate_vertex_buffer_memory_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to allocate vulkan vertex buffer memory: %s",
+                string_VkResult(allocate_vertex_buffer_memory_result));
+    return FALSE;
+  }
+
+  VkResult bind_buffer_memory_result =
+      vkBindBufferMemory(vulkan_context.logical_device, vulkan_context.vertex_buffer,
+                         vulkan_context.vertex_buffer_memory, 0);
+
+  if (bind_buffer_memory_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to bind vulkan vertex buffer memory: %s",
+                string_VkResult(bind_buffer_memory_result));
+    return FALSE;
+  }
+
+  void* vertex_data = NULL_PTR;
+  VkResult map_vertex_memory_result =
+      vkMapMemory(vulkan_context.logical_device, vulkan_context.vertex_buffer_memory, 0,
+                  vertex_buffer_create_info.size, ZERO, &vertex_data);
+
+  if (map_vertex_memory_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to map vulkan vertex buffer memory: %s",
+                string_VkResult(map_vertex_memory_result));
+    return FALSE;
+  }
+
+  mcopy_memory(vertex_data, vulkan_context.vertices, vertex_buffer_create_info.size);
+  vkUnmapMemory(vulkan_context.logical_device, vulkan_context.vertex_buffer_memory);
+
+  return TRUE;
+}
+
 static b8 vulkan_allocate_command_buffers() {
   VkCommandBufferAllocateInfo command_buffer_alloc_info = {
       VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
@@ -1099,10 +1198,40 @@ static void transition_image_layout(u32 image_index, VkImageLayout old_layout,
                         &dependency_info);
 }
 
-static VkVertexInputBindingDescription get_vertex_binding_description(Vertex vertex) {
+static VkVertexInputBindingDescription get_vertex_binding_description() {
   VkVertexInputBindingDescription out;
   out.binding = 0;
   out.stride = sizeof(Vertex);
   out.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
   return out;
+}
+
+static VkVertexInputAttributeDescription* get_vertex_attribute_descriptions() {
+  static VkVertexInputAttributeDescription out[] = {{
+                                                        .location = 0,
+                                                        .binding = 0,
+                                                        .format = VK_FORMAT_R32G32_SFLOAT,
+                                                        .offset = offsetof(Vertex, position),
+                                                    },
+                                                    {
+                                                        .location = 1,
+                                                        .binding = 0,
+                                                        .format = VK_FORMAT_R32G32B32_SFLOAT,
+                                                        .offset = offsetof(Vertex, colour),
+                                                    }};
+  return out;
+}
+
+static u32 get_memory_type(u32 type_filter, VkMemoryPropertyFlags props) {
+  VkPhysicalDeviceMemoryProperties memory_properties;
+  vkGetPhysicalDeviceMemoryProperties(vulkan_context.physical_device, &memory_properties);
+
+  for (u32 i = 0; i < memory_properties.memoryTypeCount; i++) {
+    if ((type_filter & (1 << i)) &&
+        (memory_properties.memoryTypes[i].propertyFlags & props) == props) {
+      return i;
+    }
+  }
+  MERROR_CORE("Failed to find memory type.");
+  return UINT32_MAX;
 }

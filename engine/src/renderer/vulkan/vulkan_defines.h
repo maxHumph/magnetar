@@ -8,15 +8,18 @@
 
 #include "define.h"
 #include "maths/vector.h"
+#include "vulkan/vulkan_core.h"
 
 #define MAX_FRAMES_IN_FLIGHT 2
+
+#define MVK_VERTEX_ATTRIBUTE_COUNT 2
 
 /**
  * @brief Stores vertex data for use i vertex buffers.
  */
 typedef struct Vertex {
   Vec2 position;
-  Vec2 colour;
+  Vec3 colour;
 } Vertex;
 
 typedef struct VulkanContext {
@@ -55,8 +58,10 @@ typedef struct VulkanContext {
   VkSemaphore* render_complete_semaphores;
   VkFence draw_fences[MAX_FRAMES_IN_FLIGHT];
 
-  u64 vertex_buffer_length;
-  Vertex* vertex_buffer;
+  u64 vertex_count;
+  Vertex* vertices;
   VkVertexInputBindingDescription vertex_binding_description;
+  VkBuffer vertex_buffer;
+  VkDeviceMemory vertex_buffer_memory;
 
 } VulkanContext;

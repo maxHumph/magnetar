@@ -198,6 +198,8 @@ static b8 vulkan_create_graphics_pipeline();  // @TODO: Split this into more ato
  */
 static b8 vulkan_create_command_pool();
 
+static b8 vulkan_create_vertex_buffers();
+
 /**
  * @brief Allocated required vulkan command buffers.
  *
@@ -242,4 +244,8 @@ static void transition_image_layout(u32 image_index, VkImageLayout old_layout,
                                     VkPipelineStageFlags2 src_stage_mask,
                                     VkPipelineStageFlags2 dst_stage_mask);
 
-static VkVertexInputBindingDescription get_vertex_binding_description(Vertex vertex);
+static VkVertexInputBindingDescription get_vertex_binding_description();
+
+static VkVertexInputAttributeDescription* get_vertex_attribute_descriptions();
+
+static u32 get_memory_type(u32 type_filter, VkMemoryPropertyFlags props);

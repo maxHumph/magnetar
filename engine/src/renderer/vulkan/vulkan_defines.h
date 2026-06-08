@@ -64,9 +64,16 @@ typedef struct VulkanContext {
   u64 vertex_count;
   Vertex* vertices;
   VkVertexInputBindingDescription vertex_binding_description;
-  VkBuffer staging_buffer;
-  VkDeviceMemory staging_buffer_mem;
+  VkBuffer staging_vertex_buffer;
+  VkDeviceMemory staging_vertex_buffer_mem;
   VkBuffer vertex_buffer;
   VkDeviceMemory vertex_buffer_memory;
+
+  u64 index_count;
+  u32* indices;
+  VkBuffer staging_index_buffer;
+  VkDeviceMemory staging_index_buffer_mem;
+  VkBuffer index_buffer;
+  VkDeviceMemory index_buffer_mem;
 
 } VulkanContext;

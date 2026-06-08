@@ -200,6 +200,8 @@ static b8 vulkan_create_command_pools();
 
 static b8 vulkan_create_vertex_buffers();
 
+static b8 vulkan_create_index_buffer();
+
 /**
  * @brief Allocated required vulkan command buffers.
  *

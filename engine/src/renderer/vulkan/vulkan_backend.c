@@ -21,25 +21,23 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   vulkan_context.swapchain_extent.height = start_height;
 
   // Test vertices
-  vulkan_context.vertex_count = 6;  // @MAGIC_NUMBER
+  vulkan_context.vertex_count = 4;  // @MAGIC_NUMBER
   vulkan_context.vertices =
       mallocate(vulkan_context.vertex_count * sizeof(Vertex), MEMORY_TAG_RENDERER);
 
   vulkan_context.vertices[0].position = (Vec2){-0.5f, -0.5f};
-  vulkan_context.vertices[1].position = (Vec2){0.0f, 0.5f};
-  vulkan_context.vertices[2].position = (Vec2){-1.0f, 0.5f};
-
-  vulkan_context.vertices[3].position = (Vec2){0.5f, -0.5f};
-  vulkan_context.vertices[4].position = (Vec2){1.0f, 0.5f};
-  vulkan_context.vertices[5].position = (Vec2){0.0f, 0.5f};
+  vulkan_context.vertices[1].position = (Vec2){0.5f, -0.5f};
+  vulkan_context.vertices[2].position = (Vec2){0.5f, 0.5f};
+  vulkan_context.vertices[3].position = (Vec2){-0.5f, 0.5f};
 
   vulkan_context.vertices[0].colour = (Vec3){1.0f, 0.0f, 0.0f};
   vulkan_context.vertices[1].colour = (Vec3){0.0f, 1.0f, 0.0f};
   vulkan_context.vertices[2].colour = (Vec3){0.0f, 0.0f, 1.0f};
+  vulkan_context.vertices[3].colour = (Vec3){0.0f, 0.0f, 0.0f};
 
-  vulkan_context.vertices[3].colour = (Vec3){1.0f, 0.0f, 0.0f};
-  vulkan_context.vertices[4].colour = (Vec3){0.0f, 0.0f, 1.0f};
-  vulkan_context.vertices[5].colour = (Vec3){0.0f, 1.0f, 0.0f};
+  vulkan_context.index_count = 6;
+  u32 indices[] = {0, 1, 2, 0, 2, 3};
+  vulkan_context.indices = indices;
 
   // CREATE INSTANCE ----------
   if (!vulkan_create_instance(application_name)) {
@@ -101,19 +99,25 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
     return FALSE;
   }
 
-  // CREATE VERTEX BUFFERS
+  // CREATE VERTEX BUFFERS ----------
   if (!vulkan_create_vertex_buffers()) {
     MERROR_CORE("Vulkan Init: Failed to create vertex buffers.");
     return FALSE;
   }
 
-  // ALLOC COMMAND BUFFERS
+  // CREATE INDEX BUFFER ----------
+  if (!vulkan_create_index_buffer()) {
+    MERROR_CORE("Vulkan Init: Failed to create index buffer.");
+    return FALSE;
+  }
+
+  // ALLOC COMMAND BUFFERS ----------
   if (!vulkan_allocate_command_buffers()) {
     MERROR_CORE("Vulkan Init: Failed to allocate command buffers.");
     return FALSE;
   }
 
-  // CREATE SYNC PRIMS
+  // CREATE SYNC PRIMS ----------
   if (!vulkan_create_sync_primatives()) {
     MERROR_CORE("Vulkan Init: Failed to create syncronisation objects.");
     return FALSE;
@@ -281,9 +285,13 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
   VkDeviceSize temp_offsets[] = {0};  // @TODO: stuff
   vkCmdBindVertexBuffers(vulkan_context.command_buffers[vulkan_context.current_frame_index], 0, 1,
                          &vulkan_context.vertex_buffer, temp_offsets);
+  vkCmdBindIndexBuffer(vulkan_context.command_buffers[vulkan_context.current_frame_index],
+                       vulkan_context.index_buffer, 0, VK_INDEX_TYPE_UINT32);
 
-  vkCmdDraw(vulkan_context.command_buffers[vulkan_context.current_frame_index],
-            vulkan_context.vertex_count, 1, 0, 0);
+  /* vkCmdDraw(vulkan_context.command_buffers[vulkan_context.current_frame_index], */
+  /*           vulkan_context.vertex_count, 1, 0, 0); */
+  vkCmdDrawIndexed(vulkan_context.command_buffers[vulkan_context.current_frame_index],
+                   vulkan_context.index_count, 1, 0, 0, 0);
 
   return TRUE;
 }
@@ -1069,13 +1077,14 @@ static b8 vulkan_create_command_pools() {
 static b8 vulkan_create_vertex_buffers() {
   /* vulkan_context.vertex_buffer = NULL_PTR; */
   /* vulkan_context.vertex_buffer_memory = NULL_PTR; */
-  /* vulkan_context.staging_buffer = NULL_PTR; */
-  /* vulkan_context.staging_buffer_mem = NULL_PTR; */
+  /* vulkan_context.staging_vertex_buffer = NULL_PTR; */
+  /* vulkan_context.staging_vertex_buffer_mem = NULL_PTR; */
 
   VkDeviceSize buffer_size = vulkan_context.vertex_count * sizeof(Vertex);
 
-  if (!create_buffer(&vulkan_context.staging_buffer, &vulkan_context.staging_buffer_mem,
-                     buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+  if (!create_buffer(&vulkan_context.staging_vertex_buffer,
+                     &vulkan_context.staging_vertex_buffer_mem, buffer_size,
+                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
     MERROR_CORE("Failed to create staging buffer");
     return FALSE;
@@ -1083,8 +1092,8 @@ static b8 vulkan_create_vertex_buffers() {
 
   void* vertex_data = NULL_PTR;
   VkResult map_staging_mem_res =
-      vkMapMemory(vulkan_context.logical_device, vulkan_context.staging_buffer_mem, 0, buffer_size,
-                  ZERO, &vertex_data);
+      vkMapMemory(vulkan_context.logical_device, vulkan_context.staging_vertex_buffer_mem, 0,
+                  buffer_size, ZERO, &vertex_data);
 
   if (map_staging_mem_res != VK_SUCCESS) {
     MERROR_CORE("Failed to map vulkan staging buffer memory: %s",
@@ -1093,7 +1102,7 @@ static b8 vulkan_create_vertex_buffers() {
   }
 
   mcopy_memory(vertex_data, vulkan_context.vertices, buffer_size);
-  vkUnmapMemory(vulkan_context.logical_device, vulkan_context.staging_buffer_mem);
+  vkUnmapMemory(vulkan_context.logical_device, vulkan_context.staging_vertex_buffer_mem);
 
   if (!create_buffer(&vulkan_context.vertex_buffer, &vulkan_context.vertex_buffer_memory,
                      buffer_size,
@@ -1103,11 +1112,49 @@ static b8 vulkan_create_vertex_buffers() {
     return FALSE;
   }
 
-  if (!copy_buffer(&vulkan_context.staging_buffer, &vulkan_context.vertex_buffer, buffer_size)) {
+  if (!copy_buffer(&vulkan_context.staging_vertex_buffer, &vulkan_context.vertex_buffer,
+                   buffer_size)) {
     MERROR_CORE("Failed to copy staging buffer to vertex buffer");
     return FALSE;
   }
 
+  return TRUE;
+}
+
+static b8 vulkan_create_index_buffer() {
+  VkDeviceSize buffer_size = sizeof(vulkan_context.indices[0]) * vulkan_context.index_count;
+
+  if (!create_buffer(&vulkan_context.staging_index_buffer, &vulkan_context.staging_index_buffer_mem,
+                     buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+    MERROR_CORE("Failed to create staging index buffer");
+    return FALSE;
+  }
+
+  void* index_data = NULL_PTR;
+  VkResult map_mem_res =
+      vkMapMemory(vulkan_context.logical_device, vulkan_context.staging_index_buffer_mem, 0,
+                  buffer_size, ZERO, &index_data);
+  if (map_mem_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to map index staging index buffer memory: %s",
+                string_VkResult(map_mem_res));
+    return FALSE;
+  }
+  mcopy_memory(index_data, vulkan_context.indices, buffer_size);
+  vkUnmapMemory(vulkan_context.logical_device, vulkan_context.staging_index_buffer_mem);
+
+  if (!create_buffer(&vulkan_context.index_buffer, &vulkan_context.index_buffer_mem, buffer_size,
+                     VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+    MERROR_CORE("Failed to create index buffer");
+    return FALSE;
+  }
+
+  if (!copy_buffer(&vulkan_context.staging_index_buffer, &vulkan_context.index_buffer,
+                   buffer_size)) {
+    MERROR_CORE("Failed to copy from staging to index buffer");
+    return FALSE;
+  }
   return TRUE;
 }
 

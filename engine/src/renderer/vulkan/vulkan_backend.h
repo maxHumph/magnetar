@@ -184,6 +184,8 @@ static b8 vulkan_get_swapchain_images();
  */
 static b8 vulkan_create_image_views();
 
+static b8 vulkan_create_descriptor_set_layout();
+
 /**
  * @brief Creates the vulkan graphics pipeline.
  *

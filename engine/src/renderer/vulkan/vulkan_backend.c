@@ -835,6 +835,13 @@ static b8 vulkan_create_image_views() {
   return TRUE;
 }
 
+static b8 vulkan_create_descriptor_set_layout() {
+  VkDescriptorSetLayoutBinding mvp_layout_binding;
+  mvp_layout_binding.binding = 0;
+  
+  return TRUE;
+}  
+
 static b8 vulkan_create_graphics_pipeline() {
   // Read shader byte code
   u8* shader_bin = NULL_PTR;

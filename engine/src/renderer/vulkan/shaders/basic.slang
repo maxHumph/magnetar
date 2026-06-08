@@ -1,7 +1,14 @@
 struct VSInput {
-    float2 in_position;
-    float3 in_colour;
+    float2 position;
+    float3 colour;
 };  
+
+struct MVPMat {
+    float4x4 model;
+    float4x4 view;
+    float4x4 proj;
+};
+ConstantBuffer<MVPMat> mvp_mat;
 
 struct VSOutput {
     float4 position : SV_Position;
@@ -11,8 +18,8 @@ struct VSOutput {
 [shader("vertex")]
 VSOutput vertMain(VSInput input) {
     VSOutput output;
-    output.position = float4(input.in_position, 0.0, 1.0);
-    output.colour = input.in_colour;
+    output.position = mul(mvp_mat.proj, mul(mvp_mat.view, mul(mvp_mat.model, float4(input.position, 0.0, 1.0))));
+    output.colour = input.colour;
     return output;
 }
 

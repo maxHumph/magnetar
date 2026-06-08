@@ -7,6 +7,7 @@
 #include <vulkan/vulkan.h>
 
 #include "define.h"
+#include "maths/matrix.h"
 #include "maths/vector.h"
 #include "vulkan/vulkan_core.h"
 
@@ -21,6 +22,12 @@ typedef struct Vertex {
   Vec2 position;
   Vec3 colour;
 } Vertex;
+
+typedef struct MVPMat {
+  Mat4 model;
+  Mat4 view;
+  Mat4 proj;
+} MVPMat;
 
 typedef struct VulkanContext {
   VkInstance instance;

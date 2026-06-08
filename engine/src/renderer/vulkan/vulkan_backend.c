@@ -1577,7 +1577,7 @@ static u32 get_memory_type(u32 type_filter, VkMemoryPropertyFlags props) {
 }
 
 static b8 update_uniform_buffer() {
-  x += 0.001f;
+  x += 0.004f;
   if (x >= 1.0f) {
     x = 0.0f;
   }

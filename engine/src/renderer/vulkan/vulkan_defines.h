@@ -57,6 +57,7 @@ typedef struct VulkanContext {
   VkExtent2D swapchain_extent;
 
   VkPipeline graphics_pipeline;
+  VkPipelineLayout pipeline_layout;
 
   VkCommandPool graphics_command_pool;
   VkCommandPool transfer_command_pool;
@@ -82,5 +83,13 @@ typedef struct VulkanContext {
   VkDeviceMemory staging_index_buffer_mem;
   VkBuffer index_buffer;
   VkDeviceMemory index_buffer_mem;
+
+  VkDescriptorSetLayout descriptor_set_layout;
+  VkDescriptorPool descriptor_pool;
+  VkDescriptorSet descriptor_sets[MAX_FRAMES_IN_FLIGHT];
+
+  VkBuffer uniform_buffers[MAX_FRAMES_IN_FLIGHT];
+  VkDeviceMemory uniform_buffer_mem[MAX_FRAMES_IN_FLIGHT];
+  void* uniform_buffer_mem_mapped[MAX_FRAMES_IN_FLIGHT];
 
 } VulkanContext;

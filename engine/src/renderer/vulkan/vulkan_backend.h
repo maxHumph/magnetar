@@ -204,6 +204,12 @@ static b8 vulkan_create_vertex_buffers();
 
 static b8 vulkan_create_index_buffer();
 
+static b8 vulkan_create_uniform_buffers();
+
+static b8 vulkan_create_descriptor_pool();
+
+static b8 vulkan_create_descriptor_sets();
+
 /**
  * @brief Allocated required vulkan command buffers.
  *
@@ -258,3 +264,5 @@ static VkVertexInputBindingDescription get_vertex_binding_description();
 static VkVertexInputAttributeDescription* get_vertex_attribute_descriptions();
 
 static u32 get_memory_type(u32 type_filter, VkMemoryPropertyFlags props);
+
+static b8 update_uniform_buffer();

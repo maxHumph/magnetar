@@ -13,6 +13,9 @@
 
 static VulkanContext vulkan_context = {};
 
+static f32 x = 0;
+static b8 toggle = TRUE;
+
 b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* application_name,
                        i16 start_width, i16 start_height, PlatformState* platform_state) {
   vulkan_context.allocator = NULL_PTR;
@@ -84,6 +87,30 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   // CREATE IMAGE VIEWS ----------
   if (!vulkan_create_image_views()) {
     MERROR_CORE("Vulkan Init: Failed to create image views.");
+    return FALSE;
+  }
+
+  // CREATE DESCRIPTOR SET LAYOUT ----------
+  if (!vulkan_create_descriptor_set_layout()) {
+    MERROR_CORE("Vulkan Init: Failed to create descriptor set layout.");
+    return FALSE;
+  }
+
+  // CREATE DESCRIPTOR POOL ----------
+  if (!vulkan_create_descriptor_pool()) {
+    MERROR_CORE("Vulkan Init: Failed to create descriptor pool");
+    return FALSE;
+  }
+
+  // CREATE UNIFORM BUFFERS ----------
+  if (!vulkan_create_uniform_buffers()) {
+    MERROR_CORE("Vulkan Init: Failed to create uniform buffers.");
+    return FALSE;
+  }
+
+  // CREATE DESCRIPTOR SETS ----------
+  if (!vulkan_create_descriptor_sets()) {
+    MERROR_CORE("Vukan Init: Failed to create descriptor sets");
     return FALSE;
   }
 
@@ -288,8 +315,11 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
   vkCmdBindIndexBuffer(vulkan_context.command_buffers[vulkan_context.current_frame_index],
                        vulkan_context.index_buffer, 0, VK_INDEX_TYPE_UINT32);
 
-  /* vkCmdDraw(vulkan_context.command_buffers[vulkan_context.current_frame_index], */
-  /*           vulkan_context.vertex_count, 1, 0, 0); */
+  vkCmdBindDescriptorSets(vulkan_context.command_buffers[vulkan_context.current_frame_index],
+                          VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_context.pipeline_layout, 0, 1,
+                          &vulkan_context.descriptor_sets[vulkan_context.current_frame_index], 0,
+                          NULL_PTR);
+
   vkCmdDrawIndexed(vulkan_context.command_buffers[vulkan_context.current_frame_index],
                    vulkan_context.index_count, 1, 0, 0, 0);
 
@@ -315,6 +345,9 @@ b8 vulkan_backend_end_frame(RendererBackend* renderer_backend, f64 delta_time) {
   }
 
   VkPipelineStageFlags wait_dst_stage_flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+  // @TODO: Update Uniform buffer
+  update_uniform_buffer();
 
   VkSubmitInfo command_buffer_submit_info = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
   command_buffer_submit_info.pNext = NULL_PTR;
@@ -836,11 +869,28 @@ static b8 vulkan_create_image_views() {
 }
 
 static b8 vulkan_create_descriptor_set_layout() {
-  VkDescriptorSetLayoutBinding mvp_layout_binding;
+  VkDescriptorSetLayoutBinding mvp_layout_binding = {};
   mvp_layout_binding.binding = 0;
-  
+  mvp_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  mvp_layout_binding.descriptorCount = 1;
+  mvp_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+  VkDescriptorSetLayoutCreateInfo descriptor_set_layout_create_info = {
+      VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
+  descriptor_set_layout_create_info.bindingCount = 1;
+  descriptor_set_layout_create_info.pBindings = &mvp_layout_binding;
+
+  VkResult create_descriptor_set_layout_res =
+      vkCreateDescriptorSetLayout(vulkan_context.logical_device, &descriptor_set_layout_create_info,
+                                  vulkan_context.allocator, &vulkan_context.descriptor_set_layout);
+  if (create_descriptor_set_layout_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to create descriptor set layout: %s",
+                string_VkResult(create_descriptor_set_layout_res));
+    return FALSE;
+  }
+
   return TRUE;
-}  
+}
 
 static b8 vulkan_create_graphics_pipeline() {
   // Read shader byte code
@@ -991,13 +1041,13 @@ static b8 vulkan_create_graphics_pipeline() {
   VkPipelineLayoutCreateInfo pipeline_layout_create_info = {
       VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
   pipeline_layout_create_info.pNext = NULL_PTR;
-  pipeline_layout_create_info.setLayoutCount = 0;
+  pipeline_layout_create_info.setLayoutCount = 1;
+  pipeline_layout_create_info.pSetLayouts = &vulkan_context.descriptor_set_layout;
   pipeline_layout_create_info.pushConstantRangeCount = 0;
 
-  VkPipelineLayout pipeline_layout;
   VkResult create_pipeline_layout_result =
       vkCreatePipelineLayout(vulkan_context.logical_device, &pipeline_layout_create_info,
-                             vulkan_context.allocator, &pipeline_layout);
+                             vulkan_context.allocator, &vulkan_context.pipeline_layout);
   if (create_pipeline_layout_result != VK_SUCCESS) {
     MERROR_CORE("Failed to create vulkan pipeline layout: %s",
                 string_VkResult(create_pipeline_layout_result));
@@ -1025,7 +1075,7 @@ static b8 vulkan_create_graphics_pipeline() {
   graphics_pipeline_create_info.pDepthStencilState = NULL_PTR;
   graphics_pipeline_create_info.pColorBlendState = &color_blend_state_create_info;
   graphics_pipeline_create_info.pDynamicState = &dynamic_state_create_info;
-  graphics_pipeline_create_info.layout = pipeline_layout;
+  graphics_pipeline_create_info.layout = vulkan_context.pipeline_layout;
   graphics_pipeline_create_info.renderPass = NULL_PTR;
 
   // Create graphics pipeline
@@ -1162,6 +1212,92 @@ static b8 vulkan_create_index_buffer() {
     MERROR_CORE("Failed to copy from staging to index buffer");
     return FALSE;
   }
+  return TRUE;
+}
+
+static b8 vulkan_create_uniform_buffers() {
+  VkDeviceSize buffer_size = sizeof(MVPMat);
+
+  for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    if (!create_buffer(
+            &vulkan_context.uniform_buffers[i], &vulkan_context.uniform_buffer_mem[i], buffer_size,
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+      MERROR_CORE("Failed to create uniform buffer");
+      return FALSE;
+    }
+
+    VkResult map_mem_res =
+        vkMapMemory(vulkan_context.logical_device, vulkan_context.uniform_buffer_mem[i], 0,
+                    buffer_size, ZERO, &vulkan_context.uniform_buffer_mem_mapped[i]);
+    if (map_mem_res != VK_SUCCESS) {
+      MERROR_CORE("Failed to map uniform buffer memory: %s", string_VkResult(map_mem_res));
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+static b8 vulkan_create_descriptor_pool() {
+  VkDescriptorPoolSize descriptor_pool_size = {.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                               .descriptorCount = MAX_FRAMES_IN_FLIGHT};
+
+  VkDescriptorPoolCreateInfo descriptor_pool_create_info = {
+      VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+  descriptor_pool_create_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+  descriptor_pool_create_info.maxSets = MAX_FRAMES_IN_FLIGHT;
+  descriptor_pool_create_info.poolSizeCount = 1;
+  descriptor_pool_create_info.pPoolSizes = &descriptor_pool_size;
+
+  VkResult create_descriptor_pool_res =
+      vkCreateDescriptorPool(vulkan_context.logical_device, &descriptor_pool_create_info,
+                             vulkan_context.allocator, &vulkan_context.descriptor_pool);
+  if (create_descriptor_pool_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to create descriptor pool: %s",
+                string_VkResult(create_descriptor_pool_res));
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+static b8 vulkan_create_descriptor_sets() {
+  VkDescriptorSetLayout layouts[MAX_FRAMES_IN_FLIGHT];
+  for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    layouts[i] = vulkan_context.descriptor_set_layout;
+  }
+
+  VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+  alloc_info.descriptorPool = vulkan_context.descriptor_pool;
+  alloc_info.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
+  alloc_info.pSetLayouts = layouts;
+
+  VkResult alloc_descriptor_set_res = vkAllocateDescriptorSets(
+      vulkan_context.logical_device, &alloc_info, vulkan_context.descriptor_sets);
+  if (alloc_descriptor_set_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to allocate descriptor sets: %s",
+                string_VkResult(alloc_descriptor_set_res));
+    return FALSE;
+  }
+
+  for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    VkDescriptorBufferInfo buffer_info;
+    buffer_info.buffer = vulkan_context.uniform_buffers[i];
+    buffer_info.offset = 0;
+    buffer_info.range = VK_WHOLE_SIZE;
+
+    VkWriteDescriptorSet descriptor_write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+    descriptor_write.dstSet = vulkan_context.descriptor_sets[i];
+    descriptor_write.dstBinding = 0;
+    descriptor_write.dstArrayElement = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_write.pBufferInfo = &buffer_info;
+
+    vkUpdateDescriptorSets(vulkan_context.logical_device, 1, &descriptor_write, 0, NULL_PTR);
+  }
+
   return TRUE;
 }
 
@@ -1438,4 +1574,24 @@ static u32 get_memory_type(u32 type_filter, VkMemoryPropertyFlags props) {
   }
   MERROR_CORE("Failed to find memory type.");
   return UINT32_MAX;
+}
+
+static b8 update_uniform_buffer() {
+  x += 0.001f;
+  if (x >= 1.0f) {
+    x = 0.0f;
+  }
+  MVPMat mvp_mat;
+  mvp_mat.model = (Mat4){
+      x,    -x,   0.0f, 0.0f,  // r1
+      x,    x,    0.0f, 0.0f,  // r2
+      0.0f, 0.0f, 1.0f, 0.0f,  // r3
+      0.0f, 0.0f, 0.0f, 1.0f,  // r4
+  };
+  mvp_mat.view = mat4_iden();
+  mvp_mat.proj = mat4_iden();
+
+  mcopy_memory(vulkan_context.uniform_buffer_mem_mapped[vulkan_context.current_frame_index],
+               &mvp_mat, sizeof(mvp_mat));
+  return TRUE;
 }

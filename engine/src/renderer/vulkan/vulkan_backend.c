@@ -1062,7 +1062,7 @@ static b8 vulkan_create_graphics_pipeline() {
   rasterization_state_create_info.rasterizerDiscardEnable = VK_FALSE;
   rasterization_state_create_info.polygonMode = VK_POLYGON_MODE_FILL;
   rasterization_state_create_info.cullMode = cull_mode_flags;
-  rasterization_state_create_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+  rasterization_state_create_info.frontFace = VK_FRONT_FACE_CLOCKWISE;
   rasterization_state_create_info.depthBiasEnable = VK_FALSE;
   rasterization_state_create_info.lineWidth = 1.0f;  // @MAGIC_NUMBER
 
@@ -1643,14 +1643,14 @@ static b8 update_uniform_buffer() {
     1.0f, 0.0f, 0.0f,  0.0f,
     0.0f, 1.0f, 0.0f,  0.0f,
     0.0f, 0.0f, 1.0f, 0.0f,
-    0.0f, 0.0f, -3.0f,  1.0f
+    0.0f, 0.0f, -2.0f,  1.0f
   };
 
   mvp_mat.model = mat4_mul(mat4_from_quat(quat_from_euler((Vec3){0.0f, M_TO_RAD(x), M_TO_RAD(x)})), model_tran);
+  //mat4_print(mvp_mat.model);
   mvp_mat.view = mat4_iden();
   mvp_mat.proj = mat4_perspective(M_TO_RAD(90.0f), (f32)vulkan_context.swapchain_extent.width / (f32)vulkan_context.swapchain_extent.height, 0.1f, 1000.0f);
   mvp_mat.proj.e22 *= -1.0f;
-  mat4_print(mvp_mat.proj);
   mcopy_memory(vulkan_context.uniform_buffer_mem_mapped[vulkan_context.current_frame_index],
                &mvp_mat, sizeof(mvp_mat));
   return TRUE;

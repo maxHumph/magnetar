@@ -9,6 +9,7 @@
 #include "platform/platform.h"
 #include "renderer/renderer_frontend.h"
 
+
 typedef struct ApplicationState {
   Game* game_instance;
 
@@ -127,6 +128,7 @@ MGAPI b8 application_run() {
 
       f64 frame_end_time = platform_get_time_abs();
       f64 frame_time = frame_end_time - frame_start_time;
+
 
       if (frame_time < frame_target_time) {
         platform_sleep(1000 * (frame_target_time - frame_time));

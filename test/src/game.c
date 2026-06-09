@@ -12,7 +12,7 @@ b8 game_initalize(Game* game_instance) {
 
   Vec4 vec_1 = vec4_create(2.0f, 3.0f, 0.0f, 1.0f);
 
-  Mat4 transform = mat4_from_quat(quat_from_euler((Vec3) { M_TWO_PI, 0.0f, 0.0f}));
+  Mat4 transform = mat4_from_quat(quat_from_euler((Vec3) { M_TO_RAD(180.0f), 0.0f, 0.0f}));
   mat4_print(transform);
 
 

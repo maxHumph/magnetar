@@ -213,18 +213,18 @@ typedef Vec4f32 Quat;
 MGINLINE Quat quat_create(f32 x, f32 i, f32 j, f32 k) { return (Quat){x, i, j, k}; }
 
 MGINLINE Quat quat_from_euler(Vec3 euler) {
-  f32 cx = mcos(euler.x / 2.0f);
-  f32 cy = mcos(euler.y / 2.0f);
-  f32 cz = mcos(euler.z / 2.0f);
-  f32 sx = msin(euler.x / 2.0f);
-  f32 sy = msin(euler.y / 2.0f);
-  f32 sz = msin(euler.z / 2.0f);
+  f32 cx = mcos(euler.x * 0.5f);
+  f32 cy = mcos(euler.y * 0.5f);
+  f32 cz = mcos(euler.z * 0.5f);
+  f32 sx = msin(euler.x * 0.5f);
+  f32 sy = msin(euler.y * 0.5f);
+  f32 sz = msin(euler.z * 0.5f);
 
   return (Quat){
-    (cx * cy * cz) + (sx * sy * sz),
-    (sx * cy * cz) - (cx * sy * sy),
+    (sx * cy * cz) - (cx * sy * sz),
     (cx * sy * cz) + (sx * cy * sz),
     (cx * cy * sz) - (sx * sy * cz),
+    (cx * cy * cz) + (sx * sy * sz),
   };
 }
  

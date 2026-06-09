@@ -165,7 +165,7 @@ MGINLINE Mat4 mat4_from_quat(Quat quat) {
   return (Mat4) {
     1 - (2 * (quat.y * quat.y)) - (2 * (quat.z * quat.z)),
     (2 * quat.x * quat.y) - (2 * quat.z * quat.w),
-    (2 * quat.x * quat.z) + (2 * quat.y * quat.z), 0.0f,
+    (2 * quat.x * quat.z) + (2 * quat.y * quat.w), 0.0f,
 
     (2 * quat.x * quat.y) + (2 * quat.z * quat.w),
     1 - (2 * (quat.x * quat.x)) - (2 * (quat.z * quat.z)),

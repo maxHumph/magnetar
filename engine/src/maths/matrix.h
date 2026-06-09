@@ -6,6 +6,7 @@
 
 #include "define.h"
 #include "maths/vector.h"
+#include "core/log.h"
 
 // MAT 2
 
@@ -104,6 +105,7 @@ typedef union Mat4f32 {
 
 typedef Mat4f32 Mat4;
 
+
 MGINLINE Mat4 mat4_iden() {
   return (Mat4){
       1.0f, 0.0f, 0.0f, 0.0f,  // r1
@@ -123,5 +125,57 @@ MGINLINE Mat4 mat4_add(Mat4 mat_1, Mat4 mat_2) {
       mat_1.e34 + mat_2.e34,  // r3
       mat_1.e41 + mat_2.e41, mat_1.e42 + mat_2.e42, mat_1.e43 + mat_2.e43,
       mat_1.e44 + mat_2.e44,  // r4
+  };
+}
+
+MGINLINE Mat4 mat4_mul(Mat4 mat_1, Mat4 mat_2) {
+  return (Mat4) {
+    (mat_1.e11 * mat_2.e11) + (mat_1.e12 * mat_2.e21) + (mat_1.e13 * mat_2.e31) + (mat_1.e14 * mat_2.e41),
+    (mat_1.e11 * mat_2.e12) + (mat_1.e12 * mat_2.e22) + (mat_1.e13 * mat_2.e32) + (mat_1.e14 * mat_2.e42),
+    (mat_1.e11 * mat_2.e13) + (mat_1.e12 * mat_2.e23) + (mat_1.e13 * mat_2.e33) + (mat_1.e14 * mat_2.e43),
+    (mat_1.e11 * mat_2.e14) + (mat_1.e12 * mat_2.e24) + (mat_1.e13 * mat_2.e34) + (mat_1.e14 * mat_2.e44),
+
+    (mat_1.e21 * mat_2.e11) + (mat_1.e22 * mat_2.e21) + (mat_1.e23 * mat_2.e31) + (mat_1.e24 * mat_2.e41),
+    (mat_1.e21 * mat_2.e12) + (mat_1.e22 * mat_2.e22) + (mat_1.e23 * mat_2.e32) + (mat_1.e24 * mat_2.e42),
+    (mat_1.e21 * mat_2.e13) + (mat_1.e22 * mat_2.e23) + (mat_1.e23 * mat_2.e33) + (mat_1.e24 * mat_2.e43),
+    (mat_1.e21 * mat_2.e14) + (mat_1.e22 * mat_2.e24) + (mat_1.e23 * mat_2.e34) + (mat_1.e24 * mat_2.e44),
+
+    (mat_1.e31 * mat_2.e11) + (mat_1.e32 * mat_2.e21) + (mat_1.e33 * mat_2.e31) + (mat_1.e34 * mat_2.e41),
+    (mat_1.e31 * mat_2.e12) + (mat_1.e32 * mat_2.e22) + (mat_1.e33 * mat_2.e32) + (mat_1.e34 * mat_2.e42),
+    (mat_1.e31 * mat_2.e13) + (mat_1.e32 * mat_2.e23) + (mat_1.e33 * mat_2.e33) + (mat_1.e34 * mat_2.e43),
+    (mat_1.e31 * mat_2.e14) + (mat_1.e32 * mat_2.e24) + (mat_1.e33 * mat_2.e34) + (mat_1.e34 * mat_2.e44),
+
+    (mat_1.e41 * mat_2.e11) + (mat_1.e42 * mat_2.e21) + (mat_1.e43 * mat_2.e31) + (mat_1.e44 * mat_2.e41),
+    (mat_1.e41 * mat_2.e12) + (mat_1.e42 * mat_2.e22) + (mat_1.e43 * mat_2.e32) + (mat_1.e44 * mat_2.e42),
+    (mat_1.e41 * mat_2.e13) + (mat_1.e42 * mat_2.e23) + (mat_1.e43 * mat_2.e33) + (mat_1.e44 * mat_2.e43),
+    (mat_1.e41 * mat_2.e14) + (mat_1.e42 * mat_2.e24) + (mat_1.e43 * mat_2.e34) + (mat_1.e44 * mat_2.e44),
+  };
+}
+
+MGINLINE Vec4 mat4_tran(Mat4 mat, Vec4 vec) {
+  return (Vec4) {
+    (mat.e11 * vec.e1) + (mat.e12 * vec.e2) + (mat.e13 * vec.e3) + (mat.e14 * vec.e4),
+    (mat.e21 * vec.e1) + (mat.e22 * vec.e2) + (mat.e23 * vec.e3) + (mat.e24 * vec.e4),
+    (mat.e31 * vec.e1) + (mat.e32 * vec.e2) + (mat.e33 * vec.e3) + (mat.e34 * vec.e4),
+    (mat.e41 * vec.e1) + (mat.e42 * vec.e2) + (mat.e43 * vec.e3) + (mat.e44 * vec.e4),
+  };
+}
+
+MGINLINE Mat4 mat4_from_quat(Quat quat) {
+  return (Mat4) {
+    1 - (2 * (quat.y * quat.y)) - (2 * (quat.z * quat.z)),
+    (2 * quat.x * quat.y) - (2 * quat.z * quat.w),
+    (2 * quat.x * quat.z) + (2 * quat.y * quat.z), 0.0f,
+
+    (2 * quat.x * quat.y) + (2 * quat.z * quat.w),
+    1 - (2 * (quat.x * quat.x)) - (2 * (quat.z * quat.z)),
+    (2 * quat.y * quat.z) - (2 * quat.x * quat.w), 0.0f,
+
+    (2 * quat.x * quat.z) - (2 * quat.y * quat.w),
+    (2 * quat.y * quat.z) + (2 * quat.x * quat.w),
+    1 - (2 * (quat.x * quat.x)) - (2 * (quat.y * quat.y)), 0.0f,
+
+    0.0f, 0.0f, 0.0f, 1.0f,
+
   };
 }

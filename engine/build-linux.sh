@@ -15,7 +15,7 @@ compilerFlags="-g -shared -fdeclspec -fPIC"
 # -fms-extensions
 # -Wall -Werror
 includeFlags="-Isrc -I$VULKAN_SDK/include"
-linkerFlags="-lvulkan -lxcb -lX11 -lX11-xcb -lxkbcommon -L$VULKAN_SDK/lib -L/usr/X11R6/lib"
+linkerFlags="-lvulkan -lxcb -lX11 -lX11-xcb -lxkbcommon -lm -L$VULKAN_SDK/lib -L/usr/X11R6/lib"
 defines="-D_DEBUG -DMEXPORT"
 
 echo "Building $assembly..."

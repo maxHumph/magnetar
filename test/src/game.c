@@ -2,10 +2,20 @@
 
 #include <core/log.h>
 #include <core/mmemory.h>
+#include <maths/matrix.h>
+#include <maths/maths_util.h>
 
 b8 game_initalize(Game* game_instance) {
   MDEBUG("game_initialize() was called");
   MINFO(get_memory_usage_string());
+
+
+  Vec4 vec_1 = vec4_create(2.0f, 3.0f, 0.0f, 1.0f);
+
+  Mat4 transform = mat4_from_quat(quat_from_euler((Vec3) { M_TWO_PI, 0.0f, 0.0f}));
+  mat4_print(transform);
+
+
   return TRUE;
 }
 

@@ -6,6 +6,7 @@
 
 #include "define.h"
 #include "maths/maths.h"
+#include "core/log.h"
 
 // VEC 2
 
@@ -149,23 +150,22 @@ typedef union Vec4f32 {
   f32 index[4];
   struct {
     union {
-      f32 x, r;
+      f32 x, r, e1;
     };
     union {
-      f32 y, g, i;
+      f32 y, g, i, e2;
     };
     union {
-      f32 z, b, j;
+      f32 z, b, j, e3;
     };
     union {
-      f32 w, a, k;
+      f32 w, a, k, e4;
     };
   };
 } Vec4f32;
 
 typedef Vec4f32 Vec4;
 
-typedef Vec4f32 Quat;
 
 MGINLINE Vec4 vec4_create(f32 x, f32 y, f32 z, f32 w) { return (Vec4){x, y, z, w}; }
 
@@ -207,3 +207,24 @@ MGINLINE Vec4 vec4_normalized(Vec4 vec) {
   const f32 len = vec4_mag(vec);
   return (Vec4){vec.x / len, vec.y / len, vec.z / len, vec.w / len};
 }
+
+typedef Vec4f32 Quat;
+
+MGINLINE Quat quat_create(f32 x, f32 i, f32 j, f32 k) { return (Quat){x, i, j, k}; }
+
+MGINLINE Quat quat_from_euler(Vec3 euler) {
+  f32 cx = mcos(euler.x / 2.0f);
+  f32 cy = mcos(euler.y / 2.0f);
+  f32 cz = mcos(euler.z / 2.0f);
+  f32 sx = msin(euler.x / 2.0f);
+  f32 sy = msin(euler.y / 2.0f);
+  f32 sz = msin(euler.z / 2.0f);
+
+  return (Quat){
+    (cx * cy * cz) + (sx * sy * sz),
+    (sx * cy * cz) - (cx * sy * sy),
+    (cx * sy * cz) + (sx * cy * sz),
+    (cx * cy * sz) - (sx * sy * cz),
+  };
+}
+ 

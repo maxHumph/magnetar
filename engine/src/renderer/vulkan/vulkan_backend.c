@@ -10,6 +10,7 @@
 #include "vulkan/vulkan_core.h"
 #include "vulkan_defines.h"
 #include "vulkan_wsi.h"
+#include "maths/maths_util.h"
 
 static VulkanContext vulkan_context = {};
 
@@ -24,23 +25,79 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   vulkan_context.swapchain_extent.height = start_height;
 
   // Test vertices
-  vulkan_context.vertex_count = 4;  // @MAGIC_NUMBER
+  // vulkan_context.vertex_count = 4;  
+  //  vulkan_context.vertices =
+  //  mallocate(vulkan_context.vertex_count * sizeof(Vertex), MEMORY_TAG_RENDERER);
+  // 
+  //  vulkan_context.vertices[0].position = (Vec3){-0.5f, -0.5f, 0.0f};
+  //  vulkan_context.vertices[1].position = (Vec3){0.5f, -0.5f, 0.0f};
+  //  vulkan_context.vertices[2].position = (Vec3){0.5f, 0.5f, 0.0f};
+  //  vulkan_context.vertices[3].position = (Vec3){-0.5f, 0.5f, 0.0f};
+  // 
+  //  vulkan_context.vertices[0].colour = (Vec3){1.0f, 0.0f, 0.0f};
+  //  vulkan_context.vertices[1].colour = (Vec3){0.0f, 1.0f, 0.0f};
+  //  vulkan_context.vertices[2].colour = (Vec3){0.0f, 0.0f, 1.0f};
+  //  vulkan_context.vertices[3].colour = (Vec3){0.0f, 0.0f, 0.0f};
+  // 
+  //  vulkan_context.index_count = 6;
+  //  u32 indices[] = {0, 1, 2, 0, 2, 3};
+  // 
+  
+  vulkan_context.vertex_count = 8;
   vulkan_context.vertices =
-      mallocate(vulkan_context.vertex_count * sizeof(Vertex), MEMORY_TAG_RENDERER);
-
-  vulkan_context.vertices[0].position = (Vec2){-0.5f, -0.5f};
-  vulkan_context.vertices[1].position = (Vec2){0.5f, -0.5f};
-  vulkan_context.vertices[2].position = (Vec2){0.5f, 0.5f};
-  vulkan_context.vertices[3].position = (Vec2){-0.5f, 0.5f};
-
-  vulkan_context.vertices[0].colour = (Vec3){1.0f, 0.0f, 0.0f};
-  vulkan_context.vertices[1].colour = (Vec3){0.0f, 1.0f, 0.0f};
-  vulkan_context.vertices[2].colour = (Vec3){0.0f, 0.0f, 1.0f};
-  vulkan_context.vertices[3].colour = (Vec3){0.0f, 0.0f, 0.0f};
-
-  vulkan_context.index_count = 6;
-  u32 indices[] = {0, 1, 2, 0, 2, 3};
-  vulkan_context.indices = indices;
+    mallocate(vulkan_context.vertex_count * sizeof(Vertex), MEMORY_TAG_RENDERER);
+  
+  vulkan_context.vertices[0].position = (Vec3){-0.5f, -0.5f, -0.5f};
+  vulkan_context.vertices[1].position = (Vec3){ 0.5f, -0.5f, -0.5f};
+  vulkan_context.vertices[2].position = (Vec3){ 0.5f,  0.5f, -0.5f};
+  vulkan_context.vertices[3].position = (Vec3){-0.5f,  0.5f, -0.5f};
+  
+  vulkan_context.vertices[4].position = (Vec3){-0.5f, -0.5f,  0.5f};
+  vulkan_context.vertices[5].position = (Vec3){ 0.5f, -0.5f,  0.5f};
+  vulkan_context.vertices[6].position = (Vec3){ 0.5f,  0.5f,  0.5f};
+  vulkan_context.vertices[7].position = (Vec3){-0.5f,  0.5f,  0.5f};
+  
+  vulkan_context.vertices[0].colour = (Vec3){1, 0, 0};
+  vulkan_context.vertices[1].colour = (Vec3){0, 1, 0};
+  vulkan_context.vertices[2].colour = (Vec3){0, 0, 1};
+  vulkan_context.vertices[3].colour = (Vec3){1, 1, 0};
+  
+  vulkan_context.vertices[4].colour = (Vec3){1, 0, 1};
+  vulkan_context.vertices[5].colour = (Vec3){0, 1, 1};
+  vulkan_context.vertices[6].colour = (Vec3){0.5f, 0.5f, 0.5f};
+  vulkan_context.vertices[7].colour = (Vec3){1, 1, 1};
+  vulkan_context.index_count = 36;
+  
+  u32 indices[] = {
+    // back face (z = -0.5)
+    0, 1, 2,
+    2, 3, 0,
+    
+    // front face (z = +0.5)
+    4, 6, 5,
+    6, 4, 7,
+    
+    // left face
+    4, 0, 3,
+    3, 7, 4,
+    
+    // right face
+    1, 5, 6,
+    6, 2, 1,
+    
+    // bottom face
+    4, 5, 1,
+    1, 0, 4,
+    
+    // top face
+    3, 2, 6,
+    6, 7, 3
+  };
+  
+  vulkan_context.indices =
+    mallocate(vulkan_context.index_count * sizeof(u32), MEMORY_TAG_RENDERER);
+  
+  mcopy_memory(vulkan_context.indices, indices, sizeof(indices));
 
   // CREATE INSTANCE ----------
   if (!vulkan_create_instance(application_name)) {
@@ -1005,7 +1062,7 @@ static b8 vulkan_create_graphics_pipeline() {
   rasterization_state_create_info.rasterizerDiscardEnable = VK_FALSE;
   rasterization_state_create_info.polygonMode = VK_POLYGON_MODE_FILL;
   rasterization_state_create_info.cullMode = cull_mode_flags;
-  rasterization_state_create_info.frontFace = VK_FRONT_FACE_CLOCKWISE;
+  rasterization_state_create_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
   rasterization_state_create_info.depthBiasEnable = VK_FALSE;
   rasterization_state_create_info.lineWidth = 1.0f;  // @MAGIC_NUMBER
 
@@ -1550,7 +1607,7 @@ static VkVertexInputAttributeDescription* get_vertex_attribute_descriptions() {
   static VkVertexInputAttributeDescription out[] = {{
                                                         .location = 0,
                                                         .binding = 0,
-                                                        .format = VK_FORMAT_R32G32_SFLOAT,
+                                                        .format = VK_FORMAT_R32G32B32_SFLOAT,
                                                         .offset = offsetof(Vertex, position),
                                                     },
                                                     {
@@ -1577,20 +1634,23 @@ static u32 get_memory_type(u32 type_filter, VkMemoryPropertyFlags props) {
 }
 
 static b8 update_uniform_buffer() {
-  x += 0.004f;
-  if (x >= 1.0f) {
+  x += 0.150f;
+  if (x >= 360.0f) {
     x = 0.0f;
   }
   MVPMat mvp_mat;
-  mvp_mat.model = (Mat4){
-      x,    -x,   0.0f, 0.0f,  // r1
-      x,    x,    0.0f, 0.0f,  // r2
-      0.0f, 0.0f, 1.0f, 0.0f,  // r3
-      0.0f, 0.0f, 0.0f, 1.0f,  // r4
+  Mat4 model_tran = {
+    1.0f, 0.0f, 0.0f,  0.0f,
+    0.0f, 1.0f, 0.0f,  0.0f,
+    0.0f, 0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, -3.0f,  1.0f
   };
-  mvp_mat.view = mat4_iden();
-  mvp_mat.proj = mat4_iden();
 
+  mvp_mat.model = mat4_mul(mat4_from_quat(quat_from_euler((Vec3){0.0f, M_TO_RAD(x), M_TO_RAD(x)})), model_tran);
+  mvp_mat.view = mat4_iden();
+  mvp_mat.proj = mat4_perspective(M_TO_RAD(90.0f), (f32)vulkan_context.swapchain_extent.width / (f32)vulkan_context.swapchain_extent.height, 0.1f, 1000.0f);
+  mvp_mat.proj.e22 *= -1.0f;
+  mat4_print(mvp_mat.proj);
   mcopy_memory(vulkan_context.uniform_buffer_mem_mapped[vulkan_context.current_frame_index],
                &mvp_mat, sizeof(mvp_mat));
   return TRUE;

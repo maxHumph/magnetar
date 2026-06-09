@@ -1,5 +1,5 @@
 struct VSInput {
-    float2 position;
+    float3 position;
     float3 colour;
 };  
 
@@ -18,7 +18,7 @@ struct VSOutput {
 [shader("vertex")]
 VSOutput vertMain(VSInput input) {
     VSOutput output;
-    output.position = mul(mvp_mat.proj, mul(mvp_mat.view, mul(mvp_mat.model, float4(input.position, 0.0, 1.0))));
+    output.position = mul(mvp_mat.proj, mul(mvp_mat.view, mul(mvp_mat.model, float4(input.position, 1.0))));
     output.colour = input.colour;
     return output;
 }

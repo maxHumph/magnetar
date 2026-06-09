@@ -19,7 +19,7 @@
  * @brief Stores vertex data for use i vertex buffers.
  */
 typedef struct Vertex {
-  Vec2 position;
+  Vec3 position;
   Vec3 colour;
 } Vertex;
 

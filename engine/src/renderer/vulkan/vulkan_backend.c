@@ -1615,7 +1615,14 @@ static VkVertexInputAttributeDescription* get_vertex_attribute_descriptions() {
                                                         .binding = 0,
                                                         .format = VK_FORMAT_R32G32B32_SFLOAT,
                                                         .offset = offsetof(Vertex, colour),
-                                                    }};
+                                                    },
+						    {
+						      .location = 2,
+						      .binding = 0,
+						      .format = VK_FORMATE_R32G32_SFLOAT,
+						      .offset = offsetoff(Vertex, texture_coord),
+						    },
+  };
   return out;
 }
 
@@ -1638,18 +1645,21 @@ static b8 update_uniform_buffer() {
   if (x >= 360.0f) {
     x = 0.0f;
   }
+
   MVPMat mvp_mat;
   Mat4 model_tran = {
     1.0f, 0.0f, 0.0f,  0.0f,
     0.0f, 1.0f, 0.0f,  0.0f,
-    0.0f, 0.0f, 1.0f, 0.0f,
-    0.0f, 0.0f, -2.0f,  1.0f
+    0.0f, 0.0f, 1.0f, -2.0f,
+    0.0f, 0.0f, 0.0f,  1.0f
   };
 
-  mvp_mat.model = mat4_mul(mat4_from_quat(quat_from_euler((Vec3){0.0f, M_TO_RAD(x), M_TO_RAD(x)})), model_tran);
-  //mat4_print(mvp_mat.model);
+  mvp_mat.model = mat4_mul(mat4_from_quat(quat_from_euler((Vec3){M_TO_RAD(x), M_TO_RAD(x), M_TO_RAD(x)})), mat4_transpose(model_tran));
   mvp_mat.view = mat4_iden();
-  mvp_mat.proj = mat4_perspective(M_TO_RAD(90.0f), (f32)vulkan_context.swapchain_extent.width / (f32)vulkan_context.swapchain_extent.height, 0.1f, 1000.0f);
+  mvp_mat.proj = mat4_perspective(M_TO_RAD(90.0f),
+				  (f32)vulkan_context.swapchain_extent.width / (f32)vulkan_context.swapchain_extent.height,
+				  0.1f, 1000.0f);
+
   mvp_mat.proj.e22 *= -1.0f;
   mcopy_memory(vulkan_context.uniform_buffer_mem_mapped[vulkan_context.current_frame_index],
                &mvp_mat, sizeof(mvp_mat));

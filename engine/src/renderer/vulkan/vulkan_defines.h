@@ -21,6 +21,7 @@
 typedef struct Vertex {
   Vec3 position;
   Vec3 colour;
+  Vec2 texure_coord;
 } Vertex;
 
 typedef struct MVPMat {

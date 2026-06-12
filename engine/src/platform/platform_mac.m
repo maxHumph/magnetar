@@ -13,6 +13,7 @@
 #include "core/log.h"
 #include "core/input.h"
 #include "platform/platform_macos_types.m"
+#include "core/events.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -154,13 +155,20 @@ b8 platform_startup(PlatformState* platform_state, const char* application_name,
   NSView *view = [[NSView alloc]
 		   initWithFrame:NSMakeRect(0, 0, width, height)];
 
-  [view setWantsLayer:YES];
+
 
   state->ns_view = view;
 
   state->metal_layer = [CAMetalLayer layer];
   state->metal_layer.frame = view.bounds;
-  view.layer = state->metal_layer;
+  [view setLayer:state->metal_layer];
+  [view setWantsLayer:YES];
+
+  [state->metal_layer removeAllAnimations];
+  state->metal_layer.needsDisplayOnBoundsChange = YES;
+
+  state->metal_layer.contentsScale =
+    window.backingScaleFactor;
 
   view.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
 
@@ -320,10 +328,15 @@ void platform_sleep(u64 ms)
   e.event_type = MAC_EVENT_TYPE_WINDOW_RESIZED;
   
   e.window_resized.width =
-    (int)frame.size.width;
+    (int)state->metal_layer.drawableSize.width;
   
+  // e.window_resized.height =
+  //   (int)frame.size.height;
+
   e.window_resized.height =
-    (int)frame.size.height;
+    (int)state->metal_layer.drawableSize.height;
+
+  // MTRACE("(%i, %i)", e.window_resized.width, e.window_resized.height);
   
   process_event(&e);
 }
@@ -616,6 +629,7 @@ static MacEvent translate_ns_event(NSEvent* ns_event) {
     
     e.mouse_moved.x_pos = (f32)p.x;
     e.mouse_moved.y_pos = (f32)p.y;
+    // MTRACE("(%f, %f)", p.x, p.y);
   } break;
     
   case NSEventTypeLeftMouseDown: {
@@ -693,6 +707,10 @@ static void process_event(MacEvent* e) {
   case MAC_EVENT_TYPE_WINDOW_RESIZED:
     
     // MTRACE_CORE("Window Resized: (%i, %i)", e->window_resized.width, e->window_resized.height);
+    EventData event_data;
+    event_data.data.u16[0] = (u16)e->window_resized.width;
+    event_data.data.u16[1] = (u16)e->window_resized.height;
+    fire_event(EVENT_CODE_WINDOW_RESIZED, 0, event_data);
     break;
     
   case MAC_EVENT_TYPE_KEY_DOWN:

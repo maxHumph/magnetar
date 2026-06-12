@@ -14,6 +14,7 @@
 
 static VulkanContext vulkan_context = {};
 
+static f32 viewport_scale = 2.0f;
 static f32 x = 0;
 static b8 toggle = TRUE;
 
@@ -448,7 +449,7 @@ b8 vulkan_backend_draw_frame(RendererBackend* renderer_backend) {
 }
 
 b8 vulkan_backend_on_resize(RendererBackend* renderer_backend, u16 width, u16 height) {
-  /* MTRACE_CORE("vk resize: (%u, %u)", width, height); */
+  MTRACE_CORE("vk resize: (%u, %u)", width, height);
   if (!vulkan_recreate_swapchain(width, height)) {
     MERROR_CORE("Vulkan On Resize: Failed to recreate swapchain.");
     return FALSE;
@@ -668,7 +669,8 @@ static b8 vulkan_set_surface_extent(i16 width, i16 height) {
   }
 
   // Sets the image extent to an acceptable value
-  if (surface_capabilities.currentExtent.width != UINT32_MAX && surface_capabilities.currentExtent.width != 0) {  // Surface provides specific size
+  if (surface_capabilities.currentExtent.width != UINT32_MAX &&
+      surface_capabilities.currentExtent.width != 0) {  // Surface provides specific size
     vulkan_context.swapchain_extent = surface_capabilities.currentExtent;
   } else {  // Application can provide size
     // Set width within acceptable Image Extent range
@@ -827,7 +829,6 @@ static b8 vulkan_create_logical_device() {
 }
 
 static b8 vulkan_create_swapchain(VkSwapchainKHR old_swapchain) {
-
   VkSurfaceCapabilitiesKHR surface_capabilities;
   VkResult get_physical_device_surface_capabilities_result =
       vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkan_context.physical_device,
@@ -844,7 +845,8 @@ static b8 vulkan_create_swapchain(VkSwapchainKHR old_swapchain) {
   VkSwapchainCreateInfoKHR swapchain_create_info = {VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR};
   swapchain_create_info.pNext = NULL_PTR;
   swapchain_create_info.surface = vulkan_context.surface;
-  swapchain_create_info.minImageCount = surface_capabilities.minImageCount;  // @TODO: Add this as a setting in user code. (Maybe)
+  swapchain_create_info.minImageCount =
+      surface_capabilities.minImageCount;  // @TODO: Add this as a setting in user code. (Maybe)
   swapchain_create_info.imageFormat = vulkan_context.surface_format.format;
   swapchain_create_info.imageColorSpace = vulkan_context.surface_format.colorSpace;
   swapchain_create_info.imageExtent = vulkan_context.swapchain_extent;

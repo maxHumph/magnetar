@@ -6,11 +6,11 @@
 #include "core/log.h"
 #include "core/mmemory.h"
 #include "define.h"
+#include "maths/maths_util.h"
 #include "renderer/vulkan/vulkan_helper.h"
 #include "vulkan/vulkan_core.h"
 #include "vulkan_defines.h"
 #include "vulkan_wsi.h"
-#include "maths/maths_util.h"
 
 static VulkanContext vulkan_context = {};
 
@@ -25,78 +25,69 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   vulkan_context.swapchain_extent.height = start_height;
 
   // Test vertices
-  // vulkan_context.vertex_count = 4;  
+  // vulkan_context.vertex_count = 4;
   //  vulkan_context.vertices =
   //  mallocate(vulkan_context.vertex_count * sizeof(Vertex), MEMORY_TAG_RENDERER);
-  // 
+  //
   //  vulkan_context.vertices[0].position = (Vec3){-0.5f, -0.5f, 0.0f};
   //  vulkan_context.vertices[1].position = (Vec3){0.5f, -0.5f, 0.0f};
   //  vulkan_context.vertices[2].position = (Vec3){0.5f, 0.5f, 0.0f};
   //  vulkan_context.vertices[3].position = (Vec3){-0.5f, 0.5f, 0.0f};
-  // 
+  //
   //  vulkan_context.vertices[0].colour = (Vec3){1.0f, 0.0f, 0.0f};
   //  vulkan_context.vertices[1].colour = (Vec3){0.0f, 1.0f, 0.0f};
   //  vulkan_context.vertices[2].colour = (Vec3){0.0f, 0.0f, 1.0f};
   //  vulkan_context.vertices[3].colour = (Vec3){0.0f, 0.0f, 0.0f};
-  // 
+  //
   //  vulkan_context.index_count = 6;
   //  u32 indices[] = {0, 1, 2, 0, 2, 3};
-  // 
-  
+  //
+
   vulkan_context.vertex_count = 8;
   vulkan_context.vertices =
-    mallocate(vulkan_context.vertex_count * sizeof(Vertex), MEMORY_TAG_RENDERER);
-  
+      mallocate(vulkan_context.vertex_count * sizeof(Vertex), MEMORY_TAG_RENDERER);
+
   vulkan_context.vertices[0].position = (Vec3){-0.5f, -0.5f, -0.5f};
-  vulkan_context.vertices[1].position = (Vec3){ 0.5f, -0.5f, -0.5f};
-  vulkan_context.vertices[2].position = (Vec3){ 0.5f,  0.5f, -0.5f};
-  vulkan_context.vertices[3].position = (Vec3){-0.5f,  0.5f, -0.5f};
-  
-  vulkan_context.vertices[4].position = (Vec3){-0.5f, -0.5f,  0.5f};
-  vulkan_context.vertices[5].position = (Vec3){ 0.5f, -0.5f,  0.5f};
-  vulkan_context.vertices[6].position = (Vec3){ 0.5f,  0.5f,  0.5f};
-  vulkan_context.vertices[7].position = (Vec3){-0.5f,  0.5f,  0.5f};
-  
+  vulkan_context.vertices[1].position = (Vec3){0.5f, -0.5f, -0.5f};
+  vulkan_context.vertices[2].position = (Vec3){0.5f, 0.5f, -0.5f};
+  vulkan_context.vertices[3].position = (Vec3){-0.5f, 0.5f, -0.5f};
+
+  vulkan_context.vertices[4].position = (Vec3){-0.5f, -0.5f, 0.5f};
+  vulkan_context.vertices[5].position = (Vec3){0.5f, -0.5f, 0.5f};
+  vulkan_context.vertices[6].position = (Vec3){0.5f, 0.5f, 0.5f};
+  vulkan_context.vertices[7].position = (Vec3){-0.5f, 0.5f, 0.5f};
+
   vulkan_context.vertices[0].colour = (Vec3){1, 0, 0};
   vulkan_context.vertices[1].colour = (Vec3){0, 1, 0};
   vulkan_context.vertices[2].colour = (Vec3){0, 0, 1};
   vulkan_context.vertices[3].colour = (Vec3){1, 1, 0};
-  
+
   vulkan_context.vertices[4].colour = (Vec3){1, 0, 1};
   vulkan_context.vertices[5].colour = (Vec3){0, 1, 1};
   vulkan_context.vertices[6].colour = (Vec3){0.5f, 0.5f, 0.5f};
   vulkan_context.vertices[7].colour = (Vec3){1, 1, 1};
   vulkan_context.index_count = 36;
-  
-  u32 indices[] = {
-    // back face (z = -0.5)
-    0, 1, 2,
-    2, 3, 0,
-    
-    // front face (z = +0.5)
-    4, 6, 5,
-    6, 4, 7,
-    
-    // left face
-    4, 0, 3,
-    3, 7, 4,
-    
-    // right face
-    1, 5, 6,
-    6, 2, 1,
-    
-    // bottom face
-    4, 5, 1,
-    1, 0, 4,
-    
-    // top face
-    3, 2, 6,
-    6, 7, 3
-  };
-  
-  vulkan_context.indices =
-    mallocate(vulkan_context.index_count * sizeof(u32), MEMORY_TAG_RENDERER);
-  
+
+  u32 indices[] = {// back face (z = -0.5)
+                   0, 1, 2, 2, 3, 0,
+
+                   // front face (z = +0.5)
+                   4, 6, 5, 6, 4, 7,
+
+                   // left face
+                   4, 0, 3, 3, 7, 4,
+
+                   // right face
+                   1, 5, 6, 6, 2, 1,
+
+                   // bottom face
+                   4, 5, 1, 1, 0, 4,
+
+                   // top face
+                   3, 2, 6, 6, 7, 3};
+
+  vulkan_context.indices = mallocate(vulkan_context.index_count * sizeof(u32), MEMORY_TAG_RENDERER);
+
   mcopy_memory(vulkan_context.indices, indices, sizeof(indices));
 
   // CREATE INSTANCE ----------
@@ -677,7 +668,7 @@ static b8 vulkan_set_surface_extent(i16 width, i16 height) {
   }
 
   // Sets the image extent to an acceptable value
-  if (surface_capabilities.currentExtent.width != UINT32_MAX) {  // Surface provides specific size
+  if (surface_capabilities.currentExtent.width != UINT32_MAX && surface_capabilities.currentExtent.width != 0) {  // Surface provides specific size
     vulkan_context.swapchain_extent = surface_capabilities.currentExtent;
   } else {  // Application can provide size
     // Set width within acceptable Image Extent range
@@ -773,14 +764,25 @@ static b8 vulkan_create_logical_device() {
   device_graphics_queue_create_info.queueCount = 1;  // @MAGIC_NUMBER
   device_graphics_queue_create_info.pQueuePriorities = &temp_priority;
 
+#if defined(MPLATFORM_APPLE)
+
+  vulkan_context.transfer_queue_family_index = vulkan_context.graphics_queue_family_index;
+
+  vulkan_context.queue_family_index_count = 1;
+  VkDeviceQueueCreateInfo device_queue_create_infos[] = {device_graphics_queue_create_info};
+
+#else
+
   VkDeviceQueueCreateInfo device_transfer_queue_create_info = {
       VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
   device_transfer_queue_create_info.queueFamilyIndex = vulkan_context.transfer_queue_family_index;
   device_transfer_queue_create_info.queueCount = 1;  // @MAGIC_NUMBER
   device_transfer_queue_create_info.pQueuePriorities = &temp_priority;
 
+  vulkan_context.queue_family_index_count = 2;
   VkDeviceQueueCreateInfo device_queue_create_infos[] = {device_graphics_queue_create_info,
                                                          device_transfer_queue_create_info};
+#endif
 
   // Enable vulkan11 features
   VkPhysicalDeviceVulkan11Features physical_device_vulkan_11_features = {
@@ -798,7 +800,7 @@ static b8 vulkan_create_logical_device() {
   const char* const device_extension_names[] = MVK_DEVICE_EXTENSION_NAMES;
   VkDeviceCreateInfo device_create_info = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
   device_create_info.pNext = &physical_device_vulkan_13_features;
-  device_create_info.queueCreateInfoCount = 2;
+  device_create_info.queueCreateInfoCount = vulkan_context.queue_family_index_count;
   device_create_info.pQueueCreateInfos = device_queue_create_infos;
   device_create_info.pEnabledFeatures = NULL_PTR;
   device_create_info.enabledExtensionCount = MVK_DEVICE_EXTENSION_COUNT;
@@ -825,12 +827,24 @@ static b8 vulkan_create_logical_device() {
 }
 
 static b8 vulkan_create_swapchain(VkSwapchainKHR old_swapchain) {
+
+  VkSurfaceCapabilitiesKHR surface_capabilities;
+  VkResult get_physical_device_surface_capabilities_result =
+      vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkan_context.physical_device,
+                                                vulkan_context.surface, &surface_capabilities);
+
+  if (get_physical_device_surface_capabilities_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to get physical device surface capabilities: %s",
+                string_VkResult(get_physical_device_surface_capabilities_result));
+    return FALSE;
+  }
+
   VkImageUsageFlags image_usage_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
   VkSwapchainCreateInfoKHR swapchain_create_info = {VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR};
   swapchain_create_info.pNext = NULL_PTR;
   swapchain_create_info.surface = vulkan_context.surface;
-  swapchain_create_info.minImageCount = 4;  // @TODO: Add this as a setting in user code. (Maybe)
+  swapchain_create_info.minImageCount = surface_capabilities.minImageCount;  // @TODO: Add this as a setting in user code. (Maybe)
   swapchain_create_info.imageFormat = vulkan_context.surface_format.format;
   swapchain_create_info.imageColorSpace = vulkan_context.surface_format.colorSpace;
   swapchain_create_info.imageExtent = vulkan_context.swapchain_extent;
@@ -1511,8 +1525,12 @@ static b8 create_buffer(VkBuffer* buffer, VkDeviceMemory* device_mem, VkDeviceSi
   VkBufferCreateInfo buffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
   buffer_create_info.size = size;
   buffer_create_info.usage = usage_flags;
-  buffer_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
-  buffer_create_info.queueFamilyIndexCount = 2;
+  if (vulkan_context.queue_family_index_count == 1) {
+    buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  } else {
+    buffer_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
+  }
+  buffer_create_info.queueFamilyIndexCount = vulkan_context.queue_family_index_count;
   buffer_create_info.pQueueFamilyIndices = queue_family_indices;
 
   VkResult create_buffer_result = vkCreateBuffer(vulkan_context.logical_device, &buffer_create_info,
@@ -1604,24 +1622,26 @@ static VkVertexInputBindingDescription get_vertex_binding_description() {
 }
 
 static VkVertexInputAttributeDescription* get_vertex_attribute_descriptions() {
-  static VkVertexInputAttributeDescription out[] = {{
-                                                        .location = 0,
-                                                        .binding = 0,
-                                                        .format = VK_FORMAT_R32G32B32_SFLOAT,
-                                                        .offset = offsetof(Vertex, position),
-                                                    },
-                                                    {
-                                                        .location = 1,
-                                                        .binding = 0,
-                                                        .format = VK_FORMAT_R32G32B32_SFLOAT,
-                                                        .offset = offsetof(Vertex, colour),
-                                                    },
-						    {
-						      .location = 2,
-						      .binding = 0,
-						      .format = VK_FORMATE_R32G32_SFLOAT,
-						      .offset = offsetoff(Vertex, texture_coord),
-						    },
+  static VkVertexInputAttributeDescription out[] = {
+      {
+          .location = 0,
+          .binding = 0,
+          .format = VK_FORMAT_R32G32B32_SFLOAT,
+          .offset = offsetof(Vertex, position),
+      },
+      {
+          .location = 1,
+          .binding = 0,
+          .format = VK_FORMAT_R32G32B32_SFLOAT,
+          .offset = offsetof(Vertex, colour),
+      },
+      {
+          .location = 2,
+          .binding = 0,
+          .format = VK_FORMAT_R32G32_SFLOAT,
+          .offset = offsetof(Vertex, texture_coord),
+
+      },
   };
   return out;
 }
@@ -1647,18 +1667,17 @@ static b8 update_uniform_buffer() {
   }
 
   MVPMat mvp_mat;
-  Mat4 model_tran = {
-    1.0f, 0.0f, 0.0f,  0.0f,
-    0.0f, 1.0f, 0.0f,  0.0f,
-    0.0f, 0.0f, 1.0f, -2.0f,
-    0.0f, 0.0f, 0.0f,  1.0f
-  };
+  Mat4 model_tran = {1.0f, 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f,
+                     0.0f, 0.0f, 1.0f, -2.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 
-  mvp_mat.model = mat4_mul(mat4_from_quat(quat_from_euler((Vec3){M_TO_RAD(x), M_TO_RAD(x), M_TO_RAD(x)})), mat4_transpose(model_tran));
+  mvp_mat.model =
+      mat4_mul(mat4_from_quat(quat_from_euler((Vec3){M_TO_RAD(x), M_TO_RAD(x), M_TO_RAD(x)})),
+               mat4_transpose(model_tran));
   mvp_mat.view = mat4_iden();
-  mvp_mat.proj = mat4_perspective(M_TO_RAD(90.0f),
-				  (f32)vulkan_context.swapchain_extent.width / (f32)vulkan_context.swapchain_extent.height,
-				  0.1f, 1000.0f);
+  mvp_mat.proj = mat4_perspective(
+      M_TO_RAD(90.0f),
+      (f32)vulkan_context.swapchain_extent.width / (f32)vulkan_context.swapchain_extent.height,
+      0.1f, 1000.0f);
 
   mvp_mat.proj.e22 *= -1.0f;
   mcopy_memory(vulkan_context.uniform_buffer_mem_mapped[vulkan_context.current_frame_index],

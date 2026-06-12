@@ -12,6 +12,7 @@
 #include "platform.h"
 #include "core/log.h"
 #include "core/input.h"
+#include "platform/platform_macos_types.m"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -21,6 +22,9 @@
 
 #import <Cocoa/Cocoa.h>
 #import <Carbon/Carbon.h>
+#import <QuartzCore/CAMetalLayer.h>
+
+static InternalState *state;
 
 /**
  * @brief Event type specifier for sruct MacEvent.
@@ -104,14 +108,6 @@ typedef struct MacEvent {
   
 } MacEvent;
 
-/**
- * @brief Used by the engine to access os specific API code.
- */
-typedef struct InternalState {
-  NSWindow* ns_window;
-  // CAMetalLayer* layer;
-  id window_delegate;
-} InternalState;
 
 
 /**
@@ -129,7 +125,7 @@ b8 platform_startup(PlatformState* platform_state, const char* application_name,
   
   
   platform_state->internal_state = malloc(sizeof(InternalState));
-  InternalState *state = (InternalState *)platform_state->internal_state;
+  state = (InternalState *)platform_state->internal_state;
   NSRect frame = NSMakeRect(x_pos, y_pos, width, height);
   
   NSWindow* window =
@@ -152,6 +148,23 @@ b8 platform_startup(PlatformState* platform_state, const char* application_name,
   
   [state->ns_window
       setDelegate:state->window_delegate];
+
+  // Crete view
+
+  NSView *view = [[NSView alloc]
+		   initWithFrame:NSMakeRect(0, 0, width, height)];
+
+  [view setWantsLayer:YES];
+
+  state->ns_view = view;
+
+  state->metal_layer = [CAMetalLayer layer];
+  state->metal_layer.frame = view.bounds;
+  view.layer = state->metal_layer;
+
+  view.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+
+  [[state->ns_window contentView] addSubview:view];
   
   [state->ns_window makeKeyAndOrderFront:nil];
   
@@ -284,6 +297,18 @@ void platform_sleep(u64 ms)
 
 - (void)windowDidResize:(NSNotification *)notification
 {
+  
+  NSView* view = state->ns_view;
+  
+  CGFloat scale =
+    view.window.backingScaleFactor;
+  
+  CGSize drawableSize =
+    CGSizeMake(view.bounds.size.width * scale,
+               view.bounds.size.height * scale);
+  
+  state->metal_layer.drawableSize = drawableSize;
+  state->metal_layer.frame = view.bounds;
   NSWindow* window =
     (NSWindow*)[notification object];
   

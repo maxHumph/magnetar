@@ -2,8 +2,6 @@
  * @file platform_linux.c
  */
 
-#include <xcb/xproto.h>
-
 #include "core/events.h"
 #include "core/input.h"
 #include "define.h"
@@ -17,6 +15,7 @@
 #include <X11/keysym.h>
 #include <sys/time.h>
 #include <xcb/xcb.h>
+#include <xcb/xproto.h>
 
 #include "core/log.h"
 #include "platform/platform_linux_types.h"

@@ -21,7 +21,8 @@
 typedef struct Vertex {
   Vec3 position;
   Vec3 colour;
-  Vec2 texure_coord;
+  Vec2 texture_coord;
+
 } Vertex;
 
 typedef struct MVPMat {
@@ -48,6 +49,7 @@ typedef struct VulkanContext {
   VkAllocationCallbacks* allocator;
   VkDebugUtilsMessengerEXT* debug_messenger;
 
+  u32 queue_family_index_count;
   u32 graphics_queue_family_index;
   u32 transfer_queue_family_index;
 

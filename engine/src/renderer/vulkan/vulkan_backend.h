@@ -209,6 +209,8 @@ static b8 vulkan_create_texture_image();
 
 static b8 vulkan_create_texture_image_view();
 
+static b8 vulkan_create_texture_image_sampler();
+
 static b8 vulkan_create_vertex_buffers();
 
 static b8 vulkan_create_index_buffer();

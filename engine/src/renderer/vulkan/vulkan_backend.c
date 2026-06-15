@@ -23,30 +23,14 @@ static b8 toggle = TRUE;
 
 b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* application_name,
                        i16 start_width, i16 start_height, PlatformState* platform_state) {
+
   vulkan_context.allocator = NULL_PTR;
   vulkan_context.debug_messenger = NULL_PTR;
   vulkan_context.swapchain_extent.width = start_width;
   vulkan_context.swapchain_extent.height = start_height;
 
-  // Test vertices
-  // vulkan_context.vertex_count = 4;
-  //  vulkan_context.vertices =
-  //  mallocate(vulkan_context.vertex_count * sizeof(Vertex), MEMORY_TAG_RENDERER);
-  //
-  //  vulkan_context.vertices[0].position = (Vec3){-0.5f, -0.5f, 0.0f};
-  //  vulkan_context.vertices[1].position = (Vec3){0.5f, -0.5f, 0.0f};
-  //  vulkan_context.vertices[2].position = (Vec3){0.5f, 0.5f, 0.0f};
-  //  vulkan_context.vertices[3].position = (Vec3){-0.5f, 0.5f, 0.0f};
-  //
-  //  vulkan_context.vertices[0].colour = (Vec3){1.0f, 0.0f, 0.0f};
-  //  vulkan_context.vertices[1].colour = (Vec3){0.0f, 1.0f, 0.0f};
-  //  vulkan_context.vertices[2].colour = (Vec3){0.0f, 0.0f, 1.0f};
-  //  vulkan_context.vertices[3].colour = (Vec3){0.0f, 0.0f, 0.0f};
-  //
-  //  vulkan_context.index_count = 6;
-  //  u32 indices[] = {0, 1, 2, 0, 2, 3};
-  //
 
+  /*
   vulkan_context.vertex_count = 8;
   vulkan_context.vertices =
       mallocate(vulkan_context.vertex_count * sizeof(Vertex), MEMORY_TAG_RENDERER);
@@ -55,6 +39,11 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   vulkan_context.vertices[1].position = (Vec3){0.5f, -0.5f, -0.5f};
   vulkan_context.vertices[2].position = (Vec3){0.5f, 0.5f, -0.5f};
   vulkan_context.vertices[3].position = (Vec3){-0.5f, 0.5f, -0.5f};
+
+  vulkan_context.vertices[0].texture_coord = (Vec2){0.0f, 0.0f};
+  vulkan_context.vertices[1].texture_coord = (Vec2){1.0f, 0.0f};
+  vulkan_context.vertices[2].texture_coord = (Vec2){1.0f, 1.0f};
+  vulkan_context.vertices[3].texture_coord = (Vec2){0.0f, 1.0f};
 
   vulkan_context.vertices[4].position = (Vec3){-0.5f, -0.5f, 0.5f};
   vulkan_context.vertices[5].position = (Vec3){0.5f, -0.5f, 0.5f};
@@ -89,6 +78,128 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
 
                    // top face
                    3, 2, 6, 6, 7, 3};
+  */
+  vulkan_context.vertex_count = 24;
+  vulkan_context.vertices =
+    mallocate(vulkan_context.vertex_count * sizeof(Vertex), MEMORY_TAG_RENDERER);
+
+  // 0
+  vulkan_context.vertices[0].position = (Vec3){-0.5f, -0.5f, -0.5f};
+  vulkan_context.vertices[0].texture_coord = (Vec2){0.0f, 0.0f};
+
+  // 1
+  vulkan_context.vertices[1].position = (Vec3){0.5f, -0.5f, -0.5f};
+  vulkan_context.vertices[1].texture_coord = (Vec2){1.0f, 0.0f};
+
+  // 2
+  vulkan_context.vertices[2].position = (Vec3){0.5f, 0.5f, -0.5f};
+  vulkan_context.vertices[2].texture_coord = (Vec2){1.0f, 1.0f};
+
+  // 3
+  vulkan_context.vertices[3].position = (Vec3){-0.5f, 0.5f, -0.5f};
+  vulkan_context.vertices[3].texture_coord = (Vec2){0.0f, 1.0f};
+
+  // 4
+  vulkan_context.vertices[4].position = (Vec3){-0.5f, -0.5f, 0.5f};
+  vulkan_context.vertices[4].texture_coord = (Vec2){0.0f, 0.0f};
+
+  // 5
+  vulkan_context.vertices[5].position = (Vec3){0.5f, -0.5f, 0.5f};
+  vulkan_context.vertices[5].texture_coord = (Vec2){1.0f, 0.0f};
+
+  // 6
+  vulkan_context.vertices[6].position = (Vec3){0.5f, 0.5f, 0.5f};
+  vulkan_context.vertices[6].texture_coord = (Vec2){1.0f, 1.0f};
+
+  // 7
+  vulkan_context.vertices[7].position = (Vec3){-0.5f, 0.5f, 0.5f};
+  vulkan_context.vertices[7].texture_coord = (Vec2){0.0f, 1.0f};
+
+  // 8
+  vulkan_context.vertices[8].position = (Vec3){-0.5f, -0.5f, -0.5f};
+  vulkan_context.vertices[8].texture_coord = (Vec2){0.0f, 0.0f};
+
+  // 9
+  vulkan_context.vertices[9].position = (Vec3){-0.5f, -0.5f, 0.5f};
+  vulkan_context.vertices[9].texture_coord = (Vec2){1.0f, 0.0f};
+
+  // 10
+  vulkan_context.vertices[10].position = (Vec3){-0.5f, 0.5f, 0.5f};
+  vulkan_context.vertices[10].texture_coord = (Vec2){1.0f, 1.0f};
+
+  // 11
+  vulkan_context.vertices[11].position = (Vec3){-0.5f, 0.5f, -0.5f};
+  vulkan_context.vertices[11].texture_coord = (Vec2){0.0f, 1.0f};
+
+  // 12
+  vulkan_context.vertices[12].position = (Vec3){0.5f, -0.5f, -0.5f};
+  vulkan_context.vertices[12].texture_coord = (Vec2){0.0f, 0.0f};
+
+  // 13
+  vulkan_context.vertices[13].position = (Vec3){0.5f, -0.5f, 0.5f};
+  vulkan_context.vertices[13].texture_coord = (Vec2){1.0f, 0.0f};
+
+  // 14
+  vulkan_context.vertices[14].position = (Vec3){0.5f, 0.5f, 0.5f};
+  vulkan_context.vertices[14].texture_coord = (Vec2){1.0f, 1.0f};
+
+  // 15
+  vulkan_context.vertices[15].position = (Vec3){0.5f, 0.5f, -0.5f};
+  vulkan_context.vertices[15].texture_coord = (Vec2){0.0f, 1.0f};
+
+  // 16
+  vulkan_context.vertices[16].position = (Vec3){-0.5f, -0.5f, -0.5f};
+  vulkan_context.vertices[16].texture_coord = (Vec2){0.0f, 0.0f};
+
+  // 17
+  vulkan_context.vertices[17].position = (Vec3){0.5f, -0.5f, -0.5f};
+  vulkan_context.vertices[17].texture_coord = (Vec2){1.0f, 0.0f};
+
+  // 18
+  vulkan_context.vertices[18].position = (Vec3){0.5f, -0.5f, 0.5f};
+  vulkan_context.vertices[18].texture_coord = (Vec2){1.0f, 1.0f};
+
+  // 19
+  vulkan_context.vertices[19].position = (Vec3){-0.5f, -0.5f, 0.5f};
+  vulkan_context.vertices[19].texture_coord = (Vec2){0.0f, 1.0f};
+
+  // 20
+  vulkan_context.vertices[20].position = (Vec3){-0.5f, 0.5f, -0.5f};
+  vulkan_context.vertices[20].texture_coord = (Vec2){0.0f, 0.0f};
+
+  // 21
+  vulkan_context.vertices[21].position = (Vec3){0.5f, 0.5f, -0.5f};
+  vulkan_context.vertices[21].texture_coord = (Vec2){1.0f, 0.0f};
+
+  // 22
+  vulkan_context.vertices[22].position = (Vec3){0.5f, 0.5f, 0.5f};
+  vulkan_context.vertices[22].texture_coord = (Vec2){1.0f, 1.0f};
+
+  // 23
+  vulkan_context.vertices[23].position = (Vec3){-0.5f, 0.5f, 0.5f};
+  vulkan_context.vertices[23].texture_coord = (Vec2){0.0f, 1.0f};
+
+  vulkan_context.index_count = 36;
+
+  u32 indices[] = {
+    // back
+    0, 1, 2, 2, 3, 0,
+
+    // front
+    4, 6, 5, 6, 4, 7,
+
+    // left
+    8, 9, 10, 10, 11, 8,
+
+    // right
+    12, 13, 14, 14, 15, 12,
+
+    // bottom
+    16, 17, 18, 18, 19, 16,
+
+    // top
+    20, 21, 22, 22, 23, 20
+  };
 
   vulkan_context.indices = mallocate(vulkan_context.index_count * sizeof(u32), MEMORY_TAG_RENDERER);
 
@@ -160,11 +271,6 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
     return FALSE;
   }
 
-  // CREATE DESCRIPTOR SETS ----------
-  if (!vulkan_create_descriptor_sets()) {
-    MERROR_CORE("Vukan Init: Failed to create descriptor sets");
-    return FALSE;
-  }
 
   // CREATE GRAPHICS PIPELINE ----------
   if (!vulkan_create_graphics_pipeline()) {
@@ -184,6 +290,23 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
     return FALSE;
   }
 
+  // CREATE TEXTURE IMAGE VIEW
+  if (!vulkan_create_texture_image_view()) {
+    MERROR_CORE("Vulkan Init: Failed to create texture image view.");
+    return FALSE;
+  }
+
+  // CREATE TEXTURE IMAGE SAMPLER
+  if (!vulkan_create_texture_image_sampler()) {
+    MERROR_CORE("Vulkan Init: Failed to create texture imgae sampler.");
+    return FALSE;
+  }
+
+  // CREATE DESCRIPTOR SETS ----------
+  if (!vulkan_create_descriptor_sets()) {
+    MERROR_CORE("Vukan Init: Failed to create descriptor sets");
+    return FALSE;
+  }
   // CREATE VERTEX BUFFERS ----------
   if (!vulkan_create_vertex_buffers()) {
     MERROR_CORE("Vulkan Init: Failed to create vertex buffers.");
@@ -207,6 +330,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
     MERROR_CORE("Vulkan Init: Failed to create syncronisation objects.");
     return FALSE;
   }
+
+  MTRACE_CORE("%s", string_VkFormat(vulkan_context.surface_format.format));
 
 
   // Get device queue for rendering
@@ -618,6 +743,8 @@ static b8 vulkan_select_physical_device() {
   }
   vulkan_context.physical_device = suitable_device;
 
+  vkGetPhysicalDeviceProperties(vulkan_context.physical_device, &vulkan_context.physical_device_properties);
+
   mfree(physical_devices, physical_device_count * sizeof(VkPhysicalDevice), MEMORY_TAG_RENDERER);
   return TRUE;
 }
@@ -808,15 +935,28 @@ static b8 vulkan_create_logical_device() {
 
   // Enable vulkan13 features
   VkPhysicalDeviceVulkan13Features physical_device_vulkan_13_features = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
-  physical_device_vulkan_13_features.pNext = &physical_device_vulkan_11_features;
-  physical_device_vulkan_13_features.dynamicRendering = VK_TRUE;
-  physical_device_vulkan_13_features.synchronization2 = VK_TRUE;
+    .sType =  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
+    .pNext = &physical_device_vulkan_11_features,
+    .dynamicRendering = VK_TRUE,
+    .synchronization2 = VK_TRUE,
+  };
+  
+  // Enable extra features
+  VkPhysicalDeviceFeatures physical_device_features = {
+    .samplerAnisotropy = VK_TRUE,
+  };
+
+  VkPhysicalDeviceFeatures2 physical_device_features_2 = {
+    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+    .pNext = &physical_device_vulkan_13_features,
+    .features = physical_device_features,
+  };
+    
 
   // Set logical device create info
   const char* const device_extension_names[] = MVK_DEVICE_EXTENSION_NAMES;
   VkDeviceCreateInfo device_create_info = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
-  device_create_info.pNext = &physical_device_vulkan_13_features;
+  device_create_info.pNext = &physical_device_features_2;
   device_create_info.queueCreateInfoCount = vulkan_context.queue_family_index_count;
   device_create_info.pQueueCreateInfos = device_queue_create_infos;
   device_create_info.pEnabledFeatures = NULL_PTR;
@@ -963,10 +1103,22 @@ static b8 vulkan_create_descriptor_set_layout() {
   mvp_layout_binding.descriptorCount = 1;
   mvp_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
+  VkDescriptorSetLayoutBinding texture_sampler_layout_binding = {
+    .binding = 1,
+    .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+    .descriptorCount = 1,
+    .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+  };
+
+  VkDescriptorSetLayoutBinding layout_bindings[2] = {
+    mvp_layout_binding,
+    texture_sampler_layout_binding,
+  };
+
   VkDescriptorSetLayoutCreateInfo descriptor_set_layout_create_info = {
       VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
-  descriptor_set_layout_create_info.bindingCount = 1;
-  descriptor_set_layout_create_info.pBindings = &mvp_layout_binding;
+  descriptor_set_layout_create_info.bindingCount = 2;
+  descriptor_set_layout_create_info.pBindings = layout_bindings;
 
   VkResult create_descriptor_set_layout_res =
       vkCreateDescriptorSetLayout(vulkan_context.logical_device, &descriptor_set_layout_create_info,
@@ -1225,7 +1377,7 @@ static b8 vulkan_create_texture_image() {
   u32 height;
   u32 channels;
 
-  const char path[] = "../test/res/textures/brick.png";
+  const char path[] = "../test/res/textures/bad_grass.png";
 
   stbi_uc *tex_data = stbi_load(path, (i32*)&width, (i32*)&height, (i32*)&channels, STBI_rgb_alpha);
   VkDeviceSize image_size = width * height * 4;
@@ -1294,6 +1446,67 @@ static b8 vulkan_create_texture_image() {
 }
 
 static b8 vulkan_create_texture_image_view() {
+
+    VkComponentMapping component_mapping;
+    component_mapping.r = VK_COMPONENT_SWIZZLE_B;
+    component_mapping.g = VK_COMPONENT_SWIZZLE_G;
+    component_mapping.b = VK_COMPONENT_SWIZZLE_R;
+    component_mapping.a = VK_COMPONENT_SWIZZLE_A;
+
+  VkImageSubresourceRange subresource_range = {
+    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+    .baseMipLevel = 0,
+    .levelCount = 1,
+    .baseArrayLayer = 0,
+    .layerCount = 1};
+
+  VkImageViewCreateInfo view_create_info = {
+    .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+    .image = vulkan_context.texture_image,
+    .viewType = VK_IMAGE_VIEW_TYPE_2D,
+    .format = vulkan_context.surface_format.format,
+    .subresourceRange = subresource_range,
+    .components = component_mapping,
+  };
+  
+  VkResult create_img_view_res = vkCreateImageView(vulkan_context.logical_device, &view_create_info, vulkan_context.allocator,
+						   &vulkan_context.texture_image_view);
+  if (create_img_view_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to create texture image view: %s", string_VkResult(create_img_view_res));
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+static b8 vulkan_create_texture_image_sampler() {
+
+  VkSamplerCreateInfo sampler_create_info = {
+    .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+    .magFilter = VK_FILTER_NEAREST,
+    .minFilter = VK_FILTER_NEAREST,
+    .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+    .mipLodBias = 0.0f,
+    .minLod = 0.0f,
+    .maxLod = 0.0f,
+    .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+    .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+    .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+    .anisotropyEnable = VK_TRUE,
+    .maxAnisotropy = vulkan_context.physical_device_properties.limits.maxSamplerAnisotropy,
+    .compareEnable = VK_FALSE,
+    .compareOp = VK_COMPARE_OP_ALWAYS,
+    .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+    .unnormalizedCoordinates = VK_FALSE};
+
+  VkResult create_sampler_res = vkCreateSampler(vulkan_context.logical_device, &sampler_create_info, vulkan_context.allocator,
+						&vulkan_context.texture_image_sampler);
+  if (create_sampler_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to create sampler: %s", string_VkResult(create_sampler_res));
+    return FALSE;
+  }
+
+  return TRUE;
 }
 
 static b8 vulkan_create_vertex_buffers() {
@@ -1405,15 +1618,24 @@ static b8 vulkan_create_uniform_buffers() {
 }
 
 static b8 vulkan_create_descriptor_pool() {
-  VkDescriptorPoolSize descriptor_pool_size = {.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+  VkDescriptorPoolSize uniform_pool_size = {.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                                .descriptorCount = MAX_FRAMES_IN_FLIGHT};
+  VkDescriptorPoolSize img_sampler_pool_size = {
+    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+    .descriptorCount = MAX_FRAMES_IN_FLIGHT,
+  };
+
+  VkDescriptorPoolSize pool_sizes[2] = {
+    uniform_pool_size,
+    img_sampler_pool_size,
+  };
 
   VkDescriptorPoolCreateInfo descriptor_pool_create_info = {
       VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
   descriptor_pool_create_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
   descriptor_pool_create_info.maxSets = MAX_FRAMES_IN_FLIGHT;
-  descriptor_pool_create_info.poolSizeCount = 1;
-  descriptor_pool_create_info.pPoolSizes = &descriptor_pool_size;
+  descriptor_pool_create_info.poolSizeCount = 2;
+  descriptor_pool_create_info.pPoolSizes = pool_sizes;
 
   VkResult create_descriptor_pool_res =
       vkCreateDescriptorPool(vulkan_context.logical_device, &descriptor_pool_create_info,
@@ -1452,15 +1674,36 @@ static b8 vulkan_create_descriptor_sets() {
     buffer_info.offset = 0;
     buffer_info.range = VK_WHOLE_SIZE;
 
-    VkWriteDescriptorSet descriptor_write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
-    descriptor_write.dstSet = vulkan_context.descriptor_sets[i];
-    descriptor_write.dstBinding = 0;
-    descriptor_write.dstArrayElement = 0;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptor_write.pBufferInfo = &buffer_info;
+    VkDescriptorImageInfo image_info = {
+      .sampler = vulkan_context.texture_image_sampler,
+      .imageView = vulkan_context.texture_image_view,
+      .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    };
 
-    vkUpdateDescriptorSets(vulkan_context.logical_device, 1, &descriptor_write, 0, NULL_PTR);
+    VkWriteDescriptorSet uniform_write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+    uniform_write.dstSet = vulkan_context.descriptor_sets[i];
+    uniform_write.dstBinding = 0;
+    uniform_write.dstArrayElement = 0;
+    uniform_write.descriptorCount = 1;
+    uniform_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uniform_write.pBufferInfo = &buffer_info;
+
+    VkWriteDescriptorSet image_write = {
+      .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+      .dstSet = vulkan_context.descriptor_sets[i],
+      .dstBinding = 1,
+      .dstArrayElement = 0,
+      .descriptorCount = 1,
+      .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+      .pImageInfo = &image_info,
+    };
+
+    VkWriteDescriptorSet writes[2] = {
+      uniform_write,
+      image_write,
+    };
+
+    vkUpdateDescriptorSets(vulkan_context.logical_device, 2, writes, 0, NULL_PTR);
   }
 
   return TRUE;

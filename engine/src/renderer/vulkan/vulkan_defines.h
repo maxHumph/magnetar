@@ -13,7 +13,7 @@
 
 #define MAX_FRAMES_IN_FLIGHT 2
 
-#define MVK_VERTEX_ATTRIBUTE_COUNT 2
+#define MVK_VERTEX_ATTRIBUTE_COUNT 3
 
 /**
  * @brief Stores vertex data for use i vertex buffers.
@@ -35,6 +35,8 @@ typedef struct VulkanContext {
   VkInstance instance;
   VkPhysicalDevice physical_device;
   VkDevice logical_device;
+
+  VkPhysicalDeviceProperties physical_device_properties;
 
   VkQueue graphics_queue;
   VkQueue transfer_queue;
@@ -91,6 +93,8 @@ typedef struct VulkanContext {
   VkDeviceMemory staging_texture_buf_mem;
   VkImage texture_image;
   VkDeviceMemory texture_image_mem;
+  VkImageView texture_image_view;
+  VkSampler texture_image_sampler;
 
   VkDescriptorSetLayout descriptor_set_layout;
   VkDescriptorPool descriptor_pool;

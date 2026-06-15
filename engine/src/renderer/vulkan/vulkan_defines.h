@@ -87,6 +87,11 @@ typedef struct VulkanContext {
   VkBuffer index_buffer;
   VkDeviceMemory index_buffer_mem;
 
+  VkBuffer staging_texture_buf;
+  VkDeviceMemory staging_texture_buf_mem;
+  VkImage texture_image;
+  VkDeviceMemory texture_image_mem;
+
   VkDescriptorSetLayout descriptor_set_layout;
   VkDescriptorPool descriptor_pool;
   VkDescriptorSet descriptor_sets[MAX_FRAMES_IN_FLIGHT];

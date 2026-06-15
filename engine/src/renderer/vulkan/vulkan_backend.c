@@ -1,8 +1,11 @@
+#define STB_IMAGE_IMPLEMENTATION
+
 #include "vulkan_backend.h"
 
 #include <stddef.h>
 #include <vulkan/vk_enum_string_helper.h>
 
+#include "vendor/stb_image.h"
 #include "core/log.h"
 #include "core/mmemory.h"
 #include "define.h"
@@ -1204,6 +1207,53 @@ static b8 vulkan_create_command_pools() {
   return TRUE;
 }
 
+static b8 vulkan_create_texture_image() {
+
+  u32 width;
+  u32 height;
+  u32 channels;
+
+  const char path[] = "../test/res/textures/brick.png";
+
+  stbi_uc *tex_data = stbi_load(path, (i32*)&width, (i32*)&height, (i32*)&channels, STBI_rgb_alpha);
+  VkDeviceSize image_size = width * height * 4;
+
+  if (tex_data == NULL_PTR) {
+    MERROR_CORE("Failed to load texture image: %s", path);
+    return FALSE;
+  }
+
+  if (!create_buffer(&vulkan_context.staging_texture_buf, &vulkan_context.staging_texture_buf_mem, image_size,
+		     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+    MERROR_CORE("Failed to create staging texture buffer for: %s", path);
+    return FALSE;
+  }
+
+  void* data;
+
+  VkResult map_mem_res = vkMapMemory(vulkan_context.logical_device, vulkan_context.staging_texture_buf_mem,
+				     0, image_size, ZERO, &data);
+
+  if (map_mem_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to map staging texture buffer memory: %s", string_VkResult(map_mem_res));
+    return FALSE;
+  }
+
+  mcopy_memory(data, tex_data, image_size);
+  vkUnmapMemory(vulkan_context.logical_device, vulkan_context.staging_texture_buf_mem);
+
+  stbi_image_free(tex_data);
+
+  if (!create_image(&vulkan_context.texture_image, &vulkan_context.texture_image_mem, width, height, vulkan_context.surface_format.format,
+		    VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+    MERROR_CORE("Failed to create image for texture");
+    return FALSE;
+  }
+   
+  return TRUE;
+}
+
 static b8 vulkan_create_vertex_buffers() {
   /* vulkan_context.vertex_buffer = NULL_PTR; */
   /* vulkan_context.vertex_buffer_memory = NULL_PTR; */
@@ -1677,12 +1727,109 @@ static b8 update_uniform_buffer() {
                mat4_transpose(model_tran));
   mvp_mat.view = mat4_iden();
   mvp_mat.proj = mat4_perspective(
-      M_TO_RAD(90.0f),
+      M_TO_RAD(70.0f),
       (f32)vulkan_context.swapchain_extent.width / (f32)vulkan_context.swapchain_extent.height,
       0.1f, 1000.0f);
 
   mvp_mat.proj.e22 *= -1.0f;
   mcopy_memory(vulkan_context.uniform_buffer_mem_mapped[vulkan_context.current_frame_index],
                &mvp_mat, sizeof(mvp_mat));
+  return TRUE;
+}
+
+static b8 create_image(VkImage* image, VkDeviceMemory* mem, u32 width, u32 height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags props) {
+
+  VkImageCreateInfo image_create_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
+  image_create_info.imageType = VK_IMAGE_TYPE_2D;
+  image_create_info.format = vulkan_context.surface_format.format;
+  image_create_info.extent.width = width;
+  image_create_info.extent.height = height;
+  image_create_info.extent.depth = 1;
+  image_create_info.mipLevels = 1;
+  image_create_info.arrayLayers = 1;
+  image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+  image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+  image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+  image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+  VkResult create_image_res = vkCreateImage(vulkan_context.logical_device, &image_create_info, vulkan_context.allocator, image);
+  
+  if (create_image_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to create teture image: %s", string_VkResult(create_image_res));
+    return FALSE;
+  }
+
+  VkMemoryRequirements mem_req;
+  vkGetImageMemoryRequirements(vulkan_context.logical_device, *image, &mem_req);
+
+  VkMemoryAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+  alloc_info.allocationSize = mem_req.size;
+  alloc_info.memoryTypeIndex = get_memory_type(mem_req.memoryTypeBits, props);
+  
+  VkResult alloc_mem_res = vkAllocateMemory(vulkan_context.logical_device, &alloc_info, vulkan_context.allocator, mem);
+  
+  if (alloc_mem_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to allocate vulkan image device memory: %s", string_VkResult(alloc_mem_res));
+    return FALSE;
+  }
+
+  VkResult bind_image_mem_res = vkBindImageMemory(vulkan_context.logical_device, *image, *mem, 0);
+
+  if (bind_image_mem_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to bind vulkan image memory: %s", string_VkResult(bind_image_mem_res));
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+static VkCommandBuffer begin_single_time_commands(VkCommandPool command_pool) {
+  VkCommandBufferAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+  alloc_info.commandPool = command_pool;
+  alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  alloc_info.commandBufferCount = 1;
+
+  VkCommandBuffer command_buf;
+
+  VkResult alloc_cmd_buf_res = vkAllocateCommandBuffers(vulkan_context.logical_device, &alloc_info, &command_buf);
+  if (alloc_cmd_buf_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to create vulkan command buffer: %s", string_VkResult(alloc_cmd_buf_res));
+    return VK_NULL_HANDLE;
+  }
+
+  VkCommandBufferBeginInfo begin_cmd_buf_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+  begin_cmd_buf_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+  
+  VkResult begin_cmd_buf_res = vkBeginCommandBuffer(command_buf, &begin_cmd_buf_info);
+  if (begin_cmd_buf_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to begin command buffer: %s", string_VkResult(begin_cmd_buf_res));
+    return VK_NULL_HANDLE;
+  }
+
+  return command_buf;
+}
+
+static b8 end_single_time_commands(VkCommandBuffer* cmd_buf, VkQueue queue) {
+  VkResult end_cmd_buf_res = vkEndCommandBuffer(*cmd_buf);
+  if (end_cmd_buf_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to end command buffer: %s", string_VkResult(end_cmd_buf_res));
+    return FALSE;
+  }
+
+  VkSubmitInfo submit_info = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  submit_info.commandBufferCount = 1;
+  submit_info.pCommandBuffers = cmd_buf;
+
+  VkResult queue_submit_res = vkQueueSubmit(queue, 1, &submit_info, NULL_PTR);
+  if (queue_submit_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to submit to queue: %s", string_VkResult(queue_submit_res));
+    return FALSE;
+  }
+
+  VkResult wait_idle_res = vkQueueWaitIdle(queue);
+  if (wait_idle_res != VK_SUCCESS) {
+    MWARN_CORE("Failed to wait for queue idle: %s", string_VkResult(wait_idle_res));
+  }
+
   return TRUE;
 }

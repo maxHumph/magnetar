@@ -207,6 +207,8 @@ static b8 vulkan_create_command_pools();
 
 static b8 vulkan_create_texture_image();
 
+static b8 vulkan_create_texture_image_view();
+
 static b8 vulkan_create_vertex_buffers();
 
 static b8 vulkan_create_index_buffer();
@@ -279,3 +281,7 @@ static b8 create_image(VkImage* image, VkDeviceMemory* mem, u32 width, u32 heigh
 static VkCommandBuffer begin_single_time_commands(VkCommandPool command_pool);
 
 static b8 end_single_time_commands(VkCommandBuffer* cmd_buf, VkQueue queue);
+
+static b8 transition_tex_image_layout(VkCommandBuffer* cmd_buf, const VkImage* image, VkImageLayout old_layout, VkImageLayout new_layout);
+
+static b8 copy_buffer_to_image(VkCommandBuffer* cmd_buf, VkBuffer* buf, VkImage* image, u32 width, u32 height);

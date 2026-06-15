@@ -178,6 +178,12 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
     return FALSE;
   }
 
+  // CREATE TEXTURE IMAGE
+  if (!vulkan_create_texture_image()) {
+    MERROR_CORE("Vulkan Init: Failed to create texture image.");
+    return FALSE;
+  }
+
   // CREATE VERTEX BUFFERS ----------
   if (!vulkan_create_vertex_buffers()) {
     MERROR_CORE("Vulkan Init: Failed to create vertex buffers.");
@@ -201,6 +207,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
     MERROR_CORE("Vulkan Init: Failed to create syncronisation objects.");
     return FALSE;
   }
+
 
   // Get device queue for rendering
   vkGetDeviceQueue(vulkan_context.logical_device, vulkan_context.graphics_queue_family_index, 0,
@@ -726,15 +733,19 @@ static b8 vulkan_create_logical_device() {
     return FALSE;
   }
 
+  b8 transfer_queue_found = FALSE;
   for (u32 i = 0; i < queue_family_properties_count; i++) {
     VkQueueFlags flags = queue_family_properties[i].queueFlags;
 
     // Prefer dedicated transfer queue
     if ((flags & VK_QUEUE_TRANSFER_BIT) && !(flags & VK_QUEUE_GRAPHICS_BIT)) {
       vulkan_context.transfer_queue_family_index = i;
-      queue_family_supported = VK_TRUE;
+      transfer_queue_found = TRUE;
       break;
     }
+  }
+  if (transfer_queue_found == FALSE) {
+    vulkan_context.transfer_queue_family_index = vulkan_context.graphics_queue_family_index;
   }
 
   /* queue_family_supported = VK_FALSE; */
@@ -769,25 +780,26 @@ static b8 vulkan_create_logical_device() {
   device_graphics_queue_create_info.queueCount = 1;  // @MAGIC_NUMBER
   device_graphics_queue_create_info.pQueuePriorities = &temp_priority;
 
-#if defined(MPLATFORM_APPLE)
 
-  vulkan_context.transfer_queue_family_index = vulkan_context.graphics_queue_family_index;
-
-  vulkan_context.queue_family_index_count = 1;
-  VkDeviceQueueCreateInfo device_queue_create_infos[] = {device_graphics_queue_create_info};
-
-#else
-
+  VkDeviceQueueCreateInfo device_queue_create_infos[2];
   VkDeviceQueueCreateInfo device_transfer_queue_create_info = {
-      VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
-  device_transfer_queue_create_info.queueFamilyIndex = vulkan_context.transfer_queue_family_index;
-  device_transfer_queue_create_info.queueCount = 1;  // @MAGIC_NUMBER
-  device_transfer_queue_create_info.pQueuePriorities = &temp_priority;
+    VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
+  
+  if (vulkan_context.graphics_queue_family_index == vulkan_context.transfer_queue_family_index) {
+    
+    vulkan_context.queue_family_index_count = 1;
+    device_queue_create_infos[0] = device_graphics_queue_create_info;
 
-  vulkan_context.queue_family_index_count = 2;
-  VkDeviceQueueCreateInfo device_queue_create_infos[] = {device_graphics_queue_create_info,
-                                                         device_transfer_queue_create_info};
-#endif
+  } else {
+    
+    device_transfer_queue_create_info.queueFamilyIndex = vulkan_context.transfer_queue_family_index;
+    device_transfer_queue_create_info.queueCount = 1;  // @MAGIC_NUMBER
+    device_transfer_queue_create_info.pQueuePriorities = &temp_priority;
+    
+    vulkan_context.queue_family_index_count = 2;
+    device_queue_create_infos[0] = device_graphics_queue_create_info;
+    device_queue_create_infos[1] = device_transfer_queue_create_info;
+  }
 
   // Enable vulkan11 features
   VkPhysicalDeviceVulkan11Features physical_device_vulkan_11_features = {
@@ -1250,8 +1262,38 @@ static b8 vulkan_create_texture_image() {
     MERROR_CORE("Failed to create image for texture");
     return FALSE;
   }
+
+  VkCommandBuffer command_buf = begin_single_time_commands(vulkan_context.graphics_command_pool);
+  if (command_buf == VK_NULL_HANDLE) {
+    MERROR_CORE("Failed to begin single time commands");
+    return FALSE;
+  }
+
+  if (!transition_tex_image_layout(&command_buf, &vulkan_context.texture_image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)) {
+    MERROR_CORE("Failed to transfer image layout");
+    return FALSE;
+  }
+
+  if (!copy_buffer_to_image(&command_buf, &vulkan_context.staging_texture_buf, &vulkan_context.texture_image, width, height)) {
+    MERROR_CORE("Failed to copy buffer to image");
+    return FALSE;
+  }
+
+  if (!transition_tex_image_layout(&command_buf, &vulkan_context.texture_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)) {
+    MERROR_CORE("Failed to transfer image layout");
+    return FALSE;
+  }
+
+  if (!end_single_time_commands(&command_buf, vulkan_context.graphics_queue)) {
+    MERROR_CORE("Failed to end single time commands");
+    return FALSE;
+  }
    
   return TRUE;
+}
+
+static b8 vulkan_create_texture_image_view() {
 }
 
 static b8 vulkan_create_vertex_buffers() {
@@ -1748,8 +1790,8 @@ static b8 create_image(VkImage* image, VkDeviceMemory* mem, u32 width, u32 heigh
   image_create_info.mipLevels = 1;
   image_create_info.arrayLayers = 1;
   image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-  image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-  image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+  image_create_info.tiling = tiling;
+  image_create_info.usage = usage;
   image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
   VkResult create_image_res = vkCreateImage(vulkan_context.logical_device, &image_create_info, vulkan_context.allocator, image);
@@ -1820,7 +1862,7 @@ static b8 end_single_time_commands(VkCommandBuffer* cmd_buf, VkQueue queue) {
   submit_info.commandBufferCount = 1;
   submit_info.pCommandBuffers = cmd_buf;
 
-  VkResult queue_submit_res = vkQueueSubmit(queue, 1, &submit_info, NULL_PTR);
+  VkResult queue_submit_res = vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
   if (queue_submit_res != VK_SUCCESS) {
     MERROR_CORE("Failed to submit to queue: %s", string_VkResult(queue_submit_res));
     return FALSE;
@@ -1830,6 +1872,70 @@ static b8 end_single_time_commands(VkCommandBuffer* cmd_buf, VkQueue queue) {
   if (wait_idle_res != VK_SUCCESS) {
     MWARN_CORE("Failed to wait for queue idle: %s", string_VkResult(wait_idle_res));
   }
+
+  return TRUE;
+}
+
+static b8 transition_tex_image_layout(VkCommandBuffer* cmd_buf, const VkImage* image, VkImageLayout old_layout, VkImageLayout new_layout) {
+
+  VkImageSubresourceRange subresource_range = {};
+  subresource_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  subresource_range.levelCount = 1;
+  subresource_range.layerCount = 1;
+
+  VkImageMemoryBarrier barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+  barrier.oldLayout = old_layout;
+  barrier.newLayout = new_layout;
+  barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  barrier.image = *image;
+  barrier.subresourceRange = subresource_range;
+
+  VkPipelineStageFlags src_stage;
+  VkPipelineStageFlags dst_stage;
+
+  if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+    barrier.srcAccessMask = ZERO;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+  } else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+  } else {
+    MERROR_CORE("Unsupported layout transition %s -> %s", string_VkImageLayout(old_layout), string_VkImageLayout(new_layout));
+    return FALSE;
+  }
+
+  vkCmdPipelineBarrier(*cmd_buf, src_stage, dst_stage, ZERO, 0, NULL_PTR, 0, NULL_PTR, 1, &barrier);
+
+  return TRUE;
+}
+
+static b8 copy_buffer_to_image(VkCommandBuffer* cmd_buf, VkBuffer* buf, VkImage* image, u32 width, u32 height) {
+
+  VkImageSubresourceLayers layers;
+  layers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  layers.mipLevel = 0;
+  layers.baseArrayLayer = 0;
+  layers.layerCount = 1;
+
+  VkOffset3D offset = {.x = 0, .y = 0, .z = 0};
+  VkExtent3D extent = {.width = width, .height = height, .depth = 1};
+
+  VkBufferImageCopy buf_image_copy;
+  buf_image_copy.bufferOffset = 0;
+  buf_image_copy.bufferRowLength = 0;
+  buf_image_copy.bufferImageHeight = 0;
+  buf_image_copy.imageSubresource = layers;
+  buf_image_copy.imageOffset = offset;
+  buf_image_copy.imageExtent = extent;
+  
+  vkCmdCopyBufferToImage(*cmd_buf, *buf, *image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buf_image_copy);
 
   return TRUE;
 }

@@ -14,8 +14,13 @@ typedef enum ObjLineType {
   OBJ_VERTEX,
   OBJ_NORMAL,
   OBJ_TEXRURE,
+  OBJ_INDEX,
 } ObjLineType;
 
-MGAPI b8 load_obj(const char* path, Vertex** vertices, u32* vertex_count);
+MGAPI b8 obj_load(const char* path, Vertex** vertices, u32* vertex_count, u32** indices, u32* index_count);
 
-static b8 get_obj_line(char* line, u64* line_len, FILE* file, ObjLineType* type);
+static b8 obj_load_vertex(Vertex** vertices);
+
+static b8 obj_load_index(u32** vertices);
+
+static b8 obj_get_line(char* line, u64* line_len, FILE* file, ObjLineType* type);

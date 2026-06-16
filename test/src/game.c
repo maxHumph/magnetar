@@ -21,9 +21,12 @@ b8 game_initalize(Game* game_instance) {
 
 
   Vertex* vertices;
-  load_obj("../test/res/models/thing.obj", &vertices, NULL_PTR);
+  u32* indices;
+  obj_load("../test/res/models/thing.obj", &vertices, NULL_PTR, &indices, NULL_PTR);
 
   MTRACE("%f, %f, %f", ((Vertex*)vertices)[0].position.x, ((Vertex*)vertices)[0].position.y, ((Vertex*)vertices)[0].position.z);
+  MTRACE("%u", ((u32*)indices)[0]);
+  MTRACE("%u", ((u32*)indices)[1]);
 
 
   return TRUE;

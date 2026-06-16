@@ -181,10 +181,13 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
 
   vulkan_context.index_count = 36;
 
+
   u32 indices[] = {
     // back
-    0, 1, 2, 2, 3, 0,
-
+    //0, 1, 2, 2, 3, 0,
+    // back face
+    0, 2, 1,
+    2, 0, 3,
     // front
     4, 6, 5, 6, 4, 7,
 
@@ -271,6 +274,11 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
     return FALSE;
   }
 
+  // CREATE DEPTH RESOURCECS
+  if (!vulkan_create_depth_resources()) {
+    MERROR_CORE("Vulkan Init: Failed to create depth resoucres.");
+    return FALSE;
+  }
 
   // CREATE GRAPHICS PIPELINE ----------
   if (!vulkan_create_graphics_pipeline()) {
@@ -284,11 +292,6 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
     return FALSE;
   }
 
-  // CREATE DEPTH RESOURCECS
-  if (!vulkan_create_depth_resources()) {
-    MERROR_CORE("Vulkan Init: Failed to create depth resoucres.");
-    return FALSE;
-  }
 
   // CREATE TEXTURE IMAGE
   if (!vulkan_create_texture_image()) {
@@ -442,15 +445,23 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
     return FALSE;
   }
 
-  transition_image_layout(vulkan_context.current_image_index, VK_IMAGE_LAYOUT_UNDEFINED,
+  transition_image_layout(vulkan_context.swapchain_images[vulkan_context.current_image_index], VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, ZERO,
                           VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
                           VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                          VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
+                          VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+			  VK_IMAGE_ASPECT_COLOR_BIT);
+
+  transition_image_layout(vulkan_context.depth_image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+			  VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+			  VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+			  VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+			  VK_IMAGE_ASPECT_DEPTH_BIT);
 
   VkClearColorValue clear_color_value = {.float32 = {0.0f, 0.0f, 0.0f, 1.0f}};
-  VkClearValue clear_color;
-  clear_color.color = clear_color_value;
+  VkClearValue clear_color = {.color = clear_color_value};
+  VkClearDepthStencilValue clear_depth_value = {.depth = 1.0f, .stencil = 0};
+  VkClearValue clear_depth = {.depthStencil = clear_depth_value};
 
   VkRenderingAttachmentInfo rendering_attachment_info = {
       VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
@@ -460,6 +471,15 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
   rendering_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
   rendering_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
   rendering_attachment_info.clearValue = clear_color;
+
+  VkRenderingAttachmentInfo depth_attachment_info = {
+    .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+    .imageView = vulkan_context.depth_image_view,
+    .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+    .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+    .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+    .clearValue = clear_depth,
+  };
 
   VkOffset2D render_area_offset;
   render_area_offset.x = 0;
@@ -476,6 +496,7 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
   rendering_info.layerCount = 1;
   rendering_info.colorAttachmentCount = 1;
   rendering_info.pColorAttachments = &rendering_attachment_info;
+  rendering_info.pDepthAttachment = &depth_attachment_info;
 
   // Start rendering
   vkCmdBeginRendering(vulkan_context.command_buffers[vulkan_context.current_frame_index],
@@ -521,9 +542,9 @@ b8 vulkan_backend_end_frame(RendererBackend* renderer_backend, f64 delta_time) {
   vkCmdEndRendering(vulkan_context.command_buffers[vulkan_context.current_frame_index]);
 
   transition_image_layout(
-      vulkan_context.current_image_index, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+      vulkan_context.swapchain_images[vulkan_context.current_image_index], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
       VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, ZERO,
-      VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT);
+      VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 
   // End command buffer recording
   VkResult end_command_buffer_result =
@@ -1255,6 +1276,15 @@ static b8 vulkan_create_graphics_pipeline() {
   rasterization_state_create_info.depthBiasEnable = VK_FALSE;
   rasterization_state_create_info.lineWidth = 1.0f;  // @MAGIC_NUMBER
 
+  VkPipelineDepthStencilStateCreateInfo depth_stencil_state_create_info = {
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+    .depthTestEnable = VK_TRUE,
+    .depthWriteEnable = VK_TRUE,
+    .depthCompareOp = VK_COMPARE_OP_LESS,
+    .depthBoundsTestEnable = VK_FALSE,
+    .stencilTestEnable = VK_FALSE,
+  };
+
   // Set multisampling opts
   VkPipelineMultisampleStateCreateInfo multisample_state_create_info = {
       VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
@@ -1306,6 +1336,7 @@ static b8 vulkan_create_graphics_pipeline() {
   pipeline_rendering_create_info.pNext = NULL_PTR;
   pipeline_rendering_create_info.colorAttachmentCount = 1;
   pipeline_rendering_create_info.pColorAttachmentFormats = &vulkan_context.surface_format.format;
+  pipeline_rendering_create_info.depthAttachmentFormat = vulkan_context.depth_format;
 
   VkGraphicsPipelineCreateInfo graphics_pipeline_create_info = {
       VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
@@ -1318,7 +1349,7 @@ static b8 vulkan_create_graphics_pipeline() {
   graphics_pipeline_create_info.pViewportState = &viewport_state_create_info;
   graphics_pipeline_create_info.pRasterizationState = &rasterization_state_create_info;
   graphics_pipeline_create_info.pMultisampleState = &multisample_state_create_info;
-  graphics_pipeline_create_info.pDepthStencilState = NULL_PTR;
+  graphics_pipeline_create_info.pDepthStencilState = &depth_stencil_state_create_info;
   graphics_pipeline_create_info.pColorBlendState = &color_blend_state_create_info;
   graphics_pipeline_create_info.pDynamicState = &dynamic_state_create_info;
   graphics_pipeline_create_info.layout = vulkan_context.pipeline_layout;
@@ -1380,7 +1411,7 @@ static b8 vulkan_create_command_pools() {
 static b8 vulkan_create_depth_resources() {
 
   VkFormat depth_format = find_supported_depth_format();
-  MTRACE("%s", string_VkFormat(depth_format));
+  vulkan_context.depth_format = depth_format;
 
   if (!create_image(&vulkan_context.depth_image, &vulkan_context.depth_image_mem, vulkan_context.swapchain_extent.width,
 		    vulkan_context.swapchain_extent.height, depth_format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -1843,18 +1874,24 @@ static b8 vulkan_recreate_swapchain(u16 width, u16 height) {
     return FALSE;
   }
 
+  if (!vulkan_create_depth_resources()) {
+    MERROR_CORE("Failed to  create depth resources");
+    return FALSE;
+  }
+
   return TRUE;
 }
 
 /* static b8 vulkan_cleanup_swapchain() { return TRUE; } */
 
-static void transition_image_layout(u32 image_index, VkImageLayout old_layout,
-                                    VkImageLayout new_layout, VkAccessFlags2 src_access_mask,
-                                    VkAccessFlags2 dst_access_mask,
-                                    VkPipelineStageFlags2 src_stage_mask,
-                                    VkPipelineStageFlags2 dst_stage_mask) {
+static void transition_image_layout(VkImage image, VkImageLayout old_layout,
+				    VkImageLayout new_layout, VkAccessFlags2 src_access_mask,
+				    VkAccessFlags2 dst_access_mask,
+				    VkPipelineStageFlags2 src_stage_mask,
+				    VkPipelineStageFlags2 dst_stage_mask,
+				    VkImageAspectFlags aspect) {
   VkImageSubresourceRange subresource_range;
-  subresource_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  subresource_range.aspectMask = aspect;
   subresource_range.baseMipLevel = 0;
   subresource_range.levelCount = 1;
   subresource_range.baseArrayLayer = 0;
@@ -1869,7 +1906,7 @@ static void transition_image_layout(u32 image_index, VkImageLayout old_layout,
   image_memory_barrier.newLayout = new_layout;
   image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
   image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-  image_memory_barrier.image = vulkan_context.swapchain_images[image_index];
+  image_memory_barrier.image = image;
   image_memory_barrier.subresourceRange = subresource_range;
 
   VkDependencyInfo dependency_info = {VK_STRUCTURE_TYPE_DEPENDENCY_INFO};

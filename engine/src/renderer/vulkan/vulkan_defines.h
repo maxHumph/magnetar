@@ -99,6 +99,7 @@ typedef struct VulkanContext {
   VkImage depth_image;
   VkDeviceMemory depth_image_mem;
   VkImageView depth_image_view;
+  VkFormat depth_format;
 
   VkDescriptorSetLayout descriptor_set_layout;
   VkDescriptorPool descriptor_pool;

@@ -9,6 +9,10 @@
 #include "platform/platform.h"
 #include "renderer/renderer_frontend.h"
 
+#include <math.h>
+#include <time.h>
+#include <stdlib.h>
+
 
 typedef struct ApplicationState {
   Game* game_instance;
@@ -94,6 +98,7 @@ MGAPI b8 application_run() {
   s_application_state.last_time = s_application_state.clock.elapsed_time;
 
   f64 frame_target_time = 1.0f / 60.0f;
+  srand(time(NULL));
 
   while (s_application_state.is_running) {
     f64 frame_start_time = platform_get_time_abs();

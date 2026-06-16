@@ -23,12 +23,10 @@ MGAPI f32 msqrt(f32 x) { return sqrt(x); }
 MGAPI i32 mabs(i32 x) { return abs(x); }
 
 MGAPI i32 random_i32() {
-  srand(time(NULL));
   return rand();
 }
 
 MGAPI i32 random_range_i32(i32 min, i32 max) {
-  srand(time(NULL));
   return rand() % (max - min + 1) + min;
 }
 

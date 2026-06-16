@@ -35,6 +35,12 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   obj_load("../test/res/models/torus.obj", &vulkan_context.vertices, &vulkan_context.vertex_count,
 	   &vulkan_context.indices, &vulkan_context.index_count);
 
+  for (u32 i = 0; i < vulkan_context.vertex_count; i++) {
+    vulkan_context.vertices[i].colour.x = 1.0f / (f32)random_range_i32(1, 10);
+    vulkan_context.vertices[i].colour.y = 1.0f / (f32)random_range_i32(1, 10);
+    vulkan_context.vertices[i].colour.z = 1.0f / (f32)random_range_i32(1, 10);
+  }
+
   
   MINFO_CORE("Loaded %u vertices, %u indices", vulkan_context.vertex_count, vulkan_context.index_count);
 
@@ -1235,7 +1241,7 @@ static b8 vulkan_create_graphics_pipeline() {
   rasterization_state_create_info.rasterizerDiscardEnable = VK_FALSE;
   rasterization_state_create_info.polygonMode = VK_POLYGON_MODE_FILL;
   rasterization_state_create_info.cullMode = cull_mode_flags;
-  rasterization_state_create_info.frontFace = VK_FRONT_FACE_CLOCKWISE;
+  rasterization_state_create_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
   rasterization_state_create_info.depthBiasEnable = VK_FALSE;
   rasterization_state_create_info.lineWidth = 1.0f;  // @MAGIC_NUMBER
 
@@ -2031,7 +2037,7 @@ static b8 update_uniform_buffer() {
 
   MVPMat mvp_mat;
   Mat4 model_tran = {1.0f, 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f,
-                     0.0f, 0.0f, 1.0f, -7.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+                     0.0f, 0.0f, 1.0f, -5.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 
   mvp_mat.model =
       mat4_mul(mat4_from_quat(quat_from_euler((Vec3){0.0f, M_TO_RAD(x), M_TO_RAD(x)})),

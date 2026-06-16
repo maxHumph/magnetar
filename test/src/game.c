@@ -4,6 +4,9 @@
 #include <core/mmemory.h>
 #include <maths/matrix.h>
 #include <maths/maths_util.h>
+#include <asset/obj_loader.h>
+
+#include <renderer/vulkan/vulkan_defines.h>
 
 b8 game_initalize(Game* game_instance) {
   MDEBUG("game_initialize() was called");
@@ -14,6 +17,13 @@ b8 game_initalize(Game* game_instance) {
 
   Mat4 transform = mat4_from_quat(quat_from_euler((Vec3) { M_TO_RAD(180.0f), 0.0f, 0.0f}));
   mat4_print(transform);
+
+
+
+  Vertex* vertices;
+  load_obj("../test/res/models/thing.obj", &vertices, NULL_PTR);
+
+  MTRACE("%f, %f, %f", ((Vertex*)vertices)[0].position.x, ((Vertex*)vertices)[0].position.y, ((Vertex*)vertices)[0].position.z);
 
 
   return TRUE;

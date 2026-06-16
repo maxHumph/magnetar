@@ -205,6 +205,8 @@ static b8 vulkan_create_graphics_pipeline();  // @TODO: Split this into more ato
  */
 static b8 vulkan_create_command_pools();
 
+static b8 vulkan_create_depth_resources();
+
 static b8 vulkan_create_texture_image();
 
 static b8 vulkan_create_texture_image_view();
@@ -280,6 +282,8 @@ static b8 update_uniform_buffer();
 
 static b8 create_image(VkImage* image, VkDeviceMemory* mem, u32 width, u32 height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags props);
 
+static b8 create_image_view(VkImageView* view, VkImage image, VkFormat format, VkImageAspectFlags aspect_flags, b8 rgb_flipped);
+
 static VkCommandBuffer begin_single_time_commands(VkCommandPool command_pool);
 
 static b8 end_single_time_commands(VkCommandBuffer* cmd_buf, VkQueue queue);
@@ -287,3 +291,7 @@ static b8 end_single_time_commands(VkCommandBuffer* cmd_buf, VkQueue queue);
 static b8 transition_tex_image_layout(VkCommandBuffer* cmd_buf, const VkImage* image, VkImageLayout old_layout, VkImageLayout new_layout);
 
 static b8 copy_buffer_to_image(VkCommandBuffer* cmd_buf, VkBuffer* buf, VkImage* image, u32 width, u32 height);
+
+static VkFormat find_supported_format(const VkFormat* formats, u32 format_count, VkImageTiling tiling, VkFormatFeatureFlags flags);
+
+static VkFormat find_supported_depth_format();

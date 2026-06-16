@@ -284,6 +284,12 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
     return FALSE;
   }
 
+  // CREATE DEPTH RESOURCECS
+  if (!vulkan_create_depth_resources()) {
+    MERROR_CORE("Vulkan Init: Failed to create depth resoucres.");
+    return FALSE;
+  }
+
   // CREATE TEXTURE IMAGE
   if (!vulkan_create_texture_image()) {
     MERROR_CORE("Vulkan Init: Failed to create texture image.");
@@ -1371,6 +1377,26 @@ static b8 vulkan_create_command_pools() {
   return TRUE;
 }
 
+static b8 vulkan_create_depth_resources() {
+
+  VkFormat depth_format = find_supported_depth_format();
+  MTRACE("%s", string_VkFormat(depth_format));
+
+  if (!create_image(&vulkan_context.depth_image, &vulkan_context.depth_image_mem, vulkan_context.swapchain_extent.width,
+		    vulkan_context.swapchain_extent.height, depth_format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+    MERROR_CORE("Failed to create depth image");
+    return FALSE;
+  }
+
+  if (!create_image_view(&vulkan_context.depth_image_view, vulkan_context.depth_image, depth_format, VK_IMAGE_ASPECT_DEPTH_BIT, FALSE)) {
+    MERROR_CORE("Failed to create depth image view");
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
 static b8 vulkan_create_texture_image() {
 
   u32 width;
@@ -2026,7 +2052,7 @@ static b8 create_image(VkImage* image, VkDeviceMemory* mem, u32 width, u32 heigh
 
   VkImageCreateInfo image_create_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
   image_create_info.imageType = VK_IMAGE_TYPE_2D;
-  image_create_info.format = vulkan_context.surface_format.format;
+  image_create_info.format = format;
   image_create_info.extent.width = width;
   image_create_info.extent.height = height;
   image_create_info.extent.depth = 1;
@@ -2062,6 +2088,47 @@ static b8 create_image(VkImage* image, VkDeviceMemory* mem, u32 width, u32 heigh
 
   if (bind_image_mem_res != VK_SUCCESS) {
     MERROR_CORE("Failed to bind vulkan image memory: %s", string_VkResult(bind_image_mem_res));
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+static b8 create_image_view(VkImageView* view, VkImage image, VkFormat format, VkImageAspectFlags aspect_flags, b8 rgb_flipped) {
+
+  VkComponentMapping components = {
+    .r = VK_COMPONENT_SWIZZLE_R,
+    .g = VK_COMPONENT_SWIZZLE_G,
+    .b = VK_COMPONENT_SWIZZLE_B,
+    .a = VK_COMPONENT_SWIZZLE_A,
+  };
+
+  if (rgb_flipped) {
+    components.r = VK_COMPONENT_SWIZZLE_B;
+    components.b = VK_COMPONENT_SWIZZLE_R;
+  }
+
+  VkImageSubresourceRange subresource_range = {
+    .aspectMask = aspect_flags,
+    .baseMipLevel = 0,
+    .levelCount = 1,
+    .baseArrayLayer = 0,
+    .layerCount = 1,
+  };
+
+  VkImageViewCreateInfo view_create_info = {
+    .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+    .flags = ZERO,
+    .image = image,
+    .viewType = VK_IMAGE_VIEW_TYPE_2D,
+    .format = format,
+    .components = components,
+    .subresourceRange = subresource_range,
+  };
+
+  VkResult create_image_view_res = vkCreateImageView(vulkan_context.logical_device, &view_create_info, vulkan_context.allocator, view);
+  if (create_image_view_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to create image view: %s", string_VkResult(create_image_view_res));
     return FALSE;
   }
 
@@ -2181,4 +2248,30 @@ static b8 copy_buffer_to_image(VkCommandBuffer* cmd_buf, VkBuffer* buf, VkImage*
   vkCmdCopyBufferToImage(*cmd_buf, *buf, *image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buf_image_copy);
 
   return TRUE;
+}
+
+static VkFormat find_supported_format(const VkFormat* formats, u32 format_count, VkImageTiling tiling, VkFormatFeatureFlags flags) {
+  for (u32 i = 0; i < format_count; i++) {
+
+    VkFormatProperties props;
+    vkGetPhysicalDeviceFormatProperties(vulkan_context.physical_device, formats[i], &props);
+
+    if (((tiling == VK_IMAGE_TILING_LINEAR) && ((props.linearTilingFeatures & flags) == flags)) ||
+	((tiling == VK_IMAGE_TILING_OPTIMAL) && ((props.optimalTilingFeatures & flags) == flags))) {
+      return formats[i];
+    }
+  }
+  MWARN_CORE("Couldn't find supported format with correct features");
+  return ZERO;
+}
+
+static VkFormat find_supported_depth_format() {
+
+  VkFormat formats[3] = {
+    VK_FORMAT_D32_SFLOAT,
+    VK_FORMAT_D24_UNORM_S8_UINT,
+    VK_FORMAT_D32_SFLOAT_S8_UINT,
+  };
+
+  return find_supported_format(formats, 3, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }

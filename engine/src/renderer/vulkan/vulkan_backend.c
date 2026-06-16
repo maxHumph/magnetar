@@ -14,6 +14,7 @@
 #include "vulkan/vulkan_core.h"
 #include "vulkan_defines.h"
 #include "vulkan_wsi.h"
+#include "asset/obj_loader.h"
 
 static VulkanContext vulkan_context = {};
 
@@ -30,59 +31,20 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   vulkan_context.swapchain_extent.height = start_height;
 
 
+
+  obj_load("../test/res/models/torus.obj", &vulkan_context.vertices, &vulkan_context.vertex_count,
+	   &vulkan_context.indices, &vulkan_context.index_count);
+
+  
+  MINFO_CORE("Loaded %u vertices, %u indices", vulkan_context.vertex_count, vulkan_context.index_count);
+
   /*
-  vulkan_context.vertex_count = 8;
-  vulkan_context.vertices =
-      mallocate(vulkan_context.vertex_count * sizeof(Vertex), MEMORY_TAG_RENDERER);
 
-  vulkan_context.vertices[0].position = (Vec3){-0.5f, -0.5f, -0.5f};
-  vulkan_context.vertices[1].position = (Vec3){0.5f, -0.5f, -0.5f};
-  vulkan_context.vertices[2].position = (Vec3){0.5f, 0.5f, -0.5f};
-  vulkan_context.vertices[3].position = (Vec3){-0.5f, 0.5f, -0.5f};
-
-  vulkan_context.vertices[0].texture_coord = (Vec2){0.0f, 0.0f};
-  vulkan_context.vertices[1].texture_coord = (Vec2){1.0f, 0.0f};
-  vulkan_context.vertices[2].texture_coord = (Vec2){1.0f, 1.0f};
-  vulkan_context.vertices[3].texture_coord = (Vec2){0.0f, 1.0f};
-
-  vulkan_context.vertices[4].position = (Vec3){-0.5f, -0.5f, 0.5f};
-  vulkan_context.vertices[5].position = (Vec3){0.5f, -0.5f, 0.5f};
-  vulkan_context.vertices[6].position = (Vec3){0.5f, 0.5f, 0.5f};
-  vulkan_context.vertices[7].position = (Vec3){-0.5f, 0.5f, 0.5f};
-
-  vulkan_context.vertices[0].colour = (Vec3){1, 0, 0};
-  vulkan_context.vertices[1].colour = (Vec3){0, 1, 0};
-  vulkan_context.vertices[2].colour = (Vec3){0, 0, 1};
-  vulkan_context.vertices[3].colour = (Vec3){1, 1, 0};
-
-  vulkan_context.vertices[4].colour = (Vec3){1, 0, 1};
-  vulkan_context.vertices[5].colour = (Vec3){0, 1, 1};
-  vulkan_context.vertices[6].colour = (Vec3){0.5f, 0.5f, 0.5f};
-  vulkan_context.vertices[7].colour = (Vec3){1, 1, 1};
-  vulkan_context.index_count = 36;
-
-  u32 indices[] = {// back face (z = -0.5)
-                   0, 1, 2, 2, 3, 0,
-
-                   // front face (z = +0.5)
-                   4, 6, 5, 6, 4, 7,
-
-                   // left face
-                   4, 0, 3, 3, 7, 4,
-
-                   // right face
-                   1, 5, 6, 6, 2, 1,
-
-                   // bottom face
-                   4, 5, 1, 1, 0, 4,
-
-                   // top face
-                   3, 2, 6, 6, 7, 3};
-  */
   vulkan_context.vertex_count = 24;
   vulkan_context.vertices =
     mallocate(vulkan_context.vertex_count * sizeof(Vertex), MEMORY_TAG_RENDERER);
 
+    
   // 0
   vulkan_context.vertices[0].position = (Vec3){-0.5f, -0.5f, -0.5f};
   vulkan_context.vertices[0].texture_coord = (Vec2){0.0f, 0.0f};
@@ -207,6 +169,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   vulkan_context.indices = mallocate(vulkan_context.index_count * sizeof(u32), MEMORY_TAG_RENDERER);
 
   mcopy_memory(vulkan_context.indices, indices, sizeof(indices));
+  */
 
   // CREATE INSTANCE ----------
   if (!vulkan_create_instance(application_name)) {
@@ -1163,7 +1126,7 @@ static b8 vulkan_create_graphics_pipeline() {
   // Read shader byte code
   u8* shader_bin = NULL_PTR;
   u64 shader_bin_size = 0;
-  vulkan_read_shader_binary("../engine/src/renderer/vulkan/shaders/basic.spv", &shader_bin_size,
+  vulkan_read_shader_binary("../engine/src/renderer/vulkan/shaders/plain_vertices.spv", &shader_bin_size,
                             &shader_bin);
 
   // Create shader module
@@ -2068,14 +2031,14 @@ static b8 update_uniform_buffer() {
 
   MVPMat mvp_mat;
   Mat4 model_tran = {1.0f, 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f,
-                     0.0f, 0.0f, 1.0f, -2.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+                     0.0f, 0.0f, 1.0f, -7.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 
   mvp_mat.model =
-      mat4_mul(mat4_from_quat(quat_from_euler((Vec3){M_TO_RAD(x), M_TO_RAD(x), M_TO_RAD(x)})),
+      mat4_mul(mat4_from_quat(quat_from_euler((Vec3){0.0f, M_TO_RAD(x), M_TO_RAD(x)})),
                mat4_transpose(model_tran));
   mvp_mat.view = mat4_iden();
   mvp_mat.proj = mat4_perspective(
-      M_TO_RAD(70.0f),
+      M_TO_RAD(90.0f),
       (f32)vulkan_context.swapchain_extent.width / (f32)vulkan_context.swapchain_extent.height,
       0.1f, 1000.0f);
 

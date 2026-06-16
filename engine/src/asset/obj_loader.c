@@ -45,6 +45,10 @@ b8 obj_load(const char* path, Vertex** vertices, u32* vertex_count, u32** indice
     }
   }
   fclose(file);
+  *vertex_count = obj_vertex_count;
+  *index_count = obj_index_count;
+  obj_vertex_count = 0;
+  obj_index_count = 0;
   return TRUE;
 
 }
@@ -83,14 +87,13 @@ static b8 obj_load_vertex(Vertex** vertices){
 }
 
 static b8 obj_load_index(u32** indices) {
-  obj_index_count++;
+  obj_index_count += 3;
   u32 c = 0;
   u32 i = 0;
 
   u32 prop = 0;
   b8 in_val = FALSE;
   char val[8];
-  MTRACE("%s", curr_line);
   while (c < curr_line_len) {
     if (!in_val && isdigit(curr_line[c])) {
       i = 0;
@@ -102,15 +105,19 @@ static b8 obj_load_index(u32** indices) {
       i++;
     } else if (curr_line[c] == '/') {
       val[i] = '\0';
-      MTRACE("%s", val);
       if (prop == 0) {
-	darray_push(*indices, (u32)atoi(val));
+	darray_push(*indices, (u32)atoi(val) - 1);
       }
       val[0] = '\0';
       i = 0;
       prop++;
     } else if (in_val && !isdigit(curr_line[c])) {
       in_val = FALSE;
+      val[i] = '\0';
+      if (prop == 0) {
+	darray_push(*indices, (u32)atoi(val) - 1);
+      }
+      val[0] = '\0';
       i = 0;
       prop = 0;
     }

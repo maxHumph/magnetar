@@ -14,7 +14,7 @@
 #include "vulkan/vulkan_core.h"
 #include "vulkan_defines.h"
 #include "vulkan_wsi.h"
-#include "asset/obj_loader.h"
+#include "asset/mg3d.h"
 
 static VulkanContext vulkan_context = {};
 
@@ -35,11 +35,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   u32* ip = NULL_PTR;
   u32* it = NULL_PTR;
 
-  obj_load("../test/res/models/thing.obj", &positions, &tex, &ip, &it);
-  MTRACE("%f, %f", positions[0].x, positions[1].y);
-  MTRACE("%f, %f", tex[0].x, tex[1].y);
-  MTRACE("%u, %u", ip[0], ip[3]);
-  MTRACE("%u, %u", it[0], it[2]);
+  mg3d_from_obj("../test/res/models/mclaren.obj", NULL_PTR);
 
   exit(1);
 

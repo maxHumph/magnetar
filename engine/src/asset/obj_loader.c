@@ -11,6 +11,7 @@ static char curr_line[100];
 static ObjLineType curr_line_type = ZERO;
 
 static u32 obj_vertex_count = 0;
+static u32 obj_texture_count = 0;
 static u32 obj_index_count = 0;
 
 b8 obj_load(const char* path, Vertex** vertices, u32* vertex_count, u32** indices, u32* index_count) {
@@ -34,6 +35,10 @@ b8 obj_load(const char* path, Vertex** vertices, u32* vertex_count, u32** indice
 
     case OBJ_VERTEX:
       obj_load_vertex(vertices);
+      break;
+
+    case OBJ_TEXTURE:
+      obj_load_texture(vertices);
       break;
 
     case OBJ_INDEX:
@@ -86,6 +91,40 @@ static b8 obj_load_vertex(Vertex** vertices){
   return TRUE;
 }
 
+static b8 obj_load_texture(Vertex** vertices) {
+  obj_texture_count++;
+  char val[10];
+  u32 c = 0;
+  u32 i = 0;
+  b8 in_val = FALSE;
+  u32 axis = 0;
+  Vertex vertex = {};
+  while (c < curr_line_len) {
+    if (!in_val && isdigit(curr_line[c])) {
+      val[i] = curr_line[c];
+      i++;
+      in_val = TRUE;
+    } else if (curr_line[c] == '.' || isdigit(curr_line[c])) {
+      val[i] = curr_line[c];
+      i++;
+    } else if ((in_val && !isdigit(curr_line[c])) && (in_val && curr_line[c] != '.') && (in_val && curr_line[c] != '-')
+	       && (i < curr_line_len)) {
+      in_val = FALSE;
+      val[i] = '\0';
+      (*vertices)[obj_texture_count - 1].texture_coord.index[axis] = (f32)atof(val);
+      axis++;
+      val[0] = '\0';
+      i = 0;
+    } else {
+      in_val = FALSE;
+      i = 0;
+    }
+    c++;
+  }
+
+  return TRUE;
+}
+
 static b8 obj_load_index(u32** indices) {
   obj_index_count += 3;
   u32 c = 0;
@@ -135,6 +174,9 @@ static b8 obj_get_line(char* line, u64* line_len, FILE* file, ObjLineType* type)
       return TRUE;
     } else if (line[0] == 'f' && line[1] == ' ') {
       *type = OBJ_INDEX;
+      return TRUE;
+    } else if (line[0] == 'v' && line[1] == 't' && line[2] == ' ') {
+      *type = OBJ_TEXTURE;
       return TRUE;
     } else {
       *type = OBJ_BLOAT;

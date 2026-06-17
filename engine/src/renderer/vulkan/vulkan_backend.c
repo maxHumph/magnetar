@@ -36,10 +36,18 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
 	   &vulkan_context.indices, &vulkan_context.index_count);
 
   for (u32 i = 0; i < vulkan_context.vertex_count; i++) {
+    /*
     vulkan_context.vertices[i].colour.x = 1.0f / (f32)random_range_i32(1, 10);
     vulkan_context.vertices[i].colour.y = 1.0f / (f32)random_range_i32(1, 10);
     vulkan_context.vertices[i].colour.z = 1.0f / (f32)random_range_i32(1, 10);
+    */
+    vulkan_context.vertices[i].colour.x = vulkan_context.vertices[i].position.x;
+    vulkan_context.vertices[i].colour.y = vulkan_context.vertices[i].position.y;
+    vulkan_context.vertices[i].colour.z = vulkan_context.vertices[i].position.z;
   }
+
+  MTRACE("%f, %f", vulkan_context.vertices[0].texture_coord.x, vulkan_context.vertices[0].texture_coord.y);
+  MTRACE("%f, %f", vulkan_context.vertices[1].texture_coord.x, vulkan_context.vertices[1].texture_coord.y);
 
   
   MINFO_CORE("Loaded %u vertices, %u indices", vulkan_context.vertex_count, vulkan_context.index_count);
@@ -2037,7 +2045,7 @@ static b8 update_uniform_buffer() {
 
   MVPMat mvp_mat;
   Mat4 model_tran = {1.0f, 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f,
-                     0.0f, 0.0f, 1.0f, -5.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+                     0.0f, 0.0f, 1.0f, -2.5f, 0.0f, 0.0f, 0.0f, 1.0f};
 
   mvp_mat.model =
       mat4_mul(mat4_from_quat(quat_from_euler((Vec3){0.0f, M_TO_RAD(x), M_TO_RAD(x)})),

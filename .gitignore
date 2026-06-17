@@ -7,3 +7,6 @@ compile_commands.json
 bin/*
 
 !bin/bin.md
+
+mclaren.obj
+mclaren.mtl

@@ -30,160 +30,21 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   vulkan_context.swapchain_extent.width = start_width;
   vulkan_context.swapchain_extent.height = start_height;
 
+  Vec3* positions = NULL_PTR;
+  Vec2* tex = NULL_PTR;
+  u32* ip = NULL_PTR;
+  u32* it = NULL_PTR;
+
+  obj_load("../test/res/models/thing.obj", &positions, &tex, &ip, &it);
+  MTRACE("%f, %f", positions[0].x, positions[1].y);
+  MTRACE("%f, %f", tex[0].x, tex[1].y);
+  MTRACE("%u, %u", ip[0], ip[3]);
+  MTRACE("%u, %u", it[0], it[2]);
+
+  exit(1);
 
 
-  obj_load("../test/res/models/torus.obj", &vulkan_context.vertices, &vulkan_context.vertex_count,
-	   &vulkan_context.indices, &vulkan_context.index_count);
-
-  for (u32 i = 0; i < vulkan_context.vertex_count; i++) {
-    /*
-    vulkan_context.vertices[i].colour.x = 1.0f / (f32)random_range_i32(1, 10);
-    vulkan_context.vertices[i].colour.y = 1.0f / (f32)random_range_i32(1, 10);
-    vulkan_context.vertices[i].colour.z = 1.0f / (f32)random_range_i32(1, 10);
-    */
-    vulkan_context.vertices[i].colour.x = vulkan_context.vertices[i].position.x;
-    vulkan_context.vertices[i].colour.y = vulkan_context.vertices[i].position.y;
-    vulkan_context.vertices[i].colour.z = vulkan_context.vertices[i].position.z;
-  }
-
-  MTRACE("%f, %f", vulkan_context.vertices[0].texture_coord.x, vulkan_context.vertices[0].texture_coord.y);
-  MTRACE("%f, %f", vulkan_context.vertices[1].texture_coord.x, vulkan_context.vertices[1].texture_coord.y);
-
-  
-  MINFO_CORE("Loaded %u vertices, %u indices", vulkan_context.vertex_count, vulkan_context.index_count);
-
-  /*
-
-  vulkan_context.vertex_count = 24;
-  vulkan_context.vertices =
-    mallocate(vulkan_context.vertex_count * sizeof(Vertex), MEMORY_TAG_RENDERER);
-
-    
-  // 0
-  vulkan_context.vertices[0].position = (Vec3){-0.5f, -0.5f, -0.5f};
-  vulkan_context.vertices[0].texture_coord = (Vec2){0.0f, 0.0f};
-
-  // 1
-  vulkan_context.vertices[1].position = (Vec3){0.5f, -0.5f, -0.5f};
-  vulkan_context.vertices[1].texture_coord = (Vec2){1.0f, 0.0f};
-
-  // 2
-  vulkan_context.vertices[2].position = (Vec3){0.5f, 0.5f, -0.5f};
-  vulkan_context.vertices[2].texture_coord = (Vec2){1.0f, 1.0f};
-
-  // 3
-  vulkan_context.vertices[3].position = (Vec3){-0.5f, 0.5f, -0.5f};
-  vulkan_context.vertices[3].texture_coord = (Vec2){0.0f, 1.0f};
-
-  // 4
-  vulkan_context.vertices[4].position = (Vec3){-0.5f, -0.5f, 0.5f};
-  vulkan_context.vertices[4].texture_coord = (Vec2){0.0f, 0.0f};
-
-  // 5
-  vulkan_context.vertices[5].position = (Vec3){0.5f, -0.5f, 0.5f};
-  vulkan_context.vertices[5].texture_coord = (Vec2){1.0f, 0.0f};
-
-  // 6
-  vulkan_context.vertices[6].position = (Vec3){0.5f, 0.5f, 0.5f};
-  vulkan_context.vertices[6].texture_coord = (Vec2){1.0f, 1.0f};
-
-  // 7
-  vulkan_context.vertices[7].position = (Vec3){-0.5f, 0.5f, 0.5f};
-  vulkan_context.vertices[7].texture_coord = (Vec2){0.0f, 1.0f};
-
-  // 8
-  vulkan_context.vertices[8].position = (Vec3){-0.5f, -0.5f, -0.5f};
-  vulkan_context.vertices[8].texture_coord = (Vec2){0.0f, 0.0f};
-
-  // 9
-  vulkan_context.vertices[9].position = (Vec3){-0.5f, -0.5f, 0.5f};
-  vulkan_context.vertices[9].texture_coord = (Vec2){1.0f, 0.0f};
-
-  // 10
-  vulkan_context.vertices[10].position = (Vec3){-0.5f, 0.5f, 0.5f};
-  vulkan_context.vertices[10].texture_coord = (Vec2){1.0f, 1.0f};
-
-  // 11
-  vulkan_context.vertices[11].position = (Vec3){-0.5f, 0.5f, -0.5f};
-  vulkan_context.vertices[11].texture_coord = (Vec2){0.0f, 1.0f};
-
-  // 12
-  vulkan_context.vertices[12].position = (Vec3){0.5f, -0.5f, -0.5f};
-  vulkan_context.vertices[12].texture_coord = (Vec2){0.0f, 0.0f};
-
-  // 13
-  vulkan_context.vertices[13].position = (Vec3){0.5f, -0.5f, 0.5f};
-  vulkan_context.vertices[13].texture_coord = (Vec2){1.0f, 0.0f};
-
-  // 14
-  vulkan_context.vertices[14].position = (Vec3){0.5f, 0.5f, 0.5f};
-  vulkan_context.vertices[14].texture_coord = (Vec2){1.0f, 1.0f};
-
-  // 15
-  vulkan_context.vertices[15].position = (Vec3){0.5f, 0.5f, -0.5f};
-  vulkan_context.vertices[15].texture_coord = (Vec2){0.0f, 1.0f};
-
-  // 16
-  vulkan_context.vertices[16].position = (Vec3){-0.5f, -0.5f, -0.5f};
-  vulkan_context.vertices[16].texture_coord = (Vec2){0.0f, 0.0f};
-
-  // 17
-  vulkan_context.vertices[17].position = (Vec3){0.5f, -0.5f, -0.5f};
-  vulkan_context.vertices[17].texture_coord = (Vec2){1.0f, 0.0f};
-
-  // 18
-  vulkan_context.vertices[18].position = (Vec3){0.5f, -0.5f, 0.5f};
-  vulkan_context.vertices[18].texture_coord = (Vec2){1.0f, 1.0f};
-
-  // 19
-  vulkan_context.vertices[19].position = (Vec3){-0.5f, -0.5f, 0.5f};
-  vulkan_context.vertices[19].texture_coord = (Vec2){0.0f, 1.0f};
-
-  // 20
-  vulkan_context.vertices[20].position = (Vec3){-0.5f, 0.5f, -0.5f};
-  vulkan_context.vertices[20].texture_coord = (Vec2){0.0f, 0.0f};
-
-  // 21
-  vulkan_context.vertices[21].position = (Vec3){0.5f, 0.5f, -0.5f};
-  vulkan_context.vertices[21].texture_coord = (Vec2){1.0f, 0.0f};
-
-  // 22
-  vulkan_context.vertices[22].position = (Vec3){0.5f, 0.5f, 0.5f};
-  vulkan_context.vertices[22].texture_coord = (Vec2){1.0f, 1.0f};
-
-  // 23
-  vulkan_context.vertices[23].position = (Vec3){-0.5f, 0.5f, 0.5f};
-  vulkan_context.vertices[23].texture_coord = (Vec2){0.0f, 1.0f};
-
-  vulkan_context.index_count = 36;
-
-
-  u32 indices[] = {
-    // back
-    //0, 1, 2, 2, 3, 0,
-    // back face
-    0, 2, 1,
-    2, 0, 3,
-    // front
-    4, 6, 5, 6, 4, 7,
-
-    // left
-    8, 9, 10, 10, 11, 8,
-
-    // right
-    12, 13, 14, 14, 15, 12,
-
-    // bottom
-    16, 17, 18, 18, 19, 16,
-
-    // top
-    20, 21, 22, 22, 23, 20
-  };
-
-  vulkan_context.indices = mallocate(vulkan_context.index_count * sizeof(u32), MEMORY_TAG_RENDERER);
-
-  mcopy_memory(vulkan_context.indices, indices, sizeof(indices));
-  */
+  //MINFO_CORE("Loaded %u vertices, %u indices", vulkan_context.vertex_count, vulkan_context.index_count);
 
   // CREATE INSTANCE ----------
   if (!vulkan_create_instance(application_name)) {
@@ -1140,7 +1001,7 @@ static b8 vulkan_create_graphics_pipeline() {
   // Read shader byte code
   u8* shader_bin = NULL_PTR;
   u64 shader_bin_size = 0;
-  vulkan_read_shader_binary("../engine/src/renderer/vulkan/shaders/plain_vertices.spv", &shader_bin_size,
+  vulkan_read_shader_binary("../engine/src/renderer/vulkan/shaders/basic.spv", &shader_bin_size,
                             &shader_bin);
 
   // Create shader module
@@ -1411,7 +1272,7 @@ static b8 vulkan_create_texture_image() {
   u32 height;
   u32 channels;
 
-  const char path[] = "../test/res/textures/bad_grass.png";
+  const char path[] = "../test/res/textures/Crate.png";
 
   stbi_uc *tex_data = stbi_load(path, (i32*)&width, (i32*)&height, (i32*)&channels, STBI_rgb_alpha);
   VkDeviceSize image_size = width * height * 4;

@@ -1,5 +1,6 @@
 /**
  * @file obj_loader.h
+ * @brief Contains functions for extracting vertex and index data from obj files.
  */
 
 #pragma once
@@ -11,18 +12,18 @@
 
 typedef enum ObjLineType {
   OBJ_BLOAT,
-  OBJ_VERTEX,
-  OBJ_NORMAL,
-  OBJ_TEXTURE,
-  OBJ_INDEX,
+  OBJ_VPOS,
+  OBJ_VNORM,
+  OBJ_VTEX,
+  OBJ_FACE,
 } ObjLineType;
 
-MGAPI b8 obj_load(const char* path, Vertex** vertices, u32* vertex_count, u32** indices, u32* index_count);
+MGAPI b8 obj_load(const char* path, Vec3** vpos, Vec2** vtex, u32** ipos, u32** itex);
 
-static b8 obj_load_vertex(Vertex** vertices);
+static b8 obj_load_vpos(Vec3** vpos);
 
-static b8 obj_load_texture(Vertex** vertices);
+static b8 obj_load_vtex(Vec2** vtex);
 
-static b8 obj_load_index(u32** vertices);
+static b8 obj_load_face(u32** ipos, u32** itex);
 
-static b8 obj_get_line(char* line, u64* line_len, FILE* file, ObjLineType* type);
+static b8 obj_get_line(FILE* file);

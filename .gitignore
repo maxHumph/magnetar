@@ -8,5 +8,7 @@ bin/*
 
 !bin/bin.md
 
+*.blend1
+
 mclaren.obj
 mclaren.mtl

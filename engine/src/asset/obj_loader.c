@@ -6,19 +6,23 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-static u64 curr_line_len = 0;
-static char curr_line[100];
-static ObjLineType curr_line_type = ZERO;
+#define OBJ_LINE_BUFFER_LENGTH 100
+#define OBJ_LOADER_TOKEN_BUFFER_LENGTH 16
 
-static u32 obj_vertex_count = 0;
-static u32 obj_texture_count = 0;
-static u32 obj_index_count = 0;
+static char* line = NULL_PTR;
+static size_t line_buf_len = OBJ_LINE_BUFFER_LENGTH;
+static u32 line_len = 0;
+static ObjLineType type = OBJ_BLOAT;
+static FILE* file = NULL_PTR;
+static char buf[OBJ_LOADER_TOKEN_BUFFER_LENGTH] = {};
 
-b8 obj_load(const char* path, Vertex** vertices, u32* vertex_count, u32** indices, u32* index_count) {
+b8 obj_load(const char* path, Vec3** vpos, Vec2** vtex, u32** ipos, u32** itex) {
 
-  FILE* file = fopen(path, "r");
-  *vertices = darray_create(Vertex);
-  *indices = darray_create(u32);
+  file = fopen(path, "r");
+  *vpos = darray_create(Vec3);
+  *vtex = darray_create(Vec2);
+  *ipos = darray_create(u32);
+  *itex = darray_create(u32);
 
   if (file == NULL_PTR) {
     MERROR_CORE("Failed to open .obj file: %s", path);
@@ -27,22 +31,22 @@ b8 obj_load(const char* path, Vertex** vertices, u32* vertex_count, u32** indice
 
   fseek(file, 0, SEEK_SET);
 
-  while (obj_get_line(curr_line, &curr_line_len, file, &curr_line_type)) {
-    switch(curr_line_type) {
+  while (obj_get_line(file)) {
+    switch(type) {
 
     case OBJ_BLOAT:
       break;
 
-    case OBJ_VERTEX:
-      obj_load_vertex(vertices);
+    case OBJ_VPOS:
+      obj_load_vpos(vpos);
       break;
 
-    case OBJ_TEXTURE:
-      obj_load_texture(vertices);
+    case OBJ_VTEX:
+      obj_load_vtex(vtex);
       break;
 
-    case OBJ_INDEX:
-      obj_load_index(indices);
+    case OBJ_FACE:
+      obj_load_face(ipos, itex);
       break;
 
     default:
@@ -50,136 +54,124 @@ b8 obj_load(const char* path, Vertex** vertices, u32* vertex_count, u32** indice
     }
   }
   fclose(file);
-  *vertex_count = obj_vertex_count;
-  *index_count = obj_index_count;
-  obj_vertex_count = 0;
-  obj_index_count = 0;
   return TRUE;
 
 }
-static b8 obj_load_vertex(Vertex** vertices){
-  obj_vertex_count++;
-  char val[10];
-  u32 c = 0;
-  u32 i = 0;
-  b8 in_val = FALSE;
-  u32 axis = 0;
-  Vertex vertex = {};
-  while (c < curr_line_len) {
-    if (!in_val && isdigit(curr_line[c]) || !in_val && (curr_line[c] == '-')) {
-      val[i] = curr_line[c];
-      i++;
-      in_val = TRUE;
-    } else if (curr_line[c] == '.' || isdigit(curr_line[c])) {
-      val[i] = curr_line[c];
-      i++;
-    } else if ((in_val && !isdigit(curr_line[c])) && (in_val && curr_line[c] != '.') && (in_val && curr_line[c] != '-')
-	       && (i < curr_line_len)) {
-      in_val = FALSE;
-      val[i] = '\0';
-      vertex.position.index[axis] = (f32)atof(val);
-      axis++;
-      val[0] = '\0';
-      i = 0;
-    } else {
-      in_val = FALSE;
-      i = 0;
-    }
-    c++;
-  }
-  darray_push(*vertices, vertex);
-  return TRUE;
-}
 
-static b8 obj_load_texture(Vertex** vertices) {
-  obj_texture_count++;
-  char val[10];
-  u32 c = 0;
-  u32 i = 0;
-  b8 in_val = FALSE;
-  u32 axis = 0;
-  Vertex vertex = {};
-  while (c < curr_line_len) {
-    if (!in_val && isdigit(curr_line[c])) {
-      val[i] = curr_line[c];
-      i++;
-      in_val = TRUE;
-    } else if (curr_line[c] == '.' || isdigit(curr_line[c])) {
-      val[i] = curr_line[c];
-      i++;
-    } else if ((in_val && !isdigit(curr_line[c])) && (in_val && curr_line[c] != '.') && (in_val && curr_line[c] != '-')
-	       && (i < curr_line_len)) {
-      in_val = FALSE;
-      val[i] = '\0';
-      (*vertices)[obj_texture_count - 1].texture_coord.index[axis] = (f32)atof(val);
-      axis++;
-      val[0] = '\0';
-      i = 0;
-    } else {
-      in_val = FALSE;
-      i = 0;
-    }
-    c++;
-  }
-
-  return TRUE;
-}
-
-static b8 obj_load_index(u32** indices) {
-  obj_index_count += 3;
-  u32 c = 0;
-  u32 i = 0;
-
-  u32 prop = 0;
-  b8 in_val = FALSE;
-  char val[8];
-  while (c < curr_line_len) {
-    if (!in_val && isdigit(curr_line[c])) {
-      i = 0;
-      in_val = TRUE;
-      val[i] = curr_line[c];
-      i++;
-    } else if (in_val && isdigit(curr_line[c])) {
-      val[i] = curr_line[c];
-      i++;
-    } else if (curr_line[c] == '/') {
-      val[i] = '\0';
-      if (prop == 0) {
-	darray_push(*indices, (u32)atoi(val) - 1);
+static b8 obj_load_vpos(Vec3** vpos) {
+  b8 in_token = FALSE;
+  buf[0] = NULL_TERM;
+  u32 buf_idx = 0;
+  Vec3 pos;
+  u32 pos_idx = 0;
+  for (u32 i = 0; i < line_len; i++) {
+    char chr = line[i];
+    if (isdigit(chr) || chr == '-' || chr == '.') {
+      if (!in_token) {
+	in_token = TRUE;
       }
-      val[0] = '\0';
-      i = 0;
-      prop++;
-    } else if (in_val && !isdigit(curr_line[c])) {
-      in_val = FALSE;
-      val[i] = '\0';
-      if (prop == 0) {
-	darray_push(*indices, (u32)atoi(val) - 1);
+      buf[buf_idx] = chr;
+      buf_idx++;
+    } else {
+      if (in_token) {
+	buf[buf_idx] = NULL_TERM;
+	pos.index[pos_idx] = atof(buf);
+	pos_idx++;
+	buf_idx = 0;
       }
-      val[0] = '\0';
-      i = 0;
-      prop = 0;
     }
-    c++;
   }
+  darray_push(*vpos, pos);
+  return TRUE;
+}
+
+static b8 obj_load_vtex(Vec2** vtex) {
+  b8 in_token = FALSE;
+  buf[0] = NULL_TERM;
+  u32 buf_idx = 0;
+  Vec2 tex;
+  u32 tex_idx = 0;
+  for (u32 i = 0; i < line_len; i++) {
+    char chr = line[i];
+    if (isdigit(chr) || chr == '.') {
+      if (!in_token) {
+	in_token = TRUE;
+      }
+      buf[buf_idx] = chr;
+      buf_idx++;
+    } else {
+      if (in_token) {
+	in_token = FALSE;
+	buf[buf_idx] = NULL_TERM;
+	tex.index[tex_idx] = atof(buf);
+	tex_idx++;
+	buf_idx = 0;
+      }
+    }
+  }
+  darray_push(*vtex, tex);
+  return TRUE;
+}
+
+static b8 obj_load_face(u32** ipos, u32** itex) {
+  b8 in_token = FALSE;
+  buf[0] = NULL_TERM;
+  u32 buf_idx = 0;
+  u32 face_attr = 0;
+
+  for (u32 i = 0; i < line_len; i++) {
+    char chr = line[i];
+    if (isdigit(chr)) {
+      if (!in_token) {
+	in_token = TRUE;
+      }
+      buf[buf_idx] = chr;
+      buf_idx++;
+    } else {
+      if (in_token) {
+	in_token = FALSE;
+	buf[buf_idx] = NULL_TERM;
+	buf_idx = 0;
+	switch (face_attr) {
+	case 0:
+	  darray_push(*ipos, (u32)atol(buf));
+	  break;
+	case 1:
+	  darray_push(*itex, (u32)atol(buf));
+	  break;
+	case 2:
+	  break;
+	default:
+	  MERROR_CORE("Invalid face in .obj file: %s", line);
+	  return FALSE;
+	  break;
+	}
+	face_attr++;
+	if (chr != '/') {
+	  face_attr = 0;
+	}
+      }
+    }
+  }
+  
 
   return TRUE;
 }
 
-static b8 obj_get_line(char* line, u64* line_len, FILE* file, ObjLineType* type) {
+static b8 obj_get_line(FILE* file) {
   static size_t len = 100;
-  if ((*line_len = getline(&line, &len, file)) != -1) {
+  if ((line_len = getline(&line, &line_buf_len, file)) != -1) {
     if (line[0] == 'v' && line[1] == ' ') {
-      *type = OBJ_VERTEX;
+      type = OBJ_VPOS;
       return TRUE;
     } else if (line[0] == 'f' && line[1] == ' ') {
-      *type = OBJ_INDEX;
+      type = OBJ_FACE;
       return TRUE;
     } else if (line[0] == 'v' && line[1] == 't' && line[2] == ' ') {
-      *type = OBJ_TEXTURE;
+      type = OBJ_VTEX;
       return TRUE;
     } else {
-      *type = OBJ_BLOAT;
+      type = OBJ_BLOAT;
       return TRUE;
     }
   }

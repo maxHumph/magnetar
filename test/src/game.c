@@ -5,6 +5,7 @@
 #include <maths/matrix.h>
 #include <maths/maths_util.h>
 #include <asset/obj_loader.h>
+#include <ecs/ecs.h>
 
 #include <renderer/vulkan/vulkan_defines.h>
 

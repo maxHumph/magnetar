@@ -2,34 +2,18 @@
 
 #include <core/log.h>
 #include <core/mmemory.h>
-#include <maths/matrix.h>
-#include <maths/maths_util.h>
-#include <asset/obj_loader.h>
 #include <ecs/ecs.h>
 
-#include <renderer/vulkan/vulkan_defines.h>
+#include "test_scene.h"
 
 b8 game_initalize(Game* game_instance) {
+
   MDEBUG("game_initialize() was called");
   MINFO(get_memory_usage_string());
 
-
-  Vec4 vec_1 = vec4_create(2.0f, 3.0f, 0.0f, 1.0f);
-
-  Mat4 transform = mat4_from_quat(quat_from_euler((Vec3) { M_TO_RAD(180.0f), 0.0f, 0.0f}));
-  mat4_print(transform);
+  
 
 
-
-  /*
-  Vertex* vertices;
-  u32* indices;
-  obj_load("../test/res/models/thing.obj", &vertices, NULL_PTR, &indices, NULL_PTR);
-
-  MTRACE("%f, %f, %f", ((Vertex*)vertices)[0].position.x, ((Vertex*)vertices)[0].position.y, ((Vertex*)vertices)[0].position.z);
-  MTRACE("%u", ((u32*)indices)[0]);
-  MTRACE("%u", ((u32*)indices)[1]);
-  */
 
 
   return TRUE;

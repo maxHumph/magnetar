@@ -5,6 +5,7 @@
 #pragma once
 
 #include "maths/vector.h"
+#include "renderer/vulkan/vulkan_defines.h"
 
 typedef enum ComponentType {
   COMPONENT_TYPE_CODE,
@@ -40,12 +41,12 @@ typedef struct Scene {
   const char* name;
 
   u32 entity_count;
-  Entity* entities;
+  Entity** entities;
 
 } Scene;
 
 typedef struct CTransform {
-  Component* component;
+  Entity* entity;
 
   Vec3 position;
   Quat rotation;
@@ -53,7 +54,9 @@ typedef struct CTransform {
 } CTransform;
 
 typedef struct CMesh {
-  Component* component;
+  Entity* entity;
+
+  const char* model_path;
 
   u32 vertex_count;
   Vertex* vertices;
@@ -67,6 +70,8 @@ typedef struct CMaterial CMaterial;
 typedef struct CCTexture {
   CMaterial* material;
 
+  const char* image_path;
+
   u32 width;
   u32 height;
   u32 channels;
@@ -76,8 +81,8 @@ typedef struct CCTexture {
 } CCTexture;
 
 typedef struct CMaterial {
-  Component* component;
+  Entity* entity;
 
-  CCTexture* texture;
+  CCTexture texture;
 
 } CMaterial;

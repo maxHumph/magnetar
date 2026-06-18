@@ -63,3 +63,11 @@ b8 renderer_on_resize(u16 width, u16 height) {
   }
   return TRUE;
 }
+
+b8 renderer_link_mesh(CMesh* mesh) {
+  if (!renderer_backend->link_mesh(renderer_backend, mesh)) {
+    MERROR_CORE("Render failed to link mesh");
+    return FALSE;
+  }
+  return TRUE;
+}

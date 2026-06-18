@@ -14,6 +14,7 @@ b8 renderer_backend_create(RendererAPI api, const char* application_name,
       backend->end_frame = vulkan_backend_end_frame;
       backend->draw_frame = vulkan_backend_draw_frame;
       backend->on_resize = vulkan_backend_on_resize;
+      backend->link_mesh = vulkan_backend_link_mesh;
       return TRUE;
   }
 }
@@ -25,4 +26,5 @@ void renderer_backend_destroy(RendererBackend* backend) {
   backend->end_frame = NULL_PTR;
   backend->draw_frame = NULL_PTR;
   backend->on_resize = NULL_PTR;
+  backend->link_mesh = NULL_PTR;
 }

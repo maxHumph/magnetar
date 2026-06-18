@@ -7,25 +7,27 @@
 #include "maths/vector.h"
 #include "renderer/vulkan/vulkan_defines.h"
 
-typedef enum ComponentType {
-  COMPONENT_TYPE_CODE,
-  COMPONENT_TYPE_TRANSFORM,
-  COMPONENT_TYPE_MESH,
-  COMPONENT_TYPE_MATERIAL,
+typedef Mask64 ComponentTypeMask;
+typedef Bit64 ComponentTypeBit;
 
-  MAX_COMPONENT_TYPE,
-} ComponentType;
+static const ComponentTypeBit COMPONENT_TYPE_NONE      = 0x00000000ULL;
+static const ComponentTypeBit COMPONENT_TYPE_TRANSFORM = 0x00000001ULL;
+static const ComponentTypeBit COMPONENT_TYPE_MESH      = 0x00000002ULL;
+static const ComponentTypeBit COMPONENT_TYPE_MATERIAL  = 0x00000004ULL;
+static const ComponentTypeBit COMPONENT_TYPE_CODE      = 0x00000008ULL;
 
 typedef struct Entity Entity;
 
 typedef struct Component {
-  ComponentType type;
+  ComponentTypeBit type;
   void* component;
 } Component;
 
 typedef struct Entity {
 
   const char* name;
+
+  ComponentTypeMask component_mask;
 
   Entity* parent;
 

@@ -24,6 +24,11 @@ typedef double f64;
 typedef char b8;
 typedef int b32;
 
+typedef u32 Mask32;
+typedef u64 Mask64;
+typedef u32 Bit32;
+typedef u64 Bit64;
+
 #define TRUE 1
 #define FALSE 0
 

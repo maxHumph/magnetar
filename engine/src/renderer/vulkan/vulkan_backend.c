@@ -15,6 +15,8 @@
 #include "vulkan_defines.h"
 #include "vulkan_wsi.h"
 #include "asset/mg3d.h"
+#include "data_structures/darray.h"
+#include "default_scene.h"
 
 static VulkanContext vulkan_context = {};
 
@@ -30,13 +32,27 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   vulkan_context.swapchain_extent.width = start_width;
   vulkan_context.swapchain_extent.height = start_height;
 
+  vulkan_context.vertex_counts = darray_create(u32);
+  vulkan_context.index_counts = darray_create(u32);
+  vulkan_context.vertices = darray_create(Vertex*);
+  vulkan_context.indices = darray_create(u32*);
+
+  if (!scene_load(&test_scene)) {
+    MERROR_CORE("Failed to load scene: %s", test_scene.name);
+    return FALSE;
+  }
+
+  MTRACE("|| Scene: %s || -------- (%u) entities --------", test_scene.name, test_scene.entity_count);
+
+  /*
   Vertex* vbuf = NULL_PTR;
   u32* ibuf = NULL_PTR;
   u32 vcount;
   u32 icount;
-
+  */
   //mg3d_from_obj("../test/res/models/mclaren.obj", "../test/res/models/mclaren.mg3d");
-  mg3d_load("../test/res/models/torus.mg3d", &vbuf, &vcount, &ibuf, &icount);
+  /*
+  mg3d_load("../test/res/models/crate.mg3d", &vbuf, &vcount, &ibuf, &icount);
 
   vulkan_context.vertex_count = vcount;
   vulkan_context.vertices = vbuf;
@@ -45,9 +61,10 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   vulkan_context.index_count = icount;
   vulkan_context.indices = ibuf;
   ibuf = NULL_PTR;
+  */
 
 
-  MINFO_CORE("Loaded %u vertices, %u indices", vulkan_context.vertex_count, vulkan_context.index_count);
+  //MINFO_CORE("Loaded %u vertices, %u indices", vulkan_context.vertex_count, vulkan_context.index_count);
 
   // CREATE INSTANCE ----------
   if (!vulkan_create_instance(application_name)) {
@@ -229,6 +246,11 @@ void vulkan_backend_shutdown(RendererBackend* renderer_backend) {
   vkDeviceWaitIdle(vulkan_context.logical_device);
   vkDestroyDevice(vulkan_context.logical_device, vulkan_context.allocator);
   vkDestroyInstance(vulkan_context.instance, vulkan_context.allocator);
+
+  darray_destroy(vulkan_context.vertex_counts);
+  darray_destroy(vulkan_context.index_counts);
+  darray_destroy(vulkan_context.vertices);
+  darray_destroy(vulkan_context.indices);
 }
 
 b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time) {
@@ -373,7 +395,7 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
                           NULL_PTR);
 
   vkCmdDrawIndexed(vulkan_context.command_buffers[vulkan_context.current_frame_index],
-                   vulkan_context.index_count, 1, 0, 0, 0);
+                   vulkan_context.index_counts[0], 1, 0, 0, 0);
 
   return TRUE;
 }
@@ -457,6 +479,16 @@ b8 vulkan_backend_on_resize(RendererBackend* renderer_backend, u16 width, u16 he
     MERROR_CORE("Vulkan On Resize: Failed to recreate swapchain.");
     return FALSE;
   }
+  return TRUE;
+}
+
+b8 vulkan_backend_link_mesh(RendererBackend* renderer_backend, CMesh* mesh) {
+  MTRACE("LINK MESH");
+  darray_push(vulkan_context.vertex_counts, mesh->vertex_count);
+  darray_push(vulkan_context.vertices, mesh->vertices);
+  darray_push(vulkan_context.index_counts, mesh->index_count);
+  darray_push(vulkan_context.indices, mesh->indices);
+
   return TRUE;
 }
 
@@ -1275,7 +1307,7 @@ static b8 vulkan_create_texture_image() {
   u32 height;
   u32 channels;
 
-  const char path[] = "../test/res/textures/torus.png";
+  const char path[] = "../test/res/textures/crate.png";
 
   stbi_uc *tex_data = stbi_load(path, (i32*)&width, (i32*)&height, (i32*)&channels, STBI_rgb_alpha);
   VkDeviceSize image_size = width * height * 4;
@@ -1413,7 +1445,7 @@ static b8 vulkan_create_vertex_buffers() {
   /* vulkan_context.staging_vertex_buffer = NULL_PTR; */
   /* vulkan_context.staging_vertex_buffer_mem = NULL_PTR; */
 
-  VkDeviceSize buffer_size = vulkan_context.vertex_count * sizeof(Vertex);
+  VkDeviceSize buffer_size = vulkan_context.vertex_counts[0] * sizeof(Vertex);
 
   if (!create_buffer(&vulkan_context.staging_vertex_buffer,
                      &vulkan_context.staging_vertex_buffer_mem, buffer_size,
@@ -1434,7 +1466,7 @@ static b8 vulkan_create_vertex_buffers() {
     return FALSE;
   }
 
-  mcopy_memory(vertex_data, vulkan_context.vertices, buffer_size);
+  mcopy_memory(vertex_data, vulkan_context.vertices[0], buffer_size);
   vkUnmapMemory(vulkan_context.logical_device, vulkan_context.staging_vertex_buffer_mem);
 
   if (!create_buffer(&vulkan_context.vertex_buffer, &vulkan_context.vertex_buffer_memory,
@@ -1455,7 +1487,7 @@ static b8 vulkan_create_vertex_buffers() {
 }
 
 static b8 vulkan_create_index_buffer() {
-  VkDeviceSize buffer_size = sizeof(vulkan_context.indices[0]) * vulkan_context.index_count;
+  VkDeviceSize buffer_size = sizeof(vulkan_context.indices[0][0]) * vulkan_context.index_counts[0];
 
   if (!create_buffer(&vulkan_context.staging_index_buffer, &vulkan_context.staging_index_buffer_mem,
                      buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -1473,7 +1505,7 @@ static b8 vulkan_create_index_buffer() {
                 string_VkResult(map_mem_res));
     return FALSE;
   }
-  mcopy_memory(index_data, vulkan_context.indices, buffer_size);
+  mcopy_memory(index_data, vulkan_context.indices[0], buffer_size);
   vkUnmapMemory(vulkan_context.logical_device, vulkan_context.staging_index_buffer_mem);
 
   if (!create_buffer(&vulkan_context.index_buffer, &vulkan_context.index_buffer_mem, buffer_size,
@@ -1909,7 +1941,7 @@ static b8 update_uniform_buffer() {
 
   MVPMat mvp_mat;
   Mat4 model_tran = {1.0f, 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f,
-                     0.0f, 0.0f, 1.0f, -2.5f, 0.0f, 0.0f, 0.0f, 1.0f};
+                     0.0f, 0.0f, 1.0f, -4.5f, 0.0f, 0.0f, 0.0f, 1.0f};
 
   mvp_mat.model =
       mat4_mul(mat4_from_quat(quat_from_euler((Vec3){0.0f, M_TO_RAD(x), M_TO_RAD(x)})),

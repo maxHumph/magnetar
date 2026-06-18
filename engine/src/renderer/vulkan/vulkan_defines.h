@@ -74,16 +74,16 @@ typedef struct VulkanContext {
   VkSemaphore* render_complete_semaphores;
   VkFence draw_fences[MAX_FRAMES_IN_FLIGHT];
 
-  u32 vertex_count;
-  Vertex* vertices;
+  u32* vertex_counts;
+  Vertex** vertices;
   VkVertexInputBindingDescription vertex_binding_description;
   VkBuffer staging_vertex_buffer;
   VkDeviceMemory staging_vertex_buffer_mem;
   VkBuffer vertex_buffer;
   VkDeviceMemory vertex_buffer_memory;
 
-  u32 index_count;
-  u32* indices;
+  u32* index_counts;
+  u32** indices;
   VkBuffer staging_index_buffer;
   VkDeviceMemory staging_index_buffer_mem;
   VkBuffer index_buffer;

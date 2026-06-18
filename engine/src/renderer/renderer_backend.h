@@ -6,6 +6,7 @@
 
 #include "define.h"
 #include "platform/platform.h"
+#include "ecs/ecs_types.h"
 
 typedef enum RendererAPI {
   RENDERER_API_VULKAN,
@@ -26,6 +27,8 @@ typedef struct RendererBackend {
   b8 (*draw_frame)(struct RendererBackend* renderer_backend);
 
   b8 (*on_resize)(struct RendererBackend* renderer_backend, u16 width, u16 height);
+
+  b8 (*link_mesh)(struct RendererBackend* renderer_backend, CMesh* mesh);
 
 } RendererBackend;
 

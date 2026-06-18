@@ -113,6 +113,8 @@ b8 vulkan_backend_draw_frame(RendererBackend* renderer_backend);
  */
 b8 vulkan_backend_on_resize(RendererBackend* renderer_backend, u16 width, u16 height);
 
+b8 vulkan_backend_link_mesh(RendererBackend* renderer_backend, CMesh* mesh);
+
 // STATIC FUNCTIONS
 
 // Init functions

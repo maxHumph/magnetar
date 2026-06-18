@@ -1,6 +1,7 @@
 #include "ecs_manager.h"
 
 #include "asset/mg3d.h"
+#include "renderer/renderer_frontend.h"
 
 b8 scene_load(Scene* scene) {
   for (u32 i = 0; i < scene->entity_count; i++) {
@@ -63,6 +64,7 @@ static b8 cmesh_load(CMesh* mesh) {
     MERROR_CORE("Failed to load model: %s", mesh->model_path);
     return FALSE;
   }
+  renderer_link_mesh(mesh);
   return TRUE;
 }
 

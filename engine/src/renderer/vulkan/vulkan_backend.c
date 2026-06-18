@@ -30,17 +30,24 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   vulkan_context.swapchain_extent.width = start_width;
   vulkan_context.swapchain_extent.height = start_height;
 
-  Vec3* positions = NULL_PTR;
-  Vec2* tex = NULL_PTR;
-  u32* ip = NULL_PTR;
-  u32* it = NULL_PTR;
+  Vertex* vbuf = NULL_PTR;
+  u32* ibuf = NULL_PTR;
+  u32 vcount;
+  u32 icount;
 
-  mg3d_from_obj("../test/res/models/mclaren.obj", NULL_PTR);
+  //mg3d_from_obj("../test/res/models/mclaren.obj", "../test/res/models/mclaren.mg3d");
+  mg3d_load("../test/res/models/torus.mg3d", &vbuf, &vcount, &ibuf, &icount);
 
-  exit(1);
+  vulkan_context.vertex_count = vcount;
+  vulkan_context.vertices = vbuf;
+  vbuf = NULL_PTR;
+
+  vulkan_context.index_count = icount;
+  vulkan_context.indices = ibuf;
+  ibuf = NULL_PTR;
 
 
-  //MINFO_CORE("Loaded %u vertices, %u indices", vulkan_context.vertex_count, vulkan_context.index_count);
+  MINFO_CORE("Loaded %u vertices, %u indices", vulkan_context.vertex_count, vulkan_context.index_count);
 
   // CREATE INSTANCE ----------
   if (!vulkan_create_instance(application_name)) {
@@ -1268,7 +1275,7 @@ static b8 vulkan_create_texture_image() {
   u32 height;
   u32 channels;
 
-  const char path[] = "../test/res/textures/Crate.png";
+  const char path[] = "../test/res/textures/torus.png";
 
   stbi_uc *tex_data = stbi_load(path, (i32*)&width, (i32*)&height, (i32*)&channels, STBI_rgb_alpha);
   VkDeviceSize image_size = width * height * 4;

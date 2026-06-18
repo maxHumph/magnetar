@@ -10,5 +10,4 @@ bin/*
 
 *.blend1
 
-mclaren.obj
-mclaren.mtl
+testmod/

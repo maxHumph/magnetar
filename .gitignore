@@ -8,6 +8,7 @@ bin/*
 
 !bin/bin.md
 
+*.obj
 *.blend1
 
 testmod/

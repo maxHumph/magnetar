@@ -20,11 +20,12 @@ typedef struct Entity Entity;
 
 typedef struct Component {
   ComponentType type;
-  Entity* entity;
   void* component;
 } Component;
 
 typedef struct Entity {
+
+  const char* name;
 
   Entity* parent;
 

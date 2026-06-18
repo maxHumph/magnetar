@@ -24,6 +24,7 @@ Component crate_components[] = {
 };
 
 Entity crate_entity = {
+  .name = "Crate",
   .parent = NULL_PTR,
   .child_count = 0,
   .children = NULL_PTR,
@@ -37,7 +38,7 @@ Entity* entities[] = {
   &crate_entity,
 };
 
-Scene scene01 = {
+Scene test_scene= {
   .name = "Test scene",
   .entity_count = sizeof(entities) / sizeof(const Entity*),
   .entities = entities,

@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <vulkan/vk_enum_string_helper.h>
 
+#include "renderer/renderer_types.h"
 #include "vendor/stb_image.h"
 #include "core/log.h"
 #include "core/mmemory.h"
@@ -19,6 +20,7 @@
 #include "default_scene.h"
 #include "ecs/scene_text_loader.h"
 #include "ecs/ecs.h"
+#include "ecs/ecs_manager.h"
 
 static VulkanContext vulkan_context = {};
 
@@ -26,9 +28,11 @@ static f32 viewport_scale = 2.0f;
 static f32 x = 0;
 static b8 toggle = TRUE;
 
-b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* application_name,
-                       i16 start_width, i16 start_height, PlatformState* platform_state) {
+b8 vulkan_backend_init(RendererBackend* renderer_backend,
+		       const char* application_name, i16 start_width,
+		       i16 start_height, PlatformState* platform_state) {
 
+  vulkan_context.scene_data = NULL_PTR;
   vulkan_context.allocator = NULL_PTR;
   vulkan_context.debug_messenger = NULL_PTR;
   vulkan_context.swapchain_extent.width = start_width;
@@ -41,6 +45,10 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
 
 
   scene_load_text("../engine/src/ecs/default.txt");
+  vulkan_request_scene_data();
+
+  MTRACE("%s", get_memory_usage_string());
+  MTRACE("%s", vulkan_context.scene_data->meshes[0].name);
 
 
   exit(1);
@@ -535,6 +543,16 @@ vulkan_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
   }
 
   return VK_FALSE;
+}
+
+static b8 vulkan_request_scene_data() {
+
+  vulkan_context.scene_data = get_scene_data_ptr();
+  if (vulkan_context.scene_data == NULL_PTR) {
+    MERROR_CORE("Vulkan failed to get scene data");
+  }
+
+  return TRUE;
 }
 
 static b8 vulkan_create_instance(const char* application_name) {

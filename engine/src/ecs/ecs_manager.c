@@ -48,7 +48,7 @@ b8 scene_unload(Scene* scene) {
   return TRUE;
 };
 
-MGAPI b8 scene_load_text(const char* path) {
+b8 scene_load_text(const char* path) {
 
   scene_data.entities = darray_create(Entity);
   scene_data.meshes = darray_create(CMesh);
@@ -74,6 +74,10 @@ MGAPI b8 scene_load_text(const char* path) {
 
   fclose(file);
   return TRUE;
+}
+
+SceneData* get_scene_data_ptr() {
+  return &scene_data;
 }
 
 static b8 entity_load(Handle32 entity_handle) {

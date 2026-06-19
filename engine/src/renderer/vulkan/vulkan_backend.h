@@ -119,6 +119,8 @@ b8 vulkan_backend_link_mesh(RendererBackend* renderer_backend, CMesh* mesh);
 
 // Init functions
 
+static b8 vulkan_request_scene_data();
+
 /**
  * @brief Creates the vulkan instance.
  *

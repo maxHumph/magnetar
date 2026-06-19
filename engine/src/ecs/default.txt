@@ -6,8 +6,8 @@ position 1.0 1.2 1.0
 scale 1.0 1.0 1.0
 END_TRANSFORM
 component_count 2
-component mesh 0
-component material 0
+component mesh 0 crate_mesh
+component material 0 crate_mat
 END_ENTITY
 
 MESH 0 crate_mesh

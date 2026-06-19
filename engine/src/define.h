@@ -38,7 +38,8 @@ typedef u64 Handle64;
 #define ZERO 0
 #define NULL_PTR (void*)0
 
-#define HANDLED 1
+#define NULL_HANDLE_32 0x00000000u
+#define NULL_HANDLE_64 0x00000000ULL
 
 #define ENDL '\n'
 #define NULL_TERM '\0'

@@ -10,28 +10,17 @@
 #include "maths/matrix.h"
 #include "maths/vector.h"
 #include "vulkan/vulkan_core.h"
+#include "ecs/ecs_types.h"
+#include "renderer/renderer_types.h"
 
 #define MAX_FRAMES_IN_FLIGHT 2
 
 #define MVK_VERTEX_ATTRIBUTE_COUNT 3
 
-/**
- * @brief Stores vertex data for use i vertex buffers.
- */
-typedef struct Vertex {
-  Vec3 position;
-  Vec3 colour;
-  Vec2 texture_coord;
-
-} Vertex;
-
-typedef struct MVPMat {
-  Mat4 model;
-  Mat4 view;
-  Mat4 proj;
-} MVPMat;
 
 typedef struct VulkanContext {
+  SceneData* scene_data;
+
   VkInstance instance;
   VkPhysicalDevice physical_device;
   VkDevice logical_device;

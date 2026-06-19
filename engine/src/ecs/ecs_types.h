@@ -5,7 +5,7 @@
 #pragma once
 
 #include "maths/vector.h"
-#include "renderer/vulkan/vulkan_defines.h"
+#include "renderer/renderer_types.h"
 
 typedef Mask64 ComponentTypeMask;
 typedef Bit64 ComponentTypeBit;

@@ -12,6 +12,8 @@ MGAPI b8 scene_unload(Scene* scene);
 
 MGAPI b8 scene_load_text(const char* path);
 
+SceneData* get_scene_data_ptr();
+
 static b8 entity_load(Handle32 entity_handle);
 
 static b8 entity_unload(Handle32 entity_handle);

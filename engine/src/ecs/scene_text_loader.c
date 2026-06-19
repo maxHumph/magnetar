@@ -48,6 +48,7 @@ static b8 parse_entity(Handle32 handle, char* name) {
   mcopy_memory(name_copy, name, name_len);
   Entity new_entity = {
     .name = name_copy,
+    .component_mask = NULL_HANDLE_64,
   };
   darray_push(scene_data->entities, new_entity);
   Entity* p_entity = &scene_data->entities[handle];
@@ -83,16 +84,32 @@ static b8 parse_entity(Handle32 handle, char* name) {
       }
     } else if (strcmp(tokens[0], "component_count") == 0) {
       p_entity->component_count = (u32)atol(tokens[1]);
-      p_entity->components = mallocate(p_entity->component_count * sizeof(Component), MEMORY_TAG_ENTITY); // @TODO: Free mem
+      p_entity->components =
+	mallocate(p_entity->component_count * sizeof(Component),
+		  MEMORY_TAG_ENTITY); // @TODO: Free mem
+
     } else if (strcmp(tokens[0], "component") == 0){
       // SET COMPONENTS
       if (strcmp(tokens[1], "mesh") == 0) {
+	p_entity->component_mask = p_entity->component_mask |
+	  COMPONENT_TYPE_MESH;
+
 	p_entity->components[component_idx].type = COMPONENT_TYPE_MESH;
-	p_entity->components[component_idx].handle = (u32)atol(tokens[2]);
+
+	p_entity->components[component_idx].handle =
+	  (u32)atol(tokens[2]);
+
 	component_idx++;
       } else if (strcmp(tokens[1], "material") == 0) {
-	p_entity->components[component_idx].type = COMPONENT_TYPE_MATERIAL;
-	p_entity->components[component_idx].handle = (u32)atol(tokens[2]);
+	p_entity->component_mask = p_entity->component_mask |
+	  COMPONENT_TYPE_MATERIAL;
+
+	p_entity->components[component_idx].type =
+	  COMPONENT_TYPE_MATERIAL;
+
+	p_entity->components[component_idx].handle =
+	  (u32)atol(tokens[2]);
+
 	component_idx++;
       }
       
@@ -127,8 +144,9 @@ static b8 parse_mesh(Handle32 handle, char* name) {
     }
   }
 
-  if (!mg3d_load(p_mesh->model_path, &p_mesh->vertices, &p_mesh->vertex_count,
-		 &p_mesh->indices, &p_mesh->index_count)) {
+  if (!mg3d_load(p_mesh->model_path, &p_mesh->vertices,
+		 &p_mesh->vertex_count, &p_mesh->indices,
+		 &p_mesh->index_count)) {
     MERROR_CORE("Failed to load mesh: %s", p_mesh->model_path);
     return FALSE;
   }

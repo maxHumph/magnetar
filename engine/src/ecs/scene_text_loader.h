@@ -21,4 +21,6 @@ static b8 parse_material(Handle32 handle, char* name);
 
 static b8 parse_texture(Handle32 handle, char* name);
 
+static b8 get_drawable_handles();
+
 static b8 get_tokens();

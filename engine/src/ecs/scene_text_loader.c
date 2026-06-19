@@ -38,6 +38,11 @@ b8 parse_scene(SceneData* data, FILE* file) {
     }
   }
 
+  if (!get_drawable_handles()) {
+    MERROR_CORE("Failed to get handles of drawable entities");
+    return FALSE;
+  }
+
   return TRUE;
 }
 
@@ -205,6 +210,17 @@ static b8 parse_texture(Handle32 handle, char* name) {
 		    &p_texture->channels)) {
     MERROR_CORE("Failed to load texture: %s", p_texture->image_path);
     return FALSE;
+  }
+
+  return TRUE;
+}
+
+static b8 get_drawable_handles() {
+
+  for (u32 i = 0; i < darray_get_length(scene_data->entities); i++) {
+    if (scene_data->entities[i].component_mask & COMPONENT_TYPE_MESH) {
+      darray_push(scene_data->drawable_handles, i);
+    }
   }
 
   return TRUE;

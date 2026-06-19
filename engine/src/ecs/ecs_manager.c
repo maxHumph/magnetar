@@ -13,6 +13,7 @@ static SceneData scene_data = {};
 
 b8 scene_load(Scene* scene) {
   scene_data.entities = darray_create(Entity);
+  scene_data.drawable_handles = darray_create(Handle32);
   scene_data.codes = darray_create(CCode);
   scene_data.meshes = darray_create(CMesh);
   scene_data.materials = darray_create(CMaterial);
@@ -37,10 +38,12 @@ b8 scene_unload(Scene* scene) {
   }
 
   darray_destroy(scene_data.entities);
+  darray_destroy(scene_data.drawable_handles);
   darray_destroy(scene_data.meshes);
   darray_destroy(scene_data.materials);
   darray_destroy(scene_data.textures);
   scene_data.entities = NULL_PTR;
+  scene_data.drawable_handles = NULL_PTR;
   scene_data.meshes = NULL_PTR;
   scene_data.materials = NULL_PTR;
   scene_data.textures = NULL_PTR;
@@ -51,6 +54,7 @@ b8 scene_unload(Scene* scene) {
 b8 scene_load_text(const char* path) {
 
   scene_data.entities = darray_create(Entity);
+  scene_data.drawable_handles = darray_create(Handle32);
   scene_data.meshes = darray_create(CMesh);
   scene_data.materials = darray_create(CMaterial);
   scene_data.textures = darray_create(CCTexture);

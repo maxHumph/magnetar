@@ -101,6 +101,7 @@ typedef struct CCTexture {
 
 typedef struct SceneData {
   Entity* entities;
+  Handle32* drawable_handles;
 
   CCode* codes;
   CMesh* meshes;

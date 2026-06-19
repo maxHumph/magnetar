@@ -29,6 +29,9 @@ typedef u64 Mask64;
 typedef u32 Bit32;
 typedef u64 Bit64;
 
+typedef u32 Handle32;
+typedef u64 Handle64;
+
 #define TRUE 1
 #define FALSE 0
 

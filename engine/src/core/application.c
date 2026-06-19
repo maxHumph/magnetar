@@ -74,6 +74,7 @@ MGAPI b8 application_create(Game* game_instance) {
     return FALSE;
   }
 
+  // INIT RENDERER
   if (!renderer_init(game_instance, &s_application_state.platform_state)) {
     MFATAL_CORE("Renderer failed to init.");
   }

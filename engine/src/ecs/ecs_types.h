@@ -11,21 +11,33 @@ typedef Mask64 ComponentTypeMask;
 typedef Bit64 ComponentTypeBit;
 
 static const ComponentTypeBit COMPONENT_TYPE_NONE      = 0x00000000ULL;
-static const ComponentTypeBit COMPONENT_TYPE_TRANSFORM = 0x00000001ULL;
-static const ComponentTypeBit COMPONENT_TYPE_MESH      = 0x00000002ULL;
-static const ComponentTypeBit COMPONENT_TYPE_MATERIAL  = 0x00000004ULL;
-static const ComponentTypeBit COMPONENT_TYPE_CODE      = 0x00000008ULL;
+static const ComponentTypeBit COMPONENT_TYPE_MESH      = 0x00000001ULL;
+static const ComponentTypeBit COMPONENT_TYPE_MATERIAL  = 0x00000002ULL;
+static const ComponentTypeBit COMPONENT_TYPE_CODE      = 0x00000004ULL;
 
 typedef struct Entity Entity;
+typedef struct Component Component;
 
-typedef struct Component {
-  ComponentTypeBit type;
-  void* component;
-} Component;
+
+typedef struct Scene {
+
+  const char* name;
+
+  u32 entity_count;
+  Handle32* entity_handles;
+
+} Scene;
+
+typedef struct Transform {
+  Vec3 position;
+  Quat rotation;
+  Vec3 scale;
+} Transform;
 
 typedef struct Entity {
 
   const char* name;
+  Transform transform;
 
   ComponentTypeMask component_mask;
 
@@ -35,29 +47,24 @@ typedef struct Entity {
   Entity* children;
 
   u32 component_count;
+
   Component* components;
 
 } Entity;
 
-typedef struct Scene {
+typedef struct Component {
+  ComponentTypeBit type;
+  Handle32 handle;
+} Component;
 
-  const char* name;
-
-  u32 entity_count;
-  Entity** entities;
-
-} Scene;
-
-typedef struct CTransform {
+typedef struct CCode {
   Entity* entity;
+} CCode;
 
-  Vec3 position;
-  Quat rotation;
-  Vec3 scale;
-} CTransform;
 
 typedef struct CMesh {
   Entity* entity;
+  const char* name;
 
   const char* model_path;
 
@@ -68,10 +75,19 @@ typedef struct CMesh {
   u32* indices;
 } CMesh;
 
-typedef struct CMaterial CMaterial;
+typedef struct CMaterial {
+  Entity* entity;
+
+  const char* name;
+
+  Handle32 texture_handle;
+
+} CMaterial;
 
 typedef struct CCTexture {
   CMaterial* material;
+
+  const char* name;
 
   const char* image_path;
 
@@ -83,9 +99,11 @@ typedef struct CCTexture {
 
 } CCTexture;
 
-typedef struct CMaterial {
-  Entity* entity;
+typedef struct SceneData {
+  Entity* entities;
 
-  CCTexture texture;
-
-} CMaterial;
+  CCode* codes;
+  CMesh* meshes;
+  CMaterial* materials;
+  CCTexture* textures;
+} SceneData;

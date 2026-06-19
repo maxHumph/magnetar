@@ -1,12 +1,26 @@
 #include "ecs_manager.h"
 
+#include <stdio.h>
+#include <string.h>
+#include <stddef.h>
+
 #include "asset/mg3d.h"
 #include "renderer/renderer_frontend.h"
+#include "data_structures/darray.h"
+#include "scene_text_loader.h"
+
+static SceneData scene_data = {};
 
 b8 scene_load(Scene* scene) {
+  scene_data.entities = darray_create(Entity);
+  scene_data.codes = darray_create(CCode);
+  scene_data.meshes = darray_create(CMesh);
+  scene_data.materials = darray_create(CMaterial);
+  scene_data.textures = darray_create(CCTexture);
+
   for (u32 i = 0; i < scene->entity_count; i++) {
-    if (!entity_load(scene->entities[i])) {
-      MERROR_CORE("Failed to load entity: %s", scene->entities[i]->name);
+    if (!entity_load(scene->entity_handles[i])) {
+      MERROR_CORE("Failed to load entity");
       return FALSE;
     }
   }
@@ -16,68 +30,75 @@ b8 scene_load(Scene* scene) {
 
 b8 scene_unload(Scene* scene) {
   for (u32 i = 0; i < scene->entity_count; i++) {
-    if (!entity_unload(scene->entities[i])) {
-      MERROR_CORE("Failed to unload entity: %s", scene->entities[i]->name);
+    if (!entity_unload(scene->entity_handles[i])) {
+      MERROR_CORE("Failed to unload entity");
       return FALSE;
     }
   }
+
+  darray_destroy(scene_data.entities);
+  darray_destroy(scene_data.meshes);
+  darray_destroy(scene_data.materials);
+  darray_destroy(scene_data.textures);
+  scene_data.entities = NULL_PTR;
+  scene_data.meshes = NULL_PTR;
+  scene_data.materials = NULL_PTR;
+  scene_data.textures = NULL_PTR;
+
   return TRUE;
 };
 
-static b8 entity_load(Entity* entity) {
-  for (u32 i = 0; i < entity->component_count; i++) {
-    switch(entity->components[i].type) {
-    case COMPONENT_TYPE_CODE:
-      break;
-      
-    case COMPONENT_TYPE_TRANSFORM:
-      break;
+MGAPI b8 scene_load_text(const char* path) {
 
-    case COMPONENT_TYPE_MESH:
-      if (!cmesh_load((CMesh*)entity->components[i].component)) {
-	MERROR_CORE("Failed to load mesh component for entity: %s", entity->name);
-	return FALSE;
-      }
-      break;
+  scene_data.entities = darray_create(Entity);
+  scene_data.meshes = darray_create(CMesh);
+  scene_data.materials = darray_create(CMaterial);
+  scene_data.textures = darray_create(CCTexture);
 
-    case COMPONENT_TYPE_MATERIAL:
-      if (!cmaterial_load((CMaterial*)entity->components[i].component)) {
-	MERROR_CORE("Failed to load material component for entity: %s", entity->name);
-	return FALSE;
-      }
-      break;
+  FILE* file = fopen(path, "r");
+  if (file == NULL_PTR) {
+    MERROR_CORE("Failed to open file: %s", path);
+    return FALSE;
+  }
 
-    default:
-      break;
+  char* line = NULL_PTR;
+  size_t line_len = 0;
+
+  while ((line_len = getline(&line, &line_len, file)) != -1) {
+    char* pos = strstr(line, "SCENE");
+    if (pos != NULL_PTR) {
+      parse_scene(&scene_data, file);
     }
   }
+
+
+  fclose(file);
+  return TRUE;
+}
+
+static b8 entity_load(Handle32 entity_handle) {
   return TRUE;
 };
 
-static b8 entity_unload(Entity* entity) {
+static b8 entity_unload(Handle32 entity_handle) {
   MWARN_CORE("entity_unload() memory_leak!!!");
   return TRUE;
 };
 
-static b8 cmesh_load(CMesh* mesh) {
-  if (!mg3d_load(mesh->model_path, &mesh->vertices, &mesh->vertex_count, &mesh->indices, &mesh->index_count)) {
-    MERROR_CORE("Failed to load model: %s", mesh->model_path);
-    return FALSE;
-  }
-  renderer_link_mesh(mesh);
+static b8 cmesh_load(Handle32 mesh_handle) {
   return TRUE;
 }
 
-static b8 cmesh_unload(CMesh* mesh) {
+static b8 cmesh_unload(Handle32 mesh_handle) {
   MWARN_CORE("cmesh_unload() memory_leak!!!");
   return TRUE;
 }
 
-static b8 cmaterial_load(CMaterial* material) {
+static b8 cmaterial_load(Handle32 material_handle) {
   return TRUE;
 }
 
-static b8 cmaterial_unload(CMaterial* material) {
+static b8 cmaterial_unload(Handle32 material_handle) {
   MWARN_CORE("cmaterial_unload() memory leak!!!");
   return TRUE;
 }

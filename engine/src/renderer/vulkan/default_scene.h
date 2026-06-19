@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include <ecs/ecs.h>
@@ -43,3 +44,5 @@ Scene test_scene= {
   .entity_count = sizeof(entities) / sizeof(const Entity*),
   .entities = entities,
 };
+
+*/

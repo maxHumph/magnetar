@@ -16,7 +16,7 @@ static const char* memory_tag_strings[MEMORY_TAG_MAX_TAGS] = {
     "unknown          ", "array            ", "darray           ", "dict             ",
     "ring_queue       ", "bst              ", "string           ", "application      ",
     "job              ", "model            ", "texture          ", "material_instance", "renderer         ",
-    "game             ", "transform        ", "entity           ", "entity_node      ",
+    "game             ", "transform        ", "entity           ", "component        ",
     "scene            ",
 };
 

@@ -17,6 +17,8 @@
 #include "asset/mg3d.h"
 #include "data_structures/darray.h"
 #include "default_scene.h"
+#include "ecs/scene_text_loader.h"
+#include "ecs/ecs.h"
 
 static VulkanContext vulkan_context = {};
 
@@ -37,12 +39,21 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
   vulkan_context.vertices = darray_create(Vertex*);
   vulkan_context.indices = darray_create(u32*);
 
+
+  scene_load_text("../engine/src/ecs/default.txt");
+
+
+  exit(1);
+
+  /*
+
   if (!scene_load(&test_scene)) {
     MERROR_CORE("Failed to load scene: %s", test_scene.name);
     return FALSE;
   }
 
   MTRACE("|| Scene: %s || -------- (%u) entities --------", test_scene.name, test_scene.entity_count);
+  */
 
   /*
   Vertex* vbuf = NULL_PTR;

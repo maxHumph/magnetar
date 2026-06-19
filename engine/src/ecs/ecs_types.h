@@ -1,5 +1,6 @@
 /**
  * @file ecs_types.h
+ * @brief Contains types for the "entity component system"
  */
 
 #pragma once
@@ -18,7 +19,10 @@ static const ComponentTypeBit COMPONENT_TYPE_CODE      = 0x00000004ULL;
 typedef struct Entity Entity;
 typedef struct Component Component;
 
-
+/**
+ * @struct Scene
+ * @brief Contains handles to all of the entities in the scene
+ */
 typedef struct Scene {
 
   const char* name;
@@ -28,12 +32,22 @@ typedef struct Scene {
 
 } Scene;
 
+/**
+ * @struct Transform
+ * @brief Contains the postion scale and orientation of the entity in
+ * the scene.
+ */
 typedef struct Transform {
   Vec3 position;
   Quat rotation;
   Vec3 scale;
 } Transform;
 
+/**
+ * @struct Entity  
+ * @brief Contains the name, transform, and component handles of the
+ * entity.
+ */
 typedef struct Entity {
 
   const char* name;
@@ -41,27 +55,32 @@ typedef struct Entity {
 
   ComponentTypeMask component_mask;
 
-  Entity* parent;
-
-  u32 child_count;
-  Entity* children;
-
   u32 component_count;
-
   Component* components;
 
 } Entity;
 
+/**
+ * @struct Component
+ * @brief Contains the type and handle of a component.
+ */
 typedef struct Component {
   ComponentTypeBit type;
   Handle32 handle;
 } Component;
 
+/**
+ * Unimplemented
+ */
 typedef struct CCode {
   Entity* entity;
 } CCode;
 
 
+/**
+ * @struct CMesh
+ * @brief Contains vertex and index data of a model.
+ */
 typedef struct CMesh {
   Entity* entity;
   const char* name;
@@ -75,6 +94,12 @@ typedef struct CMesh {
   u32* indices;
 } CMesh;
 
+/**
+ * @struct CMaterial
+ * @brief Contains material data for a CMesh.
+ *
+ * @see CMesh
+ */
 typedef struct CMaterial {
   Entity* entity;
 
@@ -84,6 +109,10 @@ typedef struct CMaterial {
 
 } CMaterial;
 
+/**
+ * @struct CCTexture
+ * @brief Contains information and pixel data of a texture image.
+ */
 typedef struct CCTexture {
   CMaterial* material;
 
@@ -99,6 +128,11 @@ typedef struct CCTexture {
 
 } CCTexture;
 
+/**
+ * @struct SceneData
+ * @brief Contains buffers for scene data (all entities and components)
+ * to be loaded into.
+ */
 typedef struct SceneData {
   Entity* entities;
   Handle32* drawable_handles;

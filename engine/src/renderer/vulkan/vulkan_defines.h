@@ -17,7 +17,10 @@
 
 #define MVK_VERTEX_ATTRIBUTE_COUNT 3
 
-
+/**
+ * @struct VulkanContext
+ * @brief Contains useful data for vulkan rendering.
+ */
 typedef struct VulkanContext {
   SceneData* scene_data;
 

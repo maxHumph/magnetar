@@ -9,7 +9,7 @@
 #include "maths/matrix.h"
 
 /**
- * @brief Stores vertex data for use i vertex buffers.
+ * @brief Stores vertex data for use in vertex buffers.
  */
 typedef struct Vertex {
   Vec3 position;

@@ -1,5 +1,9 @@
 SCENE default_scene
 
+// ================================
+// 	ENTITIES
+// ================================
+
 ENTITY 0 crate
 TRANSFORM
 position 1.0 1.2 1.0
@@ -10,13 +14,25 @@ component mesh 0 crate_mesh
 component material 0 crate_mat
 END_ENTITY
 
+// ================================
+// 	MESHES
+// ================================
+
 MESH 0 crate_mesh
 path ../test/res/models/crate.mg3d
 END_MESH
 
+// ================================
+//	MATERIALS	
+// ================================
+
 MATERIAL 0 crate_mat
 texture 0
 END_MATERIAL
+
+// ================================
+//	TEXTURES
+// ================================
 
 TEXTURE 0 crate_tex
 path ../test/res/textures/crate.png

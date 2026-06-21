@@ -53,7 +53,7 @@ static b8 parse_entity(Handle32 handle, char* name) {
   mcopy_memory(name_copy, name, name_len);
   Entity new_entity = {
     .name = name_copy,
-    .component_mask = NULL_HANDLE_64,
+    .component_mask = NULL_MASK_64,
   };
   darray_push(scene_data->entities, new_entity);
   Entity* p_entity = &scene_data->entities[handle];
@@ -172,9 +172,9 @@ static b8 parse_material(Handle32 handle, char* name) {
 
   while ((line_len = getline(&line, &line_len, scene_file)) != -1) {
     get_tokens();
-    if (strcmp(tokens[0], "END_MATERIAL")) {
+    if (strcmp(tokens[0], "END_MATERIAL") == 0) {
       break;
-    } else if (strcmp(tokens[0], "texture")) {
+    } else if (strcmp(tokens[0], "texture") == 0) {
       p_material->texture_handle = (u32)atol(tokens[1]);
     }
   }
@@ -195,9 +195,9 @@ static b8 parse_texture(Handle32 handle, char* name) {
 
   while ((line_len = getline(&line, &line_len, scene_file)) != -1) {
     get_tokens();
-    if (strcmp(tokens[0], "END_TEXTURE")) {
+    if (strcmp(tokens[0], "END_TEXTURE") == 0) {
       break;
-    } else if (strcmp(tokens[0], "path")) {
+    } else if (strcmp(tokens[0], "path") == 0) {
       u64 path_len = strlen(tokens[1]) + 1;
       char* path_copy = mallocate(path_len, MEMORY_TAG_COMPONENT);
       mcopy_memory(path_copy, tokens[1], path_len);

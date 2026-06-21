@@ -24,8 +24,13 @@ typedef double f64;
 typedef char b8;
 typedef int b32;
 
+typedef u8  Mask8;
+typedef u16 Mask16;
 typedef u32 Mask32;
 typedef u64 Mask64;
+
+typedef u8  Bit8;
+typedef u16 Bit16;
 typedef u32 Bit32;
 typedef u64 Bit64;
 
@@ -38,8 +43,10 @@ typedef u64 Handle64;
 #define ZERO 0
 #define NULL_PTR (void*)0
 
-#define NULL_HANDLE_32 0x00000000u
-#define NULL_HANDLE_64 0x00000000ULL
+#define NULL_MASK_8  (u8)0x00
+#define NULL_MASK_16 (short)0x0000
+#define NULL_MASK_32 0x00000000u
+#define NULL_MASK_64 0x00000000ULL
 
 #define ENDL '\n'
 #define NULL_TERM '\0'

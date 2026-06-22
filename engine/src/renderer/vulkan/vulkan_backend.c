@@ -20,7 +20,6 @@
 #include "default_scene.h"
 #include "ecs/scene_text_loader.h"
 #include "ecs/ecs.h"
-#include "ecs/ecs_manager.h"
 
 static VulkanContext vulkan_context = {};
 
@@ -38,11 +37,6 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   vulkan_context.swapchain_extent.width = start_width;
   vulkan_context.swapchain_extent.height = start_height;
 
-  vulkan_context.vertex_counts = darray_create(u32);
-  vulkan_context.index_counts = darray_create(u32);
-  vulkan_context.vertices = darray_create(Vertex*);
-  vulkan_context.indices = darray_create(u32*);
-
 
   scene_load_text("../engine/src/ecs/default.txt");
   vulkan_request_scene_data();
@@ -52,6 +46,14 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   for (u32 i = 0; i < vulkan_context.scene_data->meshes[0].vertex_count; i++) {
     vulkan_context.scene_data->meshes[0].vertices[i].colour = (Vec3){0.3f, 0.5f, 0.8f};
   }
+
+  vulkan_context.uniform_object_count = darray_get_length(vulkan_context.scene_data->drawable_handles);
+
+  // @TODO: Free the stuff below
+  vulkan_context.uniform_bufs = mallocate(vulkan_context.uniform_object_count * sizeof(VkBuffer) * MAX_FRAMES_IN_FLIGHT, MEMORY_TAG_RENDERER);
+  vulkan_context.uniform_buf_mem = mallocate(vulkan_context.uniform_object_count * sizeof(VkDeviceMemory) * MAX_FRAMES_IN_FLIGHT, MEMORY_TAG_RENDERER);
+  vulkan_context.uniform_buf_mem_map = mallocate(vulkan_context.uniform_object_count * sizeof(void*) * MAX_FRAMES_IN_FLIGHT, MEMORY_TAG_RENDERER);
+
 
   /*
 
@@ -169,6 +171,11 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
     return FALSE;
   }
 
+  // CREATE DRAWABLE OBJECTS
+  if (!vulkan_create_drawable_objects()) {
+    MERROR_CORE("Vulkan Init: Failed to create drawable objects.");
+    return FALSE;
+  }
 
   // CREATE TEXTURE IMAGE
   if (!vulkan_create_texture_image()) {
@@ -266,10 +273,6 @@ void vulkan_backend_shutdown(RendererBackend* renderer_backend) {
   vkDestroyDevice(vulkan_context.logical_device, vulkan_context.allocator);
   vkDestroyInstance(vulkan_context.instance, vulkan_context.allocator);
 
-  darray_destroy(vulkan_context.vertex_counts);
-  darray_destroy(vulkan_context.index_counts);
-  darray_destroy(vulkan_context.vertices);
-  darray_destroy(vulkan_context.indices);
 }
 
 b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time) {
@@ -402,19 +405,40 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
   vkCmdSetScissor(vulkan_context.command_buffers[vulkan_context.current_frame_index], 0, 1,
                   &scissor);
 
-  VkDeviceSize temp_offsets[] = {0};  // @TODO: stuff
-  vkCmdBindVertexBuffers(vulkan_context.command_buffers[vulkan_context.current_frame_index], 0, 1,
-                         &vulkan_context.vertex_buffer, temp_offsets);
-  vkCmdBindIndexBuffer(vulkan_context.command_buffers[vulkan_context.current_frame_index],
-                       vulkan_context.index_buffer, 0, VK_INDEX_TYPE_UINT32);
+  u32 object_count = darray_get_length(vulkan_context.objects);
 
-  vkCmdBindDescriptorSets(vulkan_context.command_buffers[vulkan_context.current_frame_index],
-                          VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_context.pipeline_layout, 0, 1,
-                          &vulkan_context.descriptor_sets[vulkan_context.current_frame_index], 0,
-                          NULL_PTR);
+  for (u32 i = 0; i < object_count; i++) {
 
-  vkCmdDrawIndexed(vulkan_context.command_buffers[vulkan_context.current_frame_index],
-                   vulkan_context.scene_data->meshes[0].index_count, 1, 0, 0, 0);
+    /*
+    // Get pointer to next drawable entity
+    Entity* p_entity = &vulkan_context.scene_data->entities[vulkan_context.scene_data->drawable_handles[i]];
+
+    // Get handle to buffers
+    Handle32 handle;
+    for (u32 i = 0; i < p_entity->component_count; i++) {
+      if (p_entity->components[i].type == COMPONENT_TYPE_MESH) {
+        handle = p_entity->components[i].handle;
+      }
+    }
+    */
+
+    VulkanDrawable object = vulkan_context.objects[i];
+
+    VkDeviceSize temp_offsets[] = {0};  // @TODO: stuff
+    vkCmdBindVertexBuffers(vulkan_context.command_buffers[vulkan_context.current_frame_index], 0, 1,
+                           &vulkan_context.vertex_bufs[object.vbuf_handle], temp_offsets);
+    vkCmdBindIndexBuffer(vulkan_context.command_buffers[vulkan_context.current_frame_index],
+                         vulkan_context.index_bufs[object.ibuf_handle], 0, VK_INDEX_TYPE_UINT32);
+    
+    
+    vkCmdBindDescriptorSets(vulkan_context.command_buffers[vulkan_context.current_frame_index],
+                            VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_context.pipeline_layout, 0, 1,
+                            &vulkan_context.descriptor_sets[(i * MAX_FRAMES_IN_FLIGHT) + vulkan_context.current_frame_index], 0,
+                            NULL_PTR);
+    
+    vkCmdDrawIndexed(vulkan_context.command_buffers[vulkan_context.current_frame_index],
+                     vulkan_context.scene_data->meshes[object.vbuf_handle].index_count, 1, 0, 0, 0);
+  }
 
   return TRUE;
 }
@@ -498,16 +522,6 @@ b8 vulkan_backend_on_resize(RendererBackend* renderer_backend, u16 width, u16 he
     MERROR_CORE("Vulkan On Resize: Failed to recreate swapchain.");
     return FALSE;
   }
-  return TRUE;
-}
-
-b8 vulkan_backend_link_mesh(RendererBackend* renderer_backend, CMesh* mesh) {
-  MTRACE("LINK MESH");
-  darray_push(vulkan_context.vertex_counts, mesh->vertex_count);
-  darray_push(vulkan_context.vertices, mesh->vertices);
-  darray_push(vulkan_context.index_counts, mesh->index_count);
-  darray_push(vulkan_context.indices, mesh->indices);
-
   return TRUE;
 }
 
@@ -1025,6 +1039,23 @@ static b8 vulkan_create_image_views() {
   return TRUE;
 }
 
+static b8 vulkan_create_drawable_objects() {
+  vulkan_context.objects = darray_create(VulkanDrawable);
+
+  for (u32 i = 0; i < darray_get_length(vulkan_context.scene_data->drawable_handles); i++) {
+    Entity* p_entity = &vulkan_context.scene_data->entities[vulkan_context.scene_data->drawable_handles[i]];
+    Handle32 mesh_handle = entity_get_mesh_handle(p_entity);
+    VulkanDrawable object = {
+      .vbuf_handle = mesh_handle,
+      .ibuf_handle = mesh_handle,
+      .texture_handle = material_get_texture_handle(entity_get_material(p_entity)),
+    };
+    darray_push(vulkan_context.objects, object);
+  }
+
+  return TRUE;
+}
+
 static b8 vulkan_create_descriptor_set_layout() {
   VkDescriptorSetLayoutBinding mvp_layout_binding = {};
   mvp_layout_binding.binding = 0;
@@ -1332,88 +1363,94 @@ static b8 vulkan_create_depth_resources() {
 
 static b8 vulkan_create_texture_image() {
 
-  CCTexture* texture =
-    &vulkan_context.scene_data->textures[vulkan_context.scene_data->materials[0].texture_handle];
+  u32 texture_count = darray_get_length(vulkan_context.scene_data->textures);
+  vulkan_context.texture_images = mallocate(texture_count * sizeof(VkImage), MEMORY_TAG_RENDERER); // @TODO: Free
+  vulkan_context.texture_image_mem = mallocate(texture_count * sizeof(VkDeviceMemory), MEMORY_TAG_RENDERER); // @TODO: Free
+  
+  for(u32 i = 0; i < texture_count; i++) {
+    CCTexture* p_texture =
+      &vulkan_context.scene_data->textures[i];
+    
+    VkDeviceSize image_size = p_texture->width * p_texture->height * 4;
+    
+    
+    if (!create_buffer(&vulkan_context.staging_texture_buf,
+                       &vulkan_context.staging_texture_buf_mem,
+                       image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+      MERROR_CORE("Failed to create staging texture buffer for: %s",
+                  p_texture->image_path);
+      return FALSE;
+    }
 
-  VkDeviceSize image_size = texture->width * texture->height * 4;
+    void* data;
 
+    VkResult map_mem_res =
+      vkMapMemory(vulkan_context.logical_device,
+                  vulkan_context.staging_texture_buf_mem, 0, image_size,
+                  ZERO, &data);
+    
+    if (map_mem_res != VK_SUCCESS) {
+      MERROR_CORE("Failed to map staging texture buffer memory: %s",
+                  string_VkResult(map_mem_res));
+      return FALSE;
+    }
+    
+    mcopy_memory(data, p_texture->texture_data, image_size);
+    vkUnmapMemory(vulkan_context.logical_device,
+                  vulkan_context.staging_texture_buf_mem);
+    
+    stbi_image_free(p_texture->texture_data);
 
-  if (!create_buffer(&vulkan_context.staging_texture_buf,
-		     &vulkan_context.staging_texture_buf_mem,
-		     image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-		     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
-    MERROR_CORE("Failed to create staging texture buffer for: %s",
-		texture->image_path);
-    return FALSE;
-  }
+    if (!create_image(&vulkan_context.texture_images[i],
+                      &vulkan_context.texture_image_mem[i], p_texture->width,
+                      p_texture->height,
+                      vulkan_context.surface_format.format,
+                      VK_IMAGE_TILING_OPTIMAL,
+                      VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                      VK_IMAGE_USAGE_SAMPLED_BIT,
+                      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+      MERROR_CORE("Failed to create image for texture");
+      return FALSE;
+    }
 
-  void* data;
+    VkCommandBuffer command_buf =
+      begin_single_time_commands(vulkan_context.graphics_command_pool);
+    if (command_buf == VK_NULL_HANDLE) {
+      MERROR_CORE("Failed to begin single time commands");
+      return FALSE;
+    }
 
-  VkResult map_mem_res =
-    vkMapMemory(vulkan_context.logical_device,
-		vulkan_context.staging_texture_buf_mem, 0, image_size,
-		ZERO, &data);
+    if (!transition_tex_image_layout(&command_buf,
+                                     &vulkan_context.texture_images[i],
+                                     VK_IMAGE_LAYOUT_UNDEFINED,
+                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)) {
+      MERROR_CORE("Failed to transfer image layout");
+      return FALSE;
+    }
 
-  if (map_mem_res != VK_SUCCESS) {
-    MERROR_CORE("Failed to map staging texture buffer memory: %s",
-		string_VkResult(map_mem_res));
-    return FALSE;
-  }
+    if (!copy_buffer_to_image(&command_buf,
+                              &vulkan_context.staging_texture_buf,
+                              &vulkan_context.texture_images[i],
+                              p_texture->width, p_texture->height)) {
+      MERROR_CORE("Failed to copy buffer to image");
+      return FALSE;
+    }
 
-  mcopy_memory(data, texture->texture_data, image_size);
-  vkUnmapMemory(vulkan_context.logical_device,
-		vulkan_context.staging_texture_buf_mem);
+    if (!transition_tex_image_layout(&command_buf,
+                                     &vulkan_context.texture_images[i],
+                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)) {
+      MERROR_CORE("Failed to transfer image layout");
+      return FALSE;
+    }
 
-  stbi_image_free(texture->texture_data);
-
-  if (!create_image(&vulkan_context.texture_image,
-		    &vulkan_context.texture_image_mem, texture->width,
-		    texture->height,
-		    vulkan_context.surface_format.format,
-		    VK_IMAGE_TILING_OPTIMAL,
-		    VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-		    VK_IMAGE_USAGE_SAMPLED_BIT,
-		    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
-    MERROR_CORE("Failed to create image for texture");
-    return FALSE;
-  }
-
-  VkCommandBuffer command_buf =
-    begin_single_time_commands(vulkan_context.graphics_command_pool);
-  if (command_buf == VK_NULL_HANDLE) {
-    MERROR_CORE("Failed to begin single time commands");
-    return FALSE;
-  }
-
-  if (!transition_tex_image_layout(&command_buf,
-				   &vulkan_context.texture_image,
-				   VK_IMAGE_LAYOUT_UNDEFINED,
-				   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)) {
-    MERROR_CORE("Failed to transfer image layout");
-    return FALSE;
-  }
-
-  if (!copy_buffer_to_image(&command_buf,
-			    &vulkan_context.staging_texture_buf,
-			    &vulkan_context.texture_image,
-			    texture->width, texture->height)) {
-    MERROR_CORE("Failed to copy buffer to image");
-    return FALSE;
-  }
-
-  if (!transition_tex_image_layout(&command_buf,
-				   &vulkan_context.texture_image,
-				   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-				   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)) {
-    MERROR_CORE("Failed to transfer image layout");
-    return FALSE;
-  }
-
-  if (!end_single_time_commands(&command_buf,
-				vulkan_context.graphics_queue)) {
-    MERROR_CORE("Failed to end single time commands");
-    return FALSE;
+    if (!end_single_time_commands(&command_buf,
+                                  vulkan_context.graphics_queue)) {
+      MERROR_CORE("Failed to end single time commands");
+      return FALSE;
+    }
   }
    
   return TRUE;
@@ -1421,12 +1458,16 @@ static b8 vulkan_create_texture_image() {
 
 static b8 vulkan_create_texture_image_view() {
 
-    VkComponentMapping component_mapping;
-    component_mapping.r = VK_COMPONENT_SWIZZLE_B;
-    component_mapping.g = VK_COMPONENT_SWIZZLE_G;
-    component_mapping.b = VK_COMPONENT_SWIZZLE_R;
-    component_mapping.a = VK_COMPONENT_SWIZZLE_A;
+  u32 texture_count = darray_get_length(vulkan_context.scene_data->textures);
 
+  vulkan_context.texture_image_views = mallocate(texture_count * sizeof(VkImageView), MEMORY_TAG_RENDERER); // @TODO: Free
+    
+  VkComponentMapping component_mapping;
+  component_mapping.r = VK_COMPONENT_SWIZZLE_B;
+  component_mapping.g = VK_COMPONENT_SWIZZLE_G;
+  component_mapping.b = VK_COMPONENT_SWIZZLE_R;
+  component_mapping.a = VK_COMPONENT_SWIZZLE_A;
+  
   VkImageSubresourceRange subresource_range = {
     .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
     .baseMipLevel = 0,
@@ -1434,20 +1475,23 @@ static b8 vulkan_create_texture_image_view() {
     .baseArrayLayer = 0,
     .layerCount = 1};
 
-  VkImageViewCreateInfo view_create_info = {
-    .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-    .image = vulkan_context.texture_image,
-    .viewType = VK_IMAGE_VIEW_TYPE_2D,
-    .format = vulkan_context.surface_format.format,
-    .subresourceRange = subresource_range,
-    .components = component_mapping,
-  };
+  for (u32 i = 0; i < texture_count; i++) {
+
+    VkImageViewCreateInfo view_create_info = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+      .image = vulkan_context.texture_images[i],
+      .viewType = VK_IMAGE_VIEW_TYPE_2D,
+      .format = vulkan_context.surface_format.format,
+      .subresourceRange = subresource_range,
+      .components = component_mapping,
+    };
   
-  VkResult create_img_view_res = vkCreateImageView(vulkan_context.logical_device, &view_create_info, vulkan_context.allocator,
-						   &vulkan_context.texture_image_view);
-  if (create_img_view_res != VK_SUCCESS) {
-    MERROR_CORE("Failed to create texture image view: %s", string_VkResult(create_img_view_res));
-    return FALSE;
+    VkResult create_img_view_res = vkCreateImageView(vulkan_context.logical_device, &view_create_info, vulkan_context.allocator,
+                                                     &vulkan_context.texture_image_views[i]);
+    if (create_img_view_res != VK_SUCCESS) {
+      MERROR_CORE("Failed to create texture image view: %s", string_VkResult(create_img_view_res));
+      return FALSE;
+    }
   }
 
   return TRUE;
@@ -1471,7 +1515,8 @@ static b8 vulkan_create_texture_image_sampler() {
     .compareEnable = VK_FALSE,
     .compareOp = VK_COMPARE_OP_ALWAYS,
     .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
-    .unnormalizedCoordinates = VK_FALSE};
+    .unnormalizedCoordinates = VK_FALSE
+  };
 
   VkResult create_sampler_res = vkCreateSampler(vulkan_context.logical_device, &sampler_create_info, vulkan_context.allocator,
 						&vulkan_context.texture_image_sampler);
@@ -1489,114 +1534,141 @@ static b8 vulkan_create_vertex_buffers() {
   /* vulkan_context.staging_vertex_buffer = NULL_PTR; */
   /* vulkan_context.staging_vertex_buffer_mem = NULL_PTR; */
 
-  VkDeviceSize buffer_size = vulkan_context.scene_data->meshes[0].vertex_count * sizeof(Vertex);
- 
-  if (!create_buffer(&vulkan_context.staging_vertex_buffer,
-                     &vulkan_context.staging_vertex_buffer_mem, buffer_size,
-                     VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
-    MERROR_CORE("Failed to create staging buffer");
-    return FALSE;
-  }
+  u32 mesh_count = darray_get_length(vulkan_context.scene_data->meshes);
 
-  void* vertex_data = NULL_PTR;
-  VkResult map_staging_mem_res =
+  vulkan_context.vertex_bufs = mallocate(mesh_count * sizeof(VkBuffer), MEMORY_TAG_RENDERER); // @TODO: Free
+  vulkan_context.vertex_buf_mem = mallocate(mesh_count * sizeof(VkDeviceMemory), MEMORY_TAG_RENDERER); // @TODO: Free
+
+  for (u32 i = 0; i < mesh_count;i++) {
+    
+    VkDeviceSize buffer_size = vulkan_context.scene_data->meshes[i].vertex_count * sizeof(Vertex);
+ 
+    if (!create_buffer(&vulkan_context.staging_vertex_buffer,
+                       &vulkan_context.staging_vertex_buffer_mem, buffer_size,
+                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+      MERROR_CORE("Failed to create staging buffer");
+      return FALSE;
+    }
+
+    void* vertex_data = NULL_PTR;
+    VkResult map_staging_mem_res =
       vkMapMemory(vulkan_context.logical_device, vulkan_context.staging_vertex_buffer_mem, 0,
                   buffer_size, ZERO, &vertex_data);
 
-  if (map_staging_mem_res != VK_SUCCESS) {
-    MERROR_CORE("Failed to map vulkan staging buffer memory: %s",
-                string_VkResult(map_staging_mem_res));
-    return FALSE;
-  }
+    if (map_staging_mem_res != VK_SUCCESS) {
+      MERROR_CORE("Failed to map vulkan staging buffer memory: %s",
+                  string_VkResult(map_staging_mem_res));
+      return FALSE;
+    }
 
-  mcopy_memory(vertex_data, vulkan_context.scene_data->meshes[0].vertices, buffer_size);
-  vkUnmapMemory(vulkan_context.logical_device, vulkan_context.staging_vertex_buffer_mem);
+    mcopy_memory(vertex_data, vulkan_context.scene_data->meshes[i].vertices, buffer_size);
+    vkUnmapMemory(vulkan_context.logical_device, vulkan_context.staging_vertex_buffer_mem);
 
-  if (!create_buffer(&vulkan_context.vertex_buffer, &vulkan_context.vertex_buffer_memory,
-                     buffer_size,
-                     VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
-    MERROR_CORE("Failed to create vertex buffer");
-    return FALSE;
-  }
+    if (!create_buffer(&vulkan_context.vertex_bufs[i], &vulkan_context.vertex_buf_mem[i],
+                       buffer_size,
+                       VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+      MERROR_CORE("Failed to create vertex buffer");
+      return FALSE;
+    }
 
-  if (!copy_buffer(&vulkan_context.staging_vertex_buffer, &vulkan_context.vertex_buffer,
-                   buffer_size)) {
-    MERROR_CORE("Failed to copy staging buffer to vertex buffer");
-    return FALSE;
+    if (!copy_buffer(&vulkan_context.staging_vertex_buffer, &vulkan_context.vertex_bufs[i],
+                     buffer_size)) {
+      MERROR_CORE("Failed to copy staging buffer to vertex buffer");
+      return FALSE;
+    }
   }
 
   return TRUE;
 }
 
 static b8 vulkan_create_index_buffer() {
-  VkDeviceSize buffer_size = sizeof(u32) * vulkan_context.scene_data->meshes[0].index_count;
 
-  if (!create_buffer(&vulkan_context.staging_index_buffer, &vulkan_context.staging_index_buffer_mem,
-                     buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
-    MERROR_CORE("Failed to create staging index buffer");
-    return FALSE;
-  }
+  u32 mesh_count = darray_get_length(vulkan_context.scene_data->meshes);
 
-  void* index_data = NULL_PTR;
-  VkResult map_mem_res =
+  vulkan_context.index_bufs = mallocate(mesh_count * sizeof(VkBuffer), MEMORY_TAG_RENDERER); // @TODO: Free
+  vulkan_context.index_buf_mem = mallocate(mesh_count * sizeof(VkDeviceMemory), MEMORY_TAG_RENDERER); // @TODO: Free
+
+  for (u32 i = 0; i < mesh_count; i++) {
+
+    VkDeviceSize buffer_size = sizeof(u32) * vulkan_context.scene_data->meshes[i].index_count;
+
+    if (!create_buffer(&vulkan_context.staging_index_buffer, &vulkan_context.staging_index_buffer_mem,
+                       buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+      MERROR_CORE("Failed to create staging index buffer");
+      return FALSE;
+    }
+
+    void* index_data = NULL_PTR;
+    VkResult map_mem_res =
       vkMapMemory(vulkan_context.logical_device, vulkan_context.staging_index_buffer_mem, 0,
                   buffer_size, ZERO, &index_data);
-  if (map_mem_res != VK_SUCCESS) {
-    MERROR_CORE("Failed to map index staging index buffer memory: %s",
-                string_VkResult(map_mem_res));
-    return FALSE;
-  }
-  mcopy_memory(index_data, vulkan_context.scene_data->meshes[0].indices, buffer_size);
-  vkUnmapMemory(vulkan_context.logical_device, vulkan_context.staging_index_buffer_mem);
+    if (map_mem_res != VK_SUCCESS) {
+      MERROR_CORE("Failed to map index staging index buffer memory: %s",
+                  string_VkResult(map_mem_res));
+      return FALSE;
+    }
+    mcopy_memory(index_data, vulkan_context.scene_data->meshes[i].indices, buffer_size);
+    vkUnmapMemory(vulkan_context.logical_device, vulkan_context.staging_index_buffer_mem);
 
-  if (!create_buffer(&vulkan_context.index_buffer, &vulkan_context.index_buffer_mem, buffer_size,
-                     VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
-    MERROR_CORE("Failed to create index buffer");
-    return FALSE;
-  }
+    if (!create_buffer(&vulkan_context.index_bufs[i], &vulkan_context.index_buf_mem[i], buffer_size,
+                       VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+      MERROR_CORE("Failed to create index buffer");
+      return FALSE;
+    }
 
-  if (!copy_buffer(&vulkan_context.staging_index_buffer, &vulkan_context.index_buffer,
-                   buffer_size)) {
-    MERROR_CORE("Failed to copy from staging to index buffer");
-    return FALSE;
+    if (!copy_buffer(&vulkan_context.staging_index_buffer, &vulkan_context.index_bufs[i],
+                     buffer_size)) {
+      MERROR_CORE("Failed to copy from staging to index buffer");
+      return FALSE;
+    }
   }
   return TRUE;
 }
 
 static b8 vulkan_create_uniform_buffers() {
-  VkDeviceSize buffer_size = sizeof(MVPMat);
 
-  for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    if (!create_buffer(
-            &vulkan_context.uniform_buffers[i], &vulkan_context.uniform_buffer_mem[i], buffer_size,
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
-      MERROR_CORE("Failed to create uniform buffer");
-      return FALSE;
-    }
-
-    VkResult map_mem_res =
-        vkMapMemory(vulkan_context.logical_device, vulkan_context.uniform_buffer_mem[i], 0,
-                    buffer_size, ZERO, &vulkan_context.uniform_buffer_mem_mapped[i]);
-    if (map_mem_res != VK_SUCCESS) {
-      MERROR_CORE("Failed to map uniform buffer memory: %s", string_VkResult(map_mem_res));
-      return FALSE;
+  
+  for (u32 i = 0; i < vulkan_context.uniform_object_count; i++) {
+    for (u32 j = 0; j < MAX_FRAMES_IN_FLIGHT; j++) {
+      VkDeviceSize buffer_size = sizeof(MVPMat);
+      if (!create_buffer(
+                         &vulkan_context.uniform_bufs[(i * MAX_FRAMES_IN_FLIGHT) + j],
+                         &vulkan_context.uniform_buf_mem[(i * MAX_FRAMES_IN_FLIGHT) + j],
+                         buffer_size,
+                         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+        MERROR_CORE("Failed to create uniform buffer");
+        return FALSE;
+      }
+      
+      VkResult map_mem_res =
+        vkMapMemory(vulkan_context.logical_device,
+                    vulkan_context.uniform_buf_mem[(i * MAX_FRAMES_IN_FLIGHT) + j],
+                    0,
+                    buffer_size, ZERO, &vulkan_context.uniform_buf_mem_map[(i * MAX_FRAMES_IN_FLIGHT) + j]);
+      if (map_mem_res != VK_SUCCESS) {
+        MERROR_CORE("Failed to map uniform buffer memory: %s", string_VkResult(map_mem_res));
+        return FALSE;
+      }
     }
   }
-
+  
   return TRUE;
 }
 
 static b8 vulkan_create_descriptor_pool() {
-  VkDescriptorPoolSize uniform_pool_size = {.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                               .descriptorCount = MAX_FRAMES_IN_FLIGHT};
+  VkDescriptorPoolSize uniform_pool_size = {
+    .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    .descriptorCount = MAX_FRAMES_IN_FLIGHT * vulkan_context.uniform_object_count,
+  };
+  
   VkDescriptorPoolSize img_sampler_pool_size = {
     .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-    .descriptorCount = MAX_FRAMES_IN_FLIGHT,
+    .descriptorCount = MAX_FRAMES_IN_FLIGHT * vulkan_context.uniform_object_count,
   };
 
   VkDescriptorPoolSize pool_sizes[2] = {
@@ -1607,7 +1679,7 @@ static b8 vulkan_create_descriptor_pool() {
   VkDescriptorPoolCreateInfo descriptor_pool_create_info = {
       VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
   descriptor_pool_create_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-  descriptor_pool_create_info.maxSets = MAX_FRAMES_IN_FLIGHT;
+  descriptor_pool_create_info.maxSets = MAX_FRAMES_IN_FLIGHT * vulkan_context.uniform_object_count;
   descriptor_pool_create_info.poolSizeCount = 2;
   descriptor_pool_create_info.pPoolSizes = pool_sizes;
 
@@ -1624,60 +1696,72 @@ static b8 vulkan_create_descriptor_pool() {
 }
 
 static b8 vulkan_create_descriptor_sets() {
-  VkDescriptorSetLayout layouts[MAX_FRAMES_IN_FLIGHT];
-  for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    layouts[i] = vulkan_context.descriptor_set_layout;
-  }
 
-  VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
-  alloc_info.descriptorPool = vulkan_context.descriptor_pool;
-  alloc_info.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
-  alloc_info.pSetLayouts = layouts;
+  u32 object_count = darray_get_length(vulkan_context.objects);
 
-  VkResult alloc_descriptor_set_res = vkAllocateDescriptorSets(
-      vulkan_context.logical_device, &alloc_info, vulkan_context.descriptor_sets);
-  if (alloc_descriptor_set_res != VK_SUCCESS) {
-    MERROR_CORE("Failed to allocate descriptor sets: %s",
-                string_VkResult(alloc_descriptor_set_res));
-    return FALSE;
-  }
+  vulkan_context.descriptor_sets = mallocate(object_count * sizeof(VkDescriptorSet) * MAX_FRAMES_IN_FLIGHT,
+                                             MEMORY_TAG_RENDERER);// @TODO: Free mem
 
-  for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    VkDescriptorBufferInfo buffer_info;
-    buffer_info.buffer = vulkan_context.uniform_buffers[i];
-    buffer_info.offset = 0;
-    buffer_info.range = VK_WHOLE_SIZE;
+  for (u32 i = 0; i < object_count; i++) {
 
-    VkDescriptorImageInfo image_info = {
-      .sampler = vulkan_context.texture_image_sampler,
-      .imageView = vulkan_context.texture_image_view,
-      .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-    };
+    VulkanDrawable object = vulkan_context.objects[i];
 
-    VkWriteDescriptorSet uniform_write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
-    uniform_write.dstSet = vulkan_context.descriptor_sets[i];
-    uniform_write.dstBinding = 0;
-    uniform_write.dstArrayElement = 0;
-    uniform_write.descriptorCount = 1;
-    uniform_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uniform_write.pBufferInfo = &buffer_info;
+    VkDescriptorSetLayout layouts[MAX_FRAMES_IN_FLIGHT];
+    
+    for (u32 j = 0; j < MAX_FRAMES_IN_FLIGHT; j++) {
+      layouts[j] = vulkan_context.descriptor_set_layout;
+    }
 
-    VkWriteDescriptorSet image_write = {
-      .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-      .dstSet = vulkan_context.descriptor_sets[i],
-      .dstBinding = 1,
-      .dstArrayElement = 0,
-      .descriptorCount = 1,
-      .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-      .pImageInfo = &image_info,
-    };
+    VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+    alloc_info.descriptorPool = vulkan_context.descriptor_pool;
+    alloc_info.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
+    alloc_info.pSetLayouts = layouts;
 
-    VkWriteDescriptorSet writes[2] = {
-      uniform_write,
-      image_write,
-    };
+    VkResult alloc_descriptor_set_res = vkAllocateDescriptorSets(vulkan_context.logical_device, &alloc_info,
+                                                                 &vulkan_context.descriptor_sets[i * MAX_FRAMES_IN_FLIGHT]);
+    if (alloc_descriptor_set_res != VK_SUCCESS) {
+      MERROR_CORE("Failed to allocate descriptor sets: %s",
+                  string_VkResult(alloc_descriptor_set_res));
+      return FALSE;
+    }
 
-    vkUpdateDescriptorSets(vulkan_context.logical_device, 2, writes, 0, NULL_PTR);
+    for (u32 j = 0; j < MAX_FRAMES_IN_FLIGHT; j++) {
+      VkDescriptorBufferInfo buffer_info;
+      buffer_info.buffer = vulkan_context.uniform_bufs[(i * MAX_FRAMES_IN_FLIGHT) + j];
+      buffer_info.offset = 0;
+      buffer_info.range = VK_WHOLE_SIZE;
+
+      VkDescriptorImageInfo image_info = {
+        .sampler = vulkan_context.texture_image_sampler,
+        .imageView = vulkan_context.texture_image_views[object.texture_handle],
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+      };
+
+      VkWriteDescriptorSet uniform_write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+      uniform_write.dstSet = vulkan_context.descriptor_sets[(i * MAX_FRAMES_IN_FLIGHT) + j];
+      uniform_write.dstBinding = 0;
+      uniform_write.dstArrayElement = 0;
+      uniform_write.descriptorCount = 1;
+      uniform_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+      uniform_write.pBufferInfo = &buffer_info;
+
+      VkWriteDescriptorSet image_write = {
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = vulkan_context.descriptor_sets[(i * MAX_FRAMES_IN_FLIGHT) + j],
+        .dstBinding = 1,
+        .dstArrayElement = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .pImageInfo = &image_info,
+      };
+
+      VkWriteDescriptorSet writes[2] = {
+        uniform_write,
+        image_write,
+      };
+
+      vkUpdateDescriptorSets(vulkan_context.logical_device, 2, writes, 0, NULL_PTR);
+    }
   }
 
   return TRUE;
@@ -1984,21 +2068,28 @@ static b8 update_uniform_buffer() {
   }
 
   MVPMat mvp_mat;
+  /*
   Mat4 model_tran = {1.0f, 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f,
                      0.0f, 0.0f, 1.0f, -4.5f, 0.0f, 0.0f, 0.0f, 1.0f};
 
   mvp_mat.model =
       mat4_mul(mat4_from_quat(quat_from_euler((Vec3){0.0f, M_TO_RAD(x), M_TO_RAD(x)})),
                mat4_transpose(model_tran));
+  */
   mvp_mat.view = mat4_iden();
-  mvp_mat.proj = mat4_perspective(
-      M_TO_RAD(90.0f),
-      (f32)vulkan_context.swapchain_extent.width / (f32)vulkan_context.swapchain_extent.height,
-      0.1f, 1000.0f);
-
+  mvp_mat.proj = mat4_perspective(M_TO_RAD(90.0f),
+                                  (f32)vulkan_context.swapchain_extent.width /
+                                  (f32)vulkan_context.swapchain_extent.height,
+                                  0.1f, 1000.0f);
   mvp_mat.proj.e22 *= -1.0f;
-  mcopy_memory(vulkan_context.uniform_buffer_mem_mapped[vulkan_context.current_frame_index],
-               &mvp_mat, sizeof(mvp_mat));
+
+  for (u32 i = 0; i < vulkan_context.uniform_object_count; i++) {
+    mvp_mat.model = mat4_from_transform(vulkan_context.scene_data->entities[vulkan_context.scene_data->drawable_handles[i]].transform);
+
+    mcopy_memory(vulkan_context.uniform_buf_mem_map[(i * MAX_FRAMES_IN_FLIGHT) + vulkan_context.current_frame_index],
+                 &mvp_mat, sizeof(mvp_mat));
+  }
+
   return TRUE;
 }
 

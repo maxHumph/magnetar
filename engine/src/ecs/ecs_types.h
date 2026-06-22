@@ -6,6 +6,7 @@
 #pragma once
 
 #include "maths/vector.h"
+#include "maths/transform.h"
 #include "renderer/renderer_types.h"
 
 typedef Mask64 ComponentTypeMask;
@@ -32,16 +33,6 @@ typedef struct Scene {
 
 } Scene;
 
-/**
- * @struct Transform
- * @brief Contains the postion scale and orientation of the entity in
- * the scene.
- */
-typedef struct Transform {
-  Vec3 position;
-  Quat rotation;
-  Vec3 scale;
-} Transform;
 
 /**
  * @struct Entity  

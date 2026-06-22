@@ -17,12 +17,21 @@
 
 #define MVK_VERTEX_ATTRIBUTE_COUNT 3
 
+// Not used
+typedef struct VulkanDrawable {
+  Handle32 vbuf_handle;
+  Handle32 ibuf_handle;
+  Handle32 texture_handle;
+} VulkanDrawable;
+
 /**
  * @struct VulkanContext
  * @brief Contains useful data for vulkan rendering.
  */
 typedef struct VulkanContext {
   SceneData* scene_data;
+
+  VulkanDrawable* objects;
 
   VkInstance instance;
   VkPhysicalDevice physical_device;
@@ -66,26 +75,22 @@ typedef struct VulkanContext {
   VkSemaphore* render_complete_semaphores;
   VkFence draw_fences[MAX_FRAMES_IN_FLIGHT];
 
-  u32* vertex_counts;
-  Vertex** vertices;
   VkVertexInputBindingDescription vertex_binding_description;
   VkBuffer staging_vertex_buffer;
   VkDeviceMemory staging_vertex_buffer_mem;
-  VkBuffer vertex_buffer;
-  VkDeviceMemory vertex_buffer_memory;
+  VkBuffer* vertex_bufs;
+  VkDeviceMemory* vertex_buf_mem;
 
-  u32* index_counts;
-  u32** indices;
   VkBuffer staging_index_buffer;
   VkDeviceMemory staging_index_buffer_mem;
-  VkBuffer index_buffer;
-  VkDeviceMemory index_buffer_mem;
+  VkBuffer* index_bufs;
+  VkDeviceMemory* index_buf_mem;
 
   VkBuffer staging_texture_buf;
   VkDeviceMemory staging_texture_buf_mem;
-  VkImage texture_image;
-  VkDeviceMemory texture_image_mem;
-  VkImageView texture_image_view;
+  VkImage* texture_images;
+  VkDeviceMemory* texture_image_mem;
+  VkImageView* texture_image_views;
   VkSampler texture_image_sampler;
 
   VkImage depth_image;
@@ -95,10 +100,17 @@ typedef struct VulkanContext {
 
   VkDescriptorSetLayout descriptor_set_layout;
   VkDescriptorPool descriptor_pool;
-  VkDescriptorSet descriptor_sets[MAX_FRAMES_IN_FLIGHT];
+  VkDescriptorSet* descriptor_sets;
 
+  u32 uniform_object_count;
+  VkBuffer* uniform_bufs;
+  VkDeviceMemory* uniform_buf_mem;
+  void** uniform_buf_mem_map;
+
+  /*
   VkBuffer uniform_buffers[MAX_FRAMES_IN_FLIGHT];
   VkDeviceMemory uniform_buffer_mem[MAX_FRAMES_IN_FLIGHT];
   void* uniform_buffer_mem_mapped[MAX_FRAMES_IN_FLIGHT];
+  */
 
 } VulkanContext;

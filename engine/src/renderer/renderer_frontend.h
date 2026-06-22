@@ -20,5 +20,3 @@ b8 renderer_end_frame(f64 delta_time);
 b8 renderer_draw_frame();
 
 b8 renderer_on_resize(u16 width, u16 height);
-
-b8 renderer_link_mesh(CMesh* mesh);

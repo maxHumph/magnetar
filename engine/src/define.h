@@ -43,10 +43,18 @@ typedef u64 Handle64;
 #define ZERO 0
 #define NULL_PTR (void*)0
 
+#define U8_MAX 255
+#define U16_MAX 65535
+#define U32_MAX 4294967295
+#define U64_MAX 18446744073709551615
+
 #define NULL_MASK_8  (u8)0x00
 #define NULL_MASK_16 (short)0x0000
 #define NULL_MASK_32 0x00000000u
 #define NULL_MASK_64 0x00000000ULL
+
+#define NULL_HANDLE_32 U32_MAX
+#define NULL_HANDLE_64 U64_MAX
 
 #define ENDL '\n'
 #define NULL_TERM '\0'

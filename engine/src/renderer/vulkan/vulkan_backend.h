@@ -113,8 +113,6 @@ b8 vulkan_backend_draw_frame(RendererBackend* renderer_backend);
  */
 b8 vulkan_backend_on_resize(RendererBackend* renderer_backend, u16 width, u16 height);
 
-b8 vulkan_backend_link_mesh(RendererBackend* renderer_backend, CMesh* mesh);
-
 // STATIC FUNCTIONS
 
 // Init functions
@@ -208,6 +206,8 @@ static b8 vulkan_create_graphics_pipeline();  // @TODO: Split this into more ato
  * @return TRUE if the command pool was created successfully, otherwise FALSE.
  */
 static b8 vulkan_create_command_pools();
+
+static b8 vulkan_create_drawable_objects();
 
 static b8 vulkan_create_depth_resources();
 

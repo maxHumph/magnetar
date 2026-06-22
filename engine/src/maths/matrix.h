@@ -6,6 +6,7 @@
 
 #include "define.h"
 #include "maths/vector.h"
+#include "maths/transform.h"
 #include "core/log.h"
 
 // MAT 2
@@ -198,4 +199,18 @@ MGINLINE Mat4 mat4_perspective(f32 fov, f32 aspect_ratio, f32 near, f32 far) {
   m.e44 = 0.0f;
 
   return m;
+}
+
+// @TODO: Apply scale
+MGINLINE Mat4 mat4_from_transform(Transform transform) {
+  Mat4 translate = {
+    1.0f, 0.0f, 0.0f, transform.position.x, //
+    0.0f, 1.0f, 0.0f, transform.position.y, //
+    0.0f, 0.0f, 1.0f, transform.position.z, //
+    0.0f, 0.0f, 0.0f, 1.0f, //
+  };
+
+  return mat4_mul(mat4_from_quat(transform.rotation),
+                  mat4_transpose(translate));
+
 }

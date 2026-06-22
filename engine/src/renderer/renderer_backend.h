@@ -28,8 +28,6 @@ typedef struct RendererBackend {
 
   b8 (*on_resize)(struct RendererBackend* renderer_backend, u16 width, u16 height);
 
-  b8 (*link_mesh)(struct RendererBackend* renderer_backend, CMesh* mesh);
-
 } RendererBackend;
 
 b8 renderer_backend_create(RendererAPI api, const char* application_name, RendererBackend* backend);

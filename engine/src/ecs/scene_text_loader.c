@@ -90,7 +90,7 @@ static b8 parse_entity(Handle32 handle, char* name) {
     } else if (strcmp(tokens[0], "component_count") == 0) {
       p_entity->component_count = (u32)atol(tokens[1]);
       p_entity->components =
-	mallocate(p_entity->component_count * sizeof(Component),
+	mallocate(p_entity->component_count * sizeof(EComponent),
 		  MEMORY_TAG_ENTITY); // @TODO: Free mem
 
     } else if (strcmp(tokens[0], "component") == 0){

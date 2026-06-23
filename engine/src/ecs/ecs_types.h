@@ -18,7 +18,7 @@ static const ComponentTypeBit COMPONENT_TYPE_MATERIAL  = 0x00000002ULL;
 static const ComponentTypeBit COMPONENT_TYPE_CODE      = 0x00000004ULL;
 
 typedef struct Entity Entity;
-typedef struct Component Component;
+typedef struct EComponent EComponent;
 
 /**
  * @struct Scene
@@ -47,18 +47,18 @@ typedef struct Entity {
   ComponentTypeMask component_mask;
 
   u32 component_count;
-  Component* components;
+  EComponent* components;
 
 } Entity;
 
 /**
- * @struct Component
+ * @struct EComponent
  * @brief Contains the type and handle of a component.
  */
-typedef struct Component {
+typedef struct EComponent {
   ComponentTypeBit type;
   Handle32 handle;
-} Component;
+} EComponent;
 
 /**
  * Unimplemented

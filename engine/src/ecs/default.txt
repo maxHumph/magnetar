@@ -24,15 +24,6 @@ component mesh 1 dognut_mesh
 component material 1 dognut_mat
 END_ENTITY
 
-ENTITY 2 car
-TRANSFORM
-position -2.5 0.0 -4.0
-scale 1.0 1.0 1.0
-END_TRANSFORM
-component_count 2
-component mesh 2 car_mesh
-component material 0 crate_mesh
-END_ENTITY
 
 // ================================
 // 	MESHES
@@ -44,10 +35,6 @@ END_MESH
 
 MESH 1 dognut_mesh
 path ../test/res/models/torus.mg3d
-END_MESH
-
-MESH 2 car_mesh
-path ../test/res/testmod/mclaren.mg3d
 END_MESH
 
 // ================================

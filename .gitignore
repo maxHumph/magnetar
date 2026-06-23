@@ -5,6 +5,7 @@
 compile_commands.json
 
 bin/*
+/bin
 
 !bin/bin.md
 

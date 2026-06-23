@@ -35,6 +35,8 @@ b8 parse_scene(SceneData* data, FILE* file) {
       parse_material((Handle32)atol(tokens[1]), tokens[2]);
     } else if (strcmp(tokens[0], "TEXTURE") == 0) {
       parse_texture((Handle32)atol(tokens[1]), tokens[2]);
+    } else if (strcmp(tokens[0], "CAMERA") == 0) {
+      parse_camera((Handle32)atol(tokens[1]), tokens[2]);
     }
   }
 
@@ -72,12 +74,7 @@ static b8 parse_entity(Handle32 handle, char* name) {
             .z = atof(tokens[3]),
           };
         } else if (strcmp(tokens[0], "rotation") == 0) {
-          p_entity->transform.rotation = (Quat){
-            .x = atof(tokens[1]),
-            .y = atof(tokens[2]),
-            .z = atof(tokens[3]),
-            .a = atof(tokens[4]),
-          };
+          p_entity->transform.rotation = quat_from_euler((Vec3){M_TO_RAD(atof(tokens[1])), M_TO_RAD(atof(tokens[2])), M_TO_RAD(atof(tokens[3]))});
         } else if (strcmp(tokens[0], "scale") == 0) {
           p_entity->transform.scale = (Vec3){
             .x = atof(tokens[1]),
@@ -186,6 +183,36 @@ static b8 parse_texture(Handle32 handle, char* name) {
                     &p_texture->channels)) {
     MERROR_CORE("Failed to load texture: %s", p_texture->image_path);
     return FALSE;
+  }
+
+  return TRUE;
+}
+
+static b8 parse_camera(Handle32 handle, char* name) {
+  MTRACE("Parsing camera: %u, %s", handle, name);
+  u64 name_len = strlen(name) + 1;
+  char* name_copy = mallocate(name_len, MEMORY_TAG_COMPONENT);
+  mcopy_memory(name_copy, name, name_len);
+  CCamera new_camera= {
+    .name = name_copy,
+    .fov = 90.0f,
+    .near_plane = 0.1f,
+    .far_plane = 1000.0f,
+  };
+  darray_push(scene_data->cameras, new_camera);
+  CCamera* p_camera = &scene_data->cameras[handle];
+
+  while ((line_len = getline(&line, &line_len, scene_file)) != -1) {
+    get_tokens();
+    if (strcmp(tokens[0], "END_CAMERA") == 0) {
+      break;
+    } else if (strcmp(tokens[0], "fov") == 0) {
+      p_camera->fov = atof(tokens[1]);
+    } else if (strcmp(tokens[0], "near_plane") == 0) {
+      p_camera->near_plane = atof(tokens[1]);
+    } else if (strcmp(tokens[0], "far_plane") == 0) {
+      p_camera->far_plane = atof(tokens[1]);
+    }
   }
 
   return TRUE;

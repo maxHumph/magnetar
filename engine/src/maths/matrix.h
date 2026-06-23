@@ -168,6 +168,66 @@ MGINLINE Vec4 mat4_transform(Mat4 mat, Vec4 vec) {
   };
 }
 
+MGINLINE f32 mat4_determinant(Mat4f32 m) {
+  return
+    m.e14 * m.e23 * m.e32 * m.e41 -
+    m.e13 * m.e24 * m.e32 * m.e41 -
+    m.e14 * m.e22 * m.e33 * m.e41 +
+    m.e12 * m.e24 * m.e33 * m.e41 +
+    m.e13 * m.e22 * m.e34 * m.e41 -
+    m.e12 * m.e23 * m.e34 * m.e41 -
+    
+    m.e14 * m.e23 * m.e31 * m.e42 +
+    m.e13 * m.e24 * m.e31 * m.e42 +
+    m.e14 * m.e21 * m.e33 * m.e42 -
+    m.e11 * m.e24 * m.e33 * m.e42 -
+    m.e13 * m.e21 * m.e34 * m.e42 +
+    m.e11 * m.e23 * m.e34 * m.e42 +
+    
+    m.e14 * m.e22 * m.e31 * m.e43 -
+    m.e12 * m.e24 * m.e31 * m.e43 -
+    m.e14 * m.e21 * m.e32 * m.e43 +
+    m.e11 * m.e24 * m.e32 * m.e43 +
+    m.e12 * m.e21 * m.e34 * m.e43 -
+    m.e11 * m.e22 * m.e34 * m.e43 -
+    
+    m.e13 * m.e22 * m.e31 * m.e44 +
+    m.e12 * m.e23 * m.e31 * m.e44 +
+    m.e13 * m.e21 * m.e32 * m.e44 -
+    m.e11 * m.e23 * m.e32 * m.e44 -
+    m.e12 * m.e21 * m.e33 * m.e44 +
+    m.e11 * m.e22 * m.e33 * m.e44;
+}
+
+MGINLINE Mat4 mat4_inverse(Mat4 mat) {
+  f32 determ = mat4_determinant(mat);
+  f32 recip = 1.0f / determ;
+  return (Mat4) {
+    mat.e11 * recip, mat.e12 * recip, mat.e13 * recip, mat.e14 * recip,
+    mat.e21 * recip, mat.e22 * recip, mat.e23 * recip, mat.e24 * recip,
+    mat.e31 * recip, mat.e32 * recip, mat.e33 * recip, mat.e34 * recip,
+    mat.e41 * recip, mat.e42 * recip, mat.e43 * recip, mat.e44 * recip,
+  };
+}
+MGINLINE Mat4 mat4_inverse_transform(Mat4 m) {
+    Mat4 inv;
+
+    inv.e11 = m.e11; inv.e12 = m.e21; inv.e13 = m.e31;
+    inv.e21 = m.e12; inv.e22 = m.e22; inv.e23 = m.e32;
+    inv.e31 = m.e13; inv.e32 = m.e23; inv.e33 = m.e33;
+
+    inv.e14 = -(inv.e11 * m.e14 + inv.e12 * m.e24 + inv.e13 * m.e34);
+    inv.e24 = -(inv.e21 * m.e14 + inv.e22 * m.e24 + inv.e23 * m.e34);
+    inv.e34 = -(inv.e31 * m.e14 + inv.e32 * m.e24 + inv.e33 * m.e34);
+
+    inv.e41 = 0.0f;
+    inv.e42 = 0.0f;
+    inv.e43 = 0.0f;
+    inv.e44 = 1.0f;
+
+    return inv;
+}
+
 MGINLINE Mat4 mat4_from_quat(Quat quat) {
   return (Mat4) {
     1 - (2 * (quat.y * quat.y)) - (2 * (quat.z * quat.z)),
@@ -185,6 +245,8 @@ MGINLINE Mat4 mat4_from_quat(Quat quat) {
     0.0f, 0.0f, 0.0f, 1.0f,
   };
 }
+
+// MGINLINE Mat4 mat4_view(
 
 MGINLINE Mat4 mat4_perspective(f32 fov, f32 aspect_ratio, f32 near, f32 far) {
   f32 f = 1.0f / mtan(fov * 0.5f);
@@ -209,8 +271,16 @@ MGINLINE Mat4 mat4_from_transform(Transform transform) {
     0.0f, 0.0f, 1.0f, transform.position.z, //
     0.0f, 0.0f, 0.0f, 1.0f, //
   };
+  /*
+  Mat4 translate = {
+    1.0f, 0.0f, 0.0f, 0.0f, //
+    0.0f, 1.0f, 0.0f, 0.0f, //
+    0.0f, 0.0f, 1.0f, 0.0f, //
+    transform.position.x, transform.position.y, transform.position.z , 1.0f, //
+  };
+  */
 
-  return mat4_mul(mat4_from_quat(transform.rotation),
-                  mat4_transpose(translate));
+  return (mat4_mul(mat4_from_quat(transform.rotation),
+                   translate));
 
 }

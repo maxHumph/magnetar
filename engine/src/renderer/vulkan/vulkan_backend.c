@@ -28,8 +28,8 @@ static f32 x = 0;
 static b8 toggle = TRUE;
 
 b8 vulkan_backend_init(RendererBackend* renderer_backend,
-		       const char* application_name, i16 start_width,
-		       i16 start_height, PlatformState* platform_state) {
+                       const char* application_name, i16 start_width,
+                       i16 start_height, PlatformState* platform_state) {
 
   vulkan_context.scene_data = NULL_PTR;
   vulkan_context.allocator = NULL_PTR;
@@ -58,31 +58,31 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 
   /*
 
-  if (!scene_load(&test_scene)) {
+    if (!scene_load(&test_scene)) {
     MERROR_CORE("Failed to load scene: %s", test_scene.name);
     return FALSE;
-  }
+    }
 
-  MTRACE("|| Scene: %s || -------- (%u) entities --------", test_scene.name, test_scene.entity_count);
+    MTRACE("|| Scene: %s || -------- (%u) entities --------", test_scene.name, test_scene.entity_count);
   */
 
   /*
-  Vertex* vbuf = NULL_PTR;
-  u32* ibuf = NULL_PTR;
-  u32 vcount;
-  u32 icount;
+    Vertex* vbuf = NULL_PTR;
+    u32* ibuf = NULL_PTR;
+    u32 vcount;
+    u32 icount;
   */
   //mg3d_from_obj("../test/res/models/mclaren.obj", "../test/res/models/mclaren.mg3d");
   /*
-  mg3d_load("../test/res/models/crate.mg3d", &vbuf, &vcount, &ibuf, &icount);
+    mg3d_load("../test/res/models/crate.mg3d", &vbuf, &vcount, &ibuf, &icount);
 
-  vulkan_context.vertex_count = vcount;
-  vulkan_context.vertices = vbuf;
-  vbuf = NULL_PTR;
+    vulkan_context.vertex_count = vcount;
+    vulkan_context.vertices = vbuf;
+    vbuf = NULL_PTR;
 
-  vulkan_context.index_count = icount;
-  vulkan_context.indices = ibuf;
-  ibuf = NULL_PTR;
+    vulkan_context.index_count = icount;
+    vulkan_context.indices = ibuf;
+    ibuf = NULL_PTR;
   */
 
 
@@ -266,8 +266,8 @@ void vulkan_backend_shutdown(RendererBackend* renderer_backend) {
   mfree(vulkan_context.debug_messenger, sizeof(VkDebugUtilsMessengerEXT), MEMORY_TAG_RENDERER);
 
   PFN_vkDestroyDebugUtilsMessengerEXT fp_vkDestroyDebugUtilsMessengerEXT =
-      (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(vulkan_context.instance,
-                                                                 "vkDestroyDebugUtilsMessengerEXT");
+    (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(vulkan_context.instance,
+                                                               "vkDestroyDebugUtilsMessengerEXT");
   fp_vkDestroyDebugUtilsMessengerEXT(vulkan_context.instance, *vulkan_context.debug_messenger,
                                      vulkan_context.allocator);
 
@@ -279,8 +279,8 @@ void vulkan_backend_shutdown(RendererBackend* renderer_backend) {
 
 b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time) {
   VkResult wait_for_fence_result = vkWaitForFences(
-      vulkan_context.logical_device, 1,
-      &vulkan_context.draw_fences[vulkan_context.current_frame_index], VK_TRUE, UINT64_MAX);
+                                                   vulkan_context.logical_device, 1,
+                                                   &vulkan_context.draw_fences[vulkan_context.current_frame_index], VK_TRUE, UINT64_MAX);
 
   if (wait_for_fence_result != VK_SUCCESS) {
     MERROR_CORE("Failed to wait for vulkan draw fence: %s", string_VkResult(wait_for_fence_result));
@@ -288,8 +288,8 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
   }
 
   VkResult reset_fence_result =
-      vkResetFences(vulkan_context.logical_device, 1,
-                    &vulkan_context.draw_fences[vulkan_context.current_frame_index]);
+    vkResetFences(vulkan_context.logical_device, 1,
+                  &vulkan_context.draw_fences[vulkan_context.current_frame_index]);
 
   if (reset_fence_result != VK_SUCCESS) {
     MERROR_CORE("Failed to reset vulkan draw fence: %s", string_VkResult(reset_fence_result));
@@ -297,7 +297,7 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
   }
 
   VkResult reset_command_buffer_result = vkResetCommandBuffer(
-      vulkan_context.command_buffers[vulkan_context.current_frame_index], ZERO);
+                                                              vulkan_context.command_buffers[vulkan_context.current_frame_index], ZERO);
   if (reset_command_buffer_result != VK_SUCCESS) {
     MERROR_CORE("Failed to reset vulkan command buffer: %s",
                 string_VkResult(reset_command_buffer_result));
@@ -305,9 +305,9 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
   }
 
   VkResult acquire_next_image_result = vkAcquireNextImageKHR(
-      vulkan_context.logical_device, vulkan_context.swapchain, UINT64_MAX,
-      vulkan_context.present_complete_semaphores[vulkan_context.current_frame_index],
-      VK_NULL_HANDLE, &vulkan_context.current_image_index);
+                                                             vulkan_context.logical_device, vulkan_context.swapchain, UINT64_MAX,
+                                                             vulkan_context.present_complete_semaphores[vulkan_context.current_frame_index],
+                                                             VK_NULL_HANDLE, &vulkan_context.current_image_index);
 
   if (acquire_next_image_result == VK_SUBOPTIMAL_KHR) {
     MWARN_CORE("Vulkan acquire next image result: %s", string_VkResult(acquire_next_image_result));
@@ -319,13 +319,13 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
 
   // Begin command buffer recording
   VkCommandBufferBeginInfo command_buffer_begin_info = {
-      VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
   command_buffer_begin_info.flags = ZERO;
   command_buffer_begin_info.pInheritanceInfo = NULL_PTR;
 
   VkResult begin_command_buffer_result =
-      vkBeginCommandBuffer(vulkan_context.command_buffers[vulkan_context.current_frame_index],
-                           &command_buffer_begin_info);
+    vkBeginCommandBuffer(vulkan_context.command_buffers[vulkan_context.current_frame_index],
+                         &command_buffer_begin_info);
   if (begin_command_buffer_result != VK_SUCCESS) {
     MERROR_CORE("Failed to begin vulkan command buffer: %s",
                 string_VkResult(begin_command_buffer_result));
@@ -337,13 +337,13 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
                           VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
                           VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                           VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-			  VK_IMAGE_ASPECT_COLOR_BIT);
+                          VK_IMAGE_ASPECT_COLOR_BIT);
 
   transition_image_layout(vulkan_context.depth_image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-			  VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-			  VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-			  VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-			  VK_IMAGE_ASPECT_DEPTH_BIT);
+                          VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                          VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                          VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                          VK_IMAGE_ASPECT_DEPTH_BIT);
 
   VkClearColorValue clear_color_value = {.float32 = {0.0f, 0.0f, 0.0f, 1.0f}};
   VkClearValue clear_color = {.color = clear_color_value};
@@ -351,9 +351,9 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
   VkClearValue clear_depth = {.depthStencil = clear_depth_value};
 
   VkRenderingAttachmentInfo rendering_attachment_info = {
-      VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
+    VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
   rendering_attachment_info.imageView =
-      vulkan_context.swapchain_image_views[vulkan_context.current_image_index];
+    vulkan_context.swapchain_image_views[vulkan_context.current_image_index];
   rendering_attachment_info.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
   rendering_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
   rendering_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -418,9 +418,9 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
     // Get handle to buffers
     Handle32 handle;
     for (u32 i = 0; i < p_entity->component_count; i++) {
-      if (p_entity->components[i].type == COMPONENT_TYPE_MESH) {
-        handle = p_entity->components[i].handle;
-      }
+    if (p_entity->components[i].type == COMPONENT_TYPE_MESH) {
+    handle = p_entity->components[i].handle;
+    }
     }
     */
 
@@ -450,13 +450,13 @@ b8 vulkan_backend_end_frame(RendererBackend* renderer_backend, f64 delta_time) {
   vkCmdEndRendering(vulkan_context.command_buffers[vulkan_context.current_frame_index]);
 
   transition_image_layout(
-      vulkan_context.swapchain_images[vulkan_context.current_image_index], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-      VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, ZERO,
-      VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+                          vulkan_context.swapchain_images[vulkan_context.current_image_index], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                          VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, ZERO,
+                          VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 
   // End command buffer recording
   VkResult end_command_buffer_result =
-      vkEndCommandBuffer(vulkan_context.command_buffers[vulkan_context.current_frame_index]);
+    vkEndCommandBuffer(vulkan_context.command_buffers[vulkan_context.current_frame_index]);
   if (end_command_buffer_result != VK_SUCCESS) {
     MERROR_CORE("Failed to end vulkan command buffer: %s",
                 string_VkResult(end_command_buffer_result));
@@ -472,18 +472,18 @@ b8 vulkan_backend_end_frame(RendererBackend* renderer_backend, f64 delta_time) {
   command_buffer_submit_info.pNext = NULL_PTR;
   command_buffer_submit_info.waitSemaphoreCount = 1;
   command_buffer_submit_info.pWaitSemaphores =
-      &vulkan_context.present_complete_semaphores[vulkan_context.current_frame_index];
+    &vulkan_context.present_complete_semaphores[vulkan_context.current_frame_index];
   command_buffer_submit_info.pWaitDstStageMask = &wait_dst_stage_flags;
   command_buffer_submit_info.commandBufferCount = 1;
   command_buffer_submit_info.pCommandBuffers =
-      &vulkan_context.command_buffers[vulkan_context.current_frame_index];
+    &vulkan_context.command_buffers[vulkan_context.current_frame_index];
   command_buffer_submit_info.signalSemaphoreCount = 1;
   command_buffer_submit_info.pSignalSemaphores =
-      &vulkan_context.render_complete_semaphores[vulkan_context.current_image_index];
+    &vulkan_context.render_complete_semaphores[vulkan_context.current_image_index];
 
   VkResult queue_submit_restult =
-      vkQueueSubmit(vulkan_context.graphics_queue, 1, &command_buffer_submit_info,
-                    vulkan_context.draw_fences[vulkan_context.current_frame_index]);
+    vkQueueSubmit(vulkan_context.graphics_queue, 1, &command_buffer_submit_info,
+                  vulkan_context.draw_fences[vulkan_context.current_frame_index]);
 
   if (queue_submit_restult != VK_SUCCESS) {
     MERROR_CORE("Failed to sumbit to vulkan queue: %s", string_VkResult(queue_submit_restult));
@@ -497,13 +497,13 @@ b8 vulkan_backend_draw_frame(RendererBackend* renderer_backend) {
   VkPresentInfoKHR present_info = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
   present_info.waitSemaphoreCount = 1;
   present_info.pWaitSemaphores =
-      &vulkan_context.render_complete_semaphores[vulkan_context.current_image_index];
+    &vulkan_context.render_complete_semaphores[vulkan_context.current_image_index];
   present_info.swapchainCount = 1;
   present_info.pSwapchains = &vulkan_context.swapchain;
   present_info.pImageIndices = &vulkan_context.current_image_index;
 
   VkResult present_swapchain_result =
-      vkQueuePresentKHR(vulkan_context.graphics_queue, &present_info);
+    vkQueuePresentKHR(vulkan_context.graphics_queue, &present_info);
   if (present_swapchain_result == VK_SUBOPTIMAL_KHR) {
     MWARN_CORE("Vulkan present swapchain result: %s", string_VkResult(present_swapchain_result));
   } else if (present_swapchain_result != VK_SUCCESS) {
@@ -513,7 +513,7 @@ b8 vulkan_backend_draw_frame(RendererBackend* renderer_backend) {
   }
 
   vulkan_context.current_frame_index =
-      (vulkan_context.current_frame_index + 1) % MAX_FRAMES_IN_FLIGHT;
+    (vulkan_context.current_frame_index + 1) % MAX_FRAMES_IN_FLIGHT;
 
   return TRUE;
 }
@@ -532,30 +532,30 @@ vulkan_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                       VkDebugUtilsMessageTypeFlagsEXT message_types,
                       const VkDebugUtilsMessengerCallbackDataEXT* callback_data, void* user_data) {
   switch (message_severity) {
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-      MERROR_CORE("VULKAN DEBUG CALLBACK [%i: %s]: %s", callback_data->messageIdNumber,
-                  callback_data->pMessageIdName, callback_data->pMessage);
-      break;
+  case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+    MERROR_CORE("VULKAN DEBUG CALLBACK [%i: %s]: %s", callback_data->messageIdNumber,
+                callback_data->pMessageIdName, callback_data->pMessage);
+    break;
 
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-      MWARN_CORE("VULKAN DEBUG CALLBACK [%i: %s]: %s", callback_data->messageIdNumber,
-                 callback_data->pMessageIdName, callback_data->pMessage);
-      break;
+  case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+    MWARN_CORE("VULKAN DEBUG CALLBACK [%i: %s]: %s", callback_data->messageIdNumber,
+               callback_data->pMessageIdName, callback_data->pMessage);
+    break;
 
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-      MINFO_CORE("VULKAN DEBUG CALLBACK [%i: %s]: %s", callback_data->messageIdNumber,
-                 callback_data->pMessageIdName, callback_data->pMessage);
-      break;
+  case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+    MINFO_CORE("VULKAN DEBUG CALLBACK [%i: %s]: %s", callback_data->messageIdNumber,
+               callback_data->pMessageIdName, callback_data->pMessage);
+    break;
 
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-      MTRACE_CORE("VULKAN DEBUG CALLBACK [%i: %s]: %s", callback_data->messageIdNumber,
-                  callback_data->pMessageIdName, callback_data->pMessage);
-      break;
+  case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+    MTRACE_CORE("VULKAN DEBUG CALLBACK [%i: %s]: %s", callback_data->messageIdNumber,
+                callback_data->pMessageIdName, callback_data->pMessage);
+    break;
 
-    default:
-      MDEBUG_CORE("UNKNOWN VULKAN DEBUG CALLBACK [%i: %s]: %s", callback_data->messageIdNumber,
-                  callback_data->pMessageIdName, callback_data->pMessage);
-      break;
+  default:
+    MDEBUG_CORE("UNKNOWN VULKAN DEBUG CALLBACK [%i: %s]: %s", callback_data->messageIdNumber,
+                callback_data->pMessageIdName, callback_data->pMessage);
+    break;
   }
 
   return VK_FALSE;
@@ -591,7 +591,7 @@ static b8 vulkan_create_instance(const char* application_name) {
   create_info.flags = MVK_INSTANCE_CREATE_FLAGS;
 
   VkResult res_create_instance =
-      vkCreateInstance(&create_info, vulkan_context.allocator, &vulkan_context.instance);
+    vkCreateInstance(&create_info, vulkan_context.allocator, &vulkan_context.instance);
 
   // Check for instance creation errors
   if (res_create_instance == VK_SUCCESS) {
@@ -608,17 +608,17 @@ static b8 vulkan_create_instance(const char* application_name) {
 
 static b8 vulkan_create_debug_messenger() {
   VkDebugUtilsMessageSeverityFlagsEXT debug_message_severity_flags =
-      VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
-      VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-      VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
-      VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+    VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
+    VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+    VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+    VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
 
   // Set which type of events will call the debug messenger
   VkDebugUtilsMessageTypeFlagsEXT debug_message_type_flags =
-      VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+    VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
 
   VkDebugUtilsMessengerCreateInfoEXT debug_messenger_create_info = {
-      VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
+    VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
   debug_messenger_create_info.flags = ZERO;
   debug_messenger_create_info.messageSeverity = debug_message_severity_flags;
   debug_messenger_create_info.messageType = debug_message_type_flags;
@@ -627,13 +627,13 @@ static b8 vulkan_create_debug_messenger() {
 
   // Load function
   PFN_vkCreateDebugUtilsMessengerEXT fp_vkCreateDebugUtilsMessengerEXT =
-      (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(vulkan_context.instance,
-                                                                "vkCreateDebugUtilsMessengerEXT");
+    (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(vulkan_context.instance,
+                                                              "vkCreateDebugUtilsMessengerEXT");
   // Create debug messenger
   vulkan_context.debug_messenger = mallocate(sizeof(VkDebugUtilsMessengerEXT), MEMORY_TAG_RENDERER);
   VkResult create_debug_utils_messenger_result =
-      fp_vkCreateDebugUtilsMessengerEXT(vulkan_context.instance, &debug_messenger_create_info,
-                                        vulkan_context.allocator, vulkan_context.debug_messenger);
+    fp_vkCreateDebugUtilsMessengerEXT(vulkan_context.instance, &debug_messenger_create_info,
+                                      vulkan_context.allocator, vulkan_context.debug_messenger);
 
   if (create_debug_utils_messenger_result != VK_SUCCESS) {
     MERROR_CORE("Failed to create vulkan debug messenger: %s",
@@ -646,7 +646,7 @@ static b8 vulkan_create_debug_messenger() {
 static b8 vulkan_select_physical_device() {
   u32 physical_device_count = 0;
   VkResult enumerate_physical_devices_result =
-      vkEnumeratePhysicalDevices(vulkan_context.instance, &physical_device_count, NULL_PTR);
+    vkEnumeratePhysicalDevices(vulkan_context.instance, &physical_device_count, NULL_PTR);
   if (enumerate_physical_devices_result != VK_SUCCESS) {
     MERROR_CORE("Failed to retrieve Vulkan physical device count: %s",
                 string_VkResult(enumerate_physical_devices_result));
@@ -656,10 +656,10 @@ static b8 vulkan_select_physical_device() {
 
   // Get list of physical devices
   VkPhysicalDevice* physical_devices =
-      mallocate(physical_device_count * sizeof(VkPhysicalDevice), MEMORY_TAG_RENDERER);
+    mallocate(physical_device_count * sizeof(VkPhysicalDevice), MEMORY_TAG_RENDERER);
 
   enumerate_physical_devices_result =
-      vkEnumeratePhysicalDevices(vulkan_context.instance, &physical_device_count, physical_devices);
+    vkEnumeratePhysicalDevices(vulkan_context.instance, &physical_device_count, physical_devices);
   if (enumerate_physical_devices_result != VK_SUCCESS) {
     MERROR_CORE("Failed to retrieve Vulkan physical devices: %s",
                 string_VkResult(enumerate_physical_devices_result));
@@ -680,9 +680,9 @@ static b8 vulkan_select_physical_device() {
     if (targeted_physical_device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
       suitable_device = physical_devices[i];
     } else if (targeted_physical_device_properties.deviceType ==
-                   VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU &&
+               VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU &&
                suitable_physical_device_properties.deviceType !=
-                   VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+               VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
       suitable_device = physical_devices[i];
     }
   }
@@ -709,7 +709,7 @@ static b8 vulkan_get_surface(PlatformState* platform_state) {
   // Get surface formats
   u32 surface_format_count = 0;
   VkResult get_physical_device_surface_formats_count_result = vkGetPhysicalDeviceSurfaceFormatsKHR(
-      vulkan_context.physical_device, vulkan_context.surface, &surface_format_count, NULL_PTR);
+                                                                                                   vulkan_context.physical_device, vulkan_context.surface, &surface_format_count, NULL_PTR);
   if (get_physical_device_surface_formats_count_result != VK_SUCCESS) {
     MERROR_CORE("Failed to get vulkan physical device surface format count: %s",
                 string_VkResult(get_physical_device_surface_formats_count_result));
@@ -717,8 +717,8 @@ static b8 vulkan_get_surface(PlatformState* platform_state) {
   }
   VkSurfaceFormatKHR surface_formats[surface_format_count];
   VkResult get_physical_device_surface_formats_result =
-      vkGetPhysicalDeviceSurfaceFormatsKHR(vulkan_context.physical_device, vulkan_context.surface,
-                                           &surface_format_count, surface_formats);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(vulkan_context.physical_device, vulkan_context.surface,
+                                         &surface_format_count, surface_formats);
   if (get_physical_device_surface_formats_result != VK_SUCCESS) {
     MERROR_CORE("Failed to get vulkan physical device surface formats: %s",
                 string_VkResult(get_physical_device_surface_formats_result));
@@ -741,8 +741,8 @@ static b8 vulkan_get_surface(PlatformState* platform_state) {
 static b8 vulkan_set_surface_extent(i16 width, i16 height) {
   VkSurfaceCapabilitiesKHR surface_capabilities;
   VkResult get_physical_device_surface_capabilities_result =
-      vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkan_context.physical_device,
-                                                vulkan_context.surface, &surface_capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkan_context.physical_device,
+                                              vulkan_context.surface, &surface_capabilities);
 
   if (get_physical_device_surface_capabilities_result != VK_SUCCESS) {
     MERROR_CORE("Failed to get physical device surface capabilities: %s",
@@ -787,7 +787,7 @@ static b8 vulkan_create_logical_device() {
   VkBool32 queue_family_supported = VK_FALSE;
   for (u32 i = 0; i < queue_family_properties_count; i++) {
     VkResult get_physical_device_surface_support_result = vkGetPhysicalDeviceSurfaceSupportKHR(
-        vulkan_context.physical_device, i, vulkan_context.surface, &queue_family_supported);
+                                                                                               vulkan_context.physical_device, i, vulkan_context.surface, &queue_family_supported);
 
     if (get_physical_device_surface_support_result != VK_SUCCESS) {
       MERROR_CORE("Failed to get vulkan physical device surface support: %s",
@@ -847,7 +847,7 @@ static b8 vulkan_create_logical_device() {
 
   f32 temp_priority = 1.0f;  // @MAGIC_NUMBER
   VkDeviceQueueCreateInfo device_graphics_queue_create_info = {
-      VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
+    VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
   device_graphics_queue_create_info.queueFamilyIndex = vulkan_context.graphics_queue_family_index;
   device_graphics_queue_create_info.queueCount = 1;  // @MAGIC_NUMBER
   device_graphics_queue_create_info.pQueuePriorities = &temp_priority;
@@ -875,7 +875,7 @@ static b8 vulkan_create_logical_device() {
 
   // Enable vulkan11 features
   VkPhysicalDeviceVulkan11Features physical_device_vulkan_11_features = {
-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES};
+    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES};
   physical_device_vulkan_11_features.shaderDrawParameters = VK_TRUE;
 
   // Enable vulkan13 features
@@ -910,8 +910,8 @@ static b8 vulkan_create_logical_device() {
 
   // Create logical device
   VkResult create_device_result =
-      vkCreateDevice(vulkan_context.physical_device, &device_create_info, vulkan_context.allocator,
-                     &vulkan_context.logical_device);
+    vkCreateDevice(vulkan_context.physical_device, &device_create_info, vulkan_context.allocator,
+                   &vulkan_context.logical_device);
 
   if (create_device_result == VK_SUCCESS) {
     MINFO_CORE("Vulkan logical device created");
@@ -931,8 +931,8 @@ static b8 vulkan_create_logical_device() {
 static b8 vulkan_create_swapchain(VkSwapchainKHR old_swapchain) {
   VkSurfaceCapabilitiesKHR surface_capabilities;
   VkResult get_physical_device_surface_capabilities_result =
-      vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkan_context.physical_device,
-                                                vulkan_context.surface, &surface_capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkan_context.physical_device,
+                                              vulkan_context.surface, &surface_capabilities);
 
   if (get_physical_device_surface_capabilities_result != VK_SUCCESS) {
     MERROR_CORE("Failed to get physical device surface capabilities: %s",
@@ -946,7 +946,7 @@ static b8 vulkan_create_swapchain(VkSwapchainKHR old_swapchain) {
   swapchain_create_info.pNext = NULL_PTR;
   swapchain_create_info.surface = vulkan_context.surface;
   swapchain_create_info.minImageCount =
-      surface_capabilities.minImageCount;  // @TODO: Add this as a setting in user code. (Maybe)
+    surface_capabilities.minImageCount;  // @TODO: Add this as a setting in user code. (Maybe)
   swapchain_create_info.imageFormat = vulkan_context.surface_format.format;
   swapchain_create_info.imageColorSpace = vulkan_context.surface_format.colorSpace;
   swapchain_create_info.imageExtent = vulkan_context.swapchain_extent;
@@ -962,8 +962,8 @@ static b8 vulkan_create_swapchain(VkSwapchainKHR old_swapchain) {
   swapchain_create_info.oldSwapchain = old_swapchain;
 
   VkResult create_swapchain_result =
-      vkCreateSwapchainKHR(vulkan_context.logical_device, &swapchain_create_info,
-                           vulkan_context.allocator, &vulkan_context.swapchain);
+    vkCreateSwapchainKHR(vulkan_context.logical_device, &swapchain_create_info,
+                         vulkan_context.allocator, &vulkan_context.swapchain);
 
   if (create_swapchain_result != VK_SUCCESS) {
     MERROR_CORE("Failed to create Vulkan swapchain: %s", string_VkResult(create_swapchain_result));
@@ -977,18 +977,18 @@ static b8 vulkan_create_swapchain(VkSwapchainKHR old_swapchain) {
 static b8 vulkan_get_swapchain_images() {
   vulkan_context.swapchain_image_count = 0;
   VkResult get_swapchain_image_count_result =
-      vkGetSwapchainImagesKHR(vulkan_context.logical_device, vulkan_context.swapchain,
-                              &vulkan_context.swapchain_image_count, NULL_PTR);
+    vkGetSwapchainImagesKHR(vulkan_context.logical_device, vulkan_context.swapchain,
+                            &vulkan_context.swapchain_image_count, NULL_PTR);
   if (get_swapchain_image_count_result != VK_SUCCESS) {
     MERROR_CORE("Failed to get vulkan swapchain image count: %s",
                 string_VkResult(get_swapchain_image_count_result));
     return FALSE;
   }
   vulkan_context.swapchain_images =
-      mallocate(vulkan_context.swapchain_image_count * sizeof(VkImage), MEMORY_TAG_RENDERER);
+    mallocate(vulkan_context.swapchain_image_count * sizeof(VkImage), MEMORY_TAG_RENDERER);
   VkResult get_swapchain_images_result = vkGetSwapchainImagesKHR(
-      vulkan_context.logical_device, vulkan_context.swapchain,
-      &vulkan_context.swapchain_image_count, vulkan_context.swapchain_images);
+                                                                 vulkan_context.logical_device, vulkan_context.swapchain,
+                                                                 &vulkan_context.swapchain_image_count, vulkan_context.swapchain_images);
   if (get_swapchain_images_result != VK_SUCCESS) {
     MERROR_CORE("Failed to get vulkan swapchain images: %s",
                 string_VkResult(get_swapchain_images_result));
@@ -999,7 +999,7 @@ static b8 vulkan_get_swapchain_images() {
 
 static b8 vulkan_create_image_views() {
   vulkan_context.swapchain_image_views =
-      mallocate(vulkan_context.swapchain_image_count * sizeof(VkImageView), MEMORY_TAG_RENDERER);
+    mallocate(vulkan_context.swapchain_image_count * sizeof(VkImageView), MEMORY_TAG_RENDERER);
   for (u32 i = 0; i < vulkan_context.swapchain_image_count; i++) {
     VkImageViewCreateFlags image_view_create_flags = ZERO;
 
@@ -1029,8 +1029,8 @@ static b8 vulkan_create_image_views() {
     image_view_create_info.subresourceRange = image_subresource_range;
 
     VkResult create_image_view_result =
-        vkCreateImageView(vulkan_context.logical_device, &image_view_create_info,
-                          vulkan_context.allocator, &vulkan_context.swapchain_image_views[i]);
+      vkCreateImageView(vulkan_context.logical_device, &image_view_create_info,
+                        vulkan_context.allocator, &vulkan_context.swapchain_image_views[i]);
 
     if (create_image_view_result != VK_SUCCESS) {
       MERROR_CORE("Failed to create vulkan swapchain image view: %s",
@@ -1078,13 +1078,13 @@ static b8 vulkan_create_descriptor_set_layout() {
   };
 
   VkDescriptorSetLayoutCreateInfo descriptor_set_layout_create_info = {
-      VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
+    VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
   descriptor_set_layout_create_info.bindingCount = 2;
   descriptor_set_layout_create_info.pBindings = layout_bindings;
 
   VkResult create_descriptor_set_layout_res =
-      vkCreateDescriptorSetLayout(vulkan_context.logical_device, &descriptor_set_layout_create_info,
-                                  vulkan_context.allocator, &vulkan_context.descriptor_set_layout);
+    vkCreateDescriptorSetLayout(vulkan_context.logical_device, &descriptor_set_layout_create_info,
+                                vulkan_context.allocator, &vulkan_context.descriptor_set_layout);
   if (create_descriptor_set_layout_res != VK_SUCCESS) {
     MERROR_CORE("Failed to create descriptor set layout: %s",
                 string_VkResult(create_descriptor_set_layout_res));
@@ -1103,7 +1103,7 @@ static b8 vulkan_create_graphics_pipeline() {
 
   // Create shader module
   VkShaderModuleCreateInfo shader_module_create_info = {
-      VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
+    VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
   shader_module_create_info.pNext = NULL_PTR;
   shader_module_create_info.codeSize = shader_bin_size;
   shader_module_create_info.pCode = (u32*)shader_bin;
@@ -1111,8 +1111,8 @@ static b8 vulkan_create_graphics_pipeline() {
   VkShaderModule shader_module;
 
   VkResult create_shader_module_result =
-      vkCreateShaderModule(vulkan_context.logical_device, &shader_module_create_info,
-                           vulkan_context.allocator, &shader_module);
+    vkCreateShaderModule(vulkan_context.logical_device, &shader_module_create_info,
+                         vulkan_context.allocator, &shader_module);
   if (create_shader_module_result != VK_SUCCESS) {
     MERROR_CORE("Failed to create vulkan shader module: %s",
                 string_VkResult(create_shader_module_result));
@@ -1123,7 +1123,7 @@ static b8 vulkan_create_graphics_pipeline() {
 
   // Create vertex shader stage create info
   VkPipelineShaderStageCreateInfo vert_pipeline_shader_stage_create_info = {
-      VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
+    VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
   vert_pipeline_shader_stage_create_info.pNext = NULL_PTR;
   vert_pipeline_shader_stage_create_info.flags = ZERO;
   vert_pipeline_shader_stage_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -1133,7 +1133,7 @@ static b8 vulkan_create_graphics_pipeline() {
 
   // Create fragment shader stage create info
   VkPipelineShaderStageCreateInfo frag_pipeline_shader_stage_create_info = {
-      VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
+    VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
   frag_pipeline_shader_stage_create_info.pNext = NULL_PTR;
   frag_pipeline_shader_stage_create_info.flags = ZERO;
   frag_pipeline_shader_stage_create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -1142,12 +1142,12 @@ static b8 vulkan_create_graphics_pipeline() {
   frag_pipeline_shader_stage_create_info.pSpecializationInfo = NULL_PTR;
 
   VkPipelineShaderStageCreateInfo shader_stage_create_infos[] = {
-      vert_pipeline_shader_stage_create_info, frag_pipeline_shader_stage_create_info};
+    vert_pipeline_shader_stage_create_info, frag_pipeline_shader_stage_create_info};
 
   // Set dynamic states
   VkDynamicState dynamic_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
   VkPipelineDynamicStateCreateInfo dynamic_state_create_info = {
-      VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
+    VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
   dynamic_state_create_info.pNext = NULL_PTR;
   dynamic_state_create_info.dynamicStateCount = sizeof(dynamic_states) / sizeof(VkDynamicState);
   dynamic_state_create_info.pDynamicStates = dynamic_states;
@@ -1155,10 +1155,10 @@ static b8 vulkan_create_graphics_pipeline() {
   // Set vertex input state create info
   VkVertexInputBindingDescription vertex_binding_description = get_vertex_binding_description();
   VkVertexInputAttributeDescription* vertex_attribute_descriptions =
-      get_vertex_attribute_descriptions();
+    get_vertex_attribute_descriptions();
 
   VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info = {
-      VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
+    VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
   vertex_input_state_create_info.vertexBindingDescriptionCount = 1;
   vertex_input_state_create_info.pVertexBindingDescriptions = &vertex_binding_description;
   vertex_input_state_create_info.vertexAttributeDescriptionCount = MVK_VERTEX_ATTRIBUTE_COUNT;
@@ -1166,7 +1166,7 @@ static b8 vulkan_create_graphics_pipeline() {
 
   // Set input assembly state create info
   VkPipelineInputAssemblyStateCreateInfo input_assembly_state_create_info = {
-      VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
+    VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
   input_assembly_state_create_info.pNext = NULL_PTR;
   input_assembly_state_create_info.primitiveRestartEnable = VK_FALSE;
   input_assembly_state_create_info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -1190,7 +1190,7 @@ static b8 vulkan_create_graphics_pipeline() {
   scissor_rect.extent = vulkan_context.swapchain_extent;
 
   VkPipelineViewportStateCreateInfo viewport_state_create_info = {
-      VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
+    VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
   viewport_state_create_info.pNext = NULL_PTR;
   viewport_state_create_info.viewportCount = 1;  // @MAGIC_NUMBER
   /* viewport_state_create_info.pViewports = &viewport; */
@@ -1201,7 +1201,7 @@ static b8 vulkan_create_graphics_pipeline() {
   VkCullModeFlags cull_mode_flags = VK_CULL_MODE_BACK_BIT;
 
   VkPipelineRasterizationStateCreateInfo rasterization_state_create_info = {
-      VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
+    VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
   rasterization_state_create_info.pNext = NULL_PTR;
   rasterization_state_create_info.depthClampEnable = VK_FALSE;
   rasterization_state_create_info.rasterizerDiscardEnable = VK_FALSE;
@@ -1222,14 +1222,14 @@ static b8 vulkan_create_graphics_pipeline() {
 
   // Set multisampling opts
   VkPipelineMultisampleStateCreateInfo multisample_state_create_info = {
-      VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
+    VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
   multisample_state_create_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
   multisample_state_create_info.sampleShadingEnable = VK_FALSE;
 
   // Specify colour blending options
   VkColorComponentFlags color_component_flags = VK_COLOR_COMPONENT_R_BIT |
-                                                VK_COLOR_COMPONENT_G_BIT |
-                                                VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    VK_COLOR_COMPONENT_G_BIT |
+    VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
   VkPipelineColorBlendAttachmentState color_blend_attachment_state;
   color_blend_attachment_state.blendEnable = VK_TRUE;
@@ -1242,7 +1242,7 @@ static b8 vulkan_create_graphics_pipeline() {
   color_blend_attachment_state.colorWriteMask = color_component_flags;
 
   VkPipelineColorBlendStateCreateInfo color_blend_state_create_info = {
-      VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};
+    VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};
   color_blend_state_create_info.logicOpEnable = VK_FALSE;
   color_blend_state_create_info.logicOp = VK_LOGIC_OP_COPY;
   color_blend_state_create_info.attachmentCount = 1;  // @MAGIC_NUMBER
@@ -1250,15 +1250,15 @@ static b8 vulkan_create_graphics_pipeline() {
 
   // Create pipeline layout
   VkPipelineLayoutCreateInfo pipeline_layout_create_info = {
-      VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
+    VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
   pipeline_layout_create_info.pNext = NULL_PTR;
   pipeline_layout_create_info.setLayoutCount = 1;
   pipeline_layout_create_info.pSetLayouts = &vulkan_context.descriptor_set_layout;
   pipeline_layout_create_info.pushConstantRangeCount = 0;
 
   VkResult create_pipeline_layout_result =
-      vkCreatePipelineLayout(vulkan_context.logical_device, &pipeline_layout_create_info,
-                             vulkan_context.allocator, &vulkan_context.pipeline_layout);
+    vkCreatePipelineLayout(vulkan_context.logical_device, &pipeline_layout_create_info,
+                           vulkan_context.allocator, &vulkan_context.pipeline_layout);
   if (create_pipeline_layout_result != VK_SUCCESS) {
     MERROR_CORE("Failed to create vulkan pipeline layout: %s",
                 string_VkResult(create_pipeline_layout_result));
@@ -1267,14 +1267,14 @@ static b8 vulkan_create_graphics_pipeline() {
 
   // Set graphics pipeline create info
   VkPipelineRenderingCreateInfo pipeline_rendering_create_info = {
-      VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};
+    VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};
   pipeline_rendering_create_info.pNext = NULL_PTR;
   pipeline_rendering_create_info.colorAttachmentCount = 1;
   pipeline_rendering_create_info.pColorAttachmentFormats = &vulkan_context.surface_format.format;
   pipeline_rendering_create_info.depthAttachmentFormat = vulkan_context.depth_format;
 
   VkGraphicsPipelineCreateInfo graphics_pipeline_create_info = {
-      VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
+    VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
   graphics_pipeline_create_info.pNext = &pipeline_rendering_create_info;
   graphics_pipeline_create_info.stageCount = 2;  // @MAGIC_NUMBER
   graphics_pipeline_create_info.pStages = shader_stage_create_infos;
@@ -1292,8 +1292,8 @@ static b8 vulkan_create_graphics_pipeline() {
 
   // Create graphics pipeline
   VkResult create_graphics_pipelines_result = vkCreateGraphicsPipelines(
-      vulkan_context.logical_device, NULL_PTR, 1, &graphics_pipeline_create_info,
-      vulkan_context.allocator, &vulkan_context.graphics_pipeline);
+                                                                        vulkan_context.logical_device, NULL_PTR, 1, &graphics_pipeline_create_info,
+                                                                        vulkan_context.allocator, &vulkan_context.graphics_pipeline);
 
   if (create_graphics_pipelines_result != VK_SUCCESS) {
     MERROR_CORE("Failed to create vulkan graphics pipeline: %s",
@@ -1305,17 +1305,17 @@ static b8 vulkan_create_graphics_pipeline() {
 
 static b8 vulkan_create_command_pools() {
   VkCommandPoolCreateFlags graphics_command_pool_create_flags =
-      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
   VkCommandPoolCreateInfo graphics_command_pool_create_info = {
-      VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+    VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
   graphics_command_pool_create_info.pNext = NULL_PTR;
   graphics_command_pool_create_info.flags = graphics_command_pool_create_flags;
   graphics_command_pool_create_info.queueFamilyIndex = vulkan_context.graphics_queue_family_index;
 
   VkResult create_graphics_command_pool_result =
-      vkCreateCommandPool(vulkan_context.logical_device, &graphics_command_pool_create_info,
-                          vulkan_context.allocator, &vulkan_context.graphics_command_pool);
+    vkCreateCommandPool(vulkan_context.logical_device, &graphics_command_pool_create_info,
+                        vulkan_context.allocator, &vulkan_context.graphics_command_pool);
 
   if (create_graphics_command_pool_result != VK_SUCCESS) {
     MERROR_CORE("Failed to create vulkan command pool: %s",
@@ -1323,17 +1323,17 @@ static b8 vulkan_create_command_pools() {
     return FALSE;
   }
   VkCommandPoolCreateFlags transfer_command_pool_create_flags =
-      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
   VkCommandPoolCreateInfo transfer_command_pool_create_info = {
-      VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+    VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
   transfer_command_pool_create_info.pNext = NULL_PTR;
   transfer_command_pool_create_info.flags = transfer_command_pool_create_flags;
   transfer_command_pool_create_info.queueFamilyIndex = vulkan_context.transfer_queue_family_index;
 
   VkResult create_transfer_command_pool_result =
-      vkCreateCommandPool(vulkan_context.logical_device, &transfer_command_pool_create_info,
-                          vulkan_context.allocator, &vulkan_context.transfer_command_pool);
+    vkCreateCommandPool(vulkan_context.logical_device, &transfer_command_pool_create_info,
+                        vulkan_context.allocator, &vulkan_context.transfer_command_pool);
 
   if (create_transfer_command_pool_result != VK_SUCCESS) {
     MERROR_CORE("Failed to create vulkan command pool: %s",
@@ -1349,8 +1349,8 @@ static b8 vulkan_create_depth_resources() {
   vulkan_context.depth_format = depth_format;
 
   if (!create_image(&vulkan_context.depth_image, &vulkan_context.depth_image_mem, vulkan_context.swapchain_extent.width,
-		    vulkan_context.swapchain_extent.height, depth_format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-		    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+                    vulkan_context.swapchain_extent.height, depth_format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
     MERROR_CORE("Failed to create depth image");
     return FALSE;
   }
@@ -1521,7 +1521,7 @@ static b8 vulkan_create_texture_image_sampler() {
   };
 
   VkResult create_sampler_res = vkCreateSampler(vulkan_context.logical_device, &sampler_create_info, vulkan_context.allocator,
-						&vulkan_context.texture_image_sampler);
+                                                &vulkan_context.texture_image_sampler);
   if (create_sampler_res != VK_SUCCESS) {
     MERROR_CORE("Failed to create sampler: %s", string_VkResult(create_sampler_res));
     return FALSE;
@@ -1679,15 +1679,15 @@ static b8 vulkan_create_descriptor_pool() {
   };
 
   VkDescriptorPoolCreateInfo descriptor_pool_create_info = {
-      VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+    VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
   descriptor_pool_create_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
   descriptor_pool_create_info.maxSets = MAX_FRAMES_IN_FLIGHT * vulkan_context.uniform_object_count;
   descriptor_pool_create_info.poolSizeCount = 2;
   descriptor_pool_create_info.pPoolSizes = pool_sizes;
 
   VkResult create_descriptor_pool_res =
-      vkCreateDescriptorPool(vulkan_context.logical_device, &descriptor_pool_create_info,
-                             vulkan_context.allocator, &vulkan_context.descriptor_pool);
+    vkCreateDescriptorPool(vulkan_context.logical_device, &descriptor_pool_create_info,
+                           vulkan_context.allocator, &vulkan_context.descriptor_pool);
   if (create_descriptor_pool_res != VK_SUCCESS) {
     MERROR_CORE("Failed to create descriptor pool: %s",
                 string_VkResult(create_descriptor_pool_res));
@@ -1771,14 +1771,14 @@ static b8 vulkan_create_descriptor_sets() {
 
 static b8 vulkan_allocate_command_buffers() {
   VkCommandBufferAllocateInfo command_buffer_alloc_info = {
-      VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+    VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
   command_buffer_alloc_info.pNext = NULL_PTR;
   command_buffer_alloc_info.commandPool = vulkan_context.graphics_command_pool;
   command_buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
   command_buffer_alloc_info.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
 
   VkResult alloc_command_buffers_result = vkAllocateCommandBuffers(
-      vulkan_context.logical_device, &command_buffer_alloc_info, vulkan_context.command_buffers);
+                                                                   vulkan_context.logical_device, &command_buffer_alloc_info, vulkan_context.command_buffers);
 
   if (alloc_command_buffers_result != VK_SUCCESS) {
     MERROR_CORE("Failed to allocate vulkan command buffers: %s",
@@ -1790,14 +1790,14 @@ static b8 vulkan_allocate_command_buffers() {
 
 static b8 vulkan_create_sync_primatives() {
   vulkan_context.render_complete_semaphores =
-      mallocate(vulkan_context.swapchain_image_count * sizeof(VkSemaphore), MEMORY_TAG_RENDERER);
+    mallocate(vulkan_context.swapchain_image_count * sizeof(VkSemaphore), MEMORY_TAG_RENDERER);
 
   VkSemaphoreCreateInfo present_complete_semaphore_create_info = {
-      VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
+    VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
   present_complete_semaphore_create_info.pNext = NULL_PTR;
 
   VkSemaphoreCreateInfo render_complete_semaphore_create_info = {
-      VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
+    VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
   render_complete_semaphore_create_info.pNext = NULL_PTR;
 
   VkFenceCreateInfo draw_fence_create_info = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
@@ -1806,8 +1806,8 @@ static b8 vulkan_create_sync_primatives() {
 
   for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
     VkResult present_complete_create_semaphore_result =
-        vkCreateSemaphore(vulkan_context.logical_device, &present_complete_semaphore_create_info,
-                          vulkan_context.allocator, &vulkan_context.present_complete_semaphores[i]);
+      vkCreateSemaphore(vulkan_context.logical_device, &present_complete_semaphore_create_info,
+                        vulkan_context.allocator, &vulkan_context.present_complete_semaphores[i]);
 
     if (present_complete_create_semaphore_result != VK_SUCCESS) {
       MERROR_CORE("Failed to create present complete vulkan semaphore: %s",
@@ -1818,8 +1818,8 @@ static b8 vulkan_create_sync_primatives() {
 
   for (u32 i = 0; i < vulkan_context.swapchain_image_count; i++) {
     VkResult render_complete_create_semaphore_result =
-        vkCreateSemaphore(vulkan_context.logical_device, &render_complete_semaphore_create_info,
-                          vulkan_context.allocator, &vulkan_context.render_complete_semaphores[i]);
+      vkCreateSemaphore(vulkan_context.logical_device, &render_complete_semaphore_create_info,
+                        vulkan_context.allocator, &vulkan_context.render_complete_semaphores[i]);
 
     if (render_complete_create_semaphore_result != VK_SUCCESS) {
       MERROR_CORE("Failed to create render complete vulkan semaphore: %s",
@@ -1830,8 +1830,8 @@ static b8 vulkan_create_sync_primatives() {
 
   for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
     VkResult draw_create_fence_result =
-        vkCreateFence(vulkan_context.logical_device, &draw_fence_create_info,
-                      vulkan_context.allocator, &vulkan_context.draw_fences[i]);
+      vkCreateFence(vulkan_context.logical_device, &draw_fence_create_info,
+                    vulkan_context.allocator, &vulkan_context.draw_fences[i]);
     if (draw_create_fence_result != VK_SUCCESS) {
       MERROR_CORE("Failed to create draw vulkan fence: %s",
                   string_VkResult(draw_create_fence_result));
@@ -1888,11 +1888,11 @@ static b8 vulkan_recreate_swapchain(u16 width, u16 height) {
 /* static b8 vulkan_cleanup_swapchain() { return TRUE; } */
 
 static void transition_image_layout(VkImage image, VkImageLayout old_layout,
-				    VkImageLayout new_layout, VkAccessFlags2 src_access_mask,
-				    VkAccessFlags2 dst_access_mask,
-				    VkPipelineStageFlags2 src_stage_mask,
-				    VkPipelineStageFlags2 dst_stage_mask,
-				    VkImageAspectFlags aspect) {
+                                    VkImageLayout new_layout, VkAccessFlags2 src_access_mask,
+                                    VkAccessFlags2 dst_access_mask,
+                                    VkPipelineStageFlags2 src_stage_mask,
+                                    VkPipelineStageFlags2 dst_stage_mask,
+                                    VkImageAspectFlags aspect) {
   VkImageSubresourceRange subresource_range;
   subresource_range.aspectMask = aspect;
   subresource_range.baseMipLevel = 0;
@@ -1950,7 +1950,7 @@ static b8 create_buffer(VkBuffer* buffer, VkDeviceMemory* device_mem, VkDeviceSi
   VkMemoryAllocateInfo mem_alloc_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
   mem_alloc_info.allocationSize = buffer_mem_requirements.size;
   mem_alloc_info.memoryTypeIndex =
-      get_memory_type(buffer_mem_requirements.memoryTypeBits, prop_flags);
+    get_memory_type(buffer_mem_requirements.memoryTypeBits, prop_flags);
 
   VkResult alloc_mem_res = vkAllocateMemory(vulkan_context.logical_device, &mem_alloc_info,
                                             vulkan_context.allocator, device_mem);
@@ -1960,7 +1960,7 @@ static b8 create_buffer(VkBuffer* buffer, VkDeviceMemory* device_mem, VkDeviceSi
   }
 
   VkResult bind_buffer_mem =
-      vkBindBufferMemory(vulkan_context.logical_device, *buffer, *device_mem, 0);
+    vkBindBufferMemory(vulkan_context.logical_device, *buffer, *device_mem, 0);
   if (bind_buffer_mem != VK_SUCCESS) {
     MERROR_CORE("Failed to bind vulkan buffer memory: %s", string_VkResult(bind_buffer_mem));
   }
@@ -1975,7 +1975,7 @@ static b8 copy_buffer(VkBuffer* src_buffer, VkBuffer* dst_buffer, VkDeviceSize s
 
   VkCommandBuffer copy_cmd_buf;
   VkResult create_cmd_buf_res =
-      vkAllocateCommandBuffers(vulkan_context.logical_device, &alloc_info, &copy_cmd_buf);
+    vkAllocateCommandBuffers(vulkan_context.logical_device, &alloc_info, &copy_cmd_buf);
   if (create_cmd_buf_res != VK_SUCCESS) {
     MERROR_CORE("Failed to create copy command buffer: %s", string_VkResult(create_cmd_buf_res));
   }
@@ -2001,7 +2001,7 @@ static b8 copy_buffer(VkBuffer* src_buffer, VkBuffer* dst_buffer, VkDeviceSize s
   submit_info.pCommandBuffers = &copy_cmd_buf;
 
   VkResult queue_submit_res =
-      vkQueueSubmit(vulkan_context.transfer_queue, 1, &submit_info, NULL_PTR);
+    vkQueueSubmit(vulkan_context.transfer_queue, 1, &submit_info, NULL_PTR);
 
   if (queue_submit_res != VK_SUCCESS) {
     MERROR_CORE("Failed to submit to queue: %s", string_VkResult(queue_submit_res));
@@ -2026,25 +2026,25 @@ static VkVertexInputBindingDescription get_vertex_binding_description() {
 
 static VkVertexInputAttributeDescription* get_vertex_attribute_descriptions() {
   static VkVertexInputAttributeDescription out[] = {
-      {
-          .location = 0,
-          .binding = 0,
-          .format = VK_FORMAT_R32G32B32_SFLOAT,
-          .offset = offsetof(Vertex, position),
-      },
-      {
-          .location = 1,
-          .binding = 0,
-          .format = VK_FORMAT_R32G32B32_SFLOAT,
-          .offset = offsetof(Vertex, colour),
-      },
-      {
-          .location = 2,
-          .binding = 0,
-          .format = VK_FORMAT_R32G32_SFLOAT,
-          .offset = offsetof(Vertex, texture_coord),
+    {
+      .location = 0,
+      .binding = 0,
+      .format = VK_FORMAT_R32G32B32_SFLOAT,
+      .offset = offsetof(Vertex, position),
+    },
+    {
+      .location = 1,
+      .binding = 0,
+      .format = VK_FORMAT_R32G32B32_SFLOAT,
+      .offset = offsetof(Vertex, colour),
+    },
+    {
+      .location = 2,
+      .binding = 0,
+      .format = VK_FORMAT_R32G32_SFLOAT,
+      .offset = offsetof(Vertex, texture_coord),
 
-      },
+    },
   };
   return out;
 }
@@ -2069,24 +2069,19 @@ static b8 update_uniform_buffer() {
     x = 0.0f;
   }
 
-  MVPMat mvp_mat;
-  /*
-  Mat4 model_tran = {1.0f, 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 0.0f,
-                     0.0f, 0.0f, 1.0f, -4.5f, 0.0f, 0.0f, 0.0f, 1.0f};
+  Entity* p_cam_ent = &vulkan_context.scene_data->entities[vulkan_context.scene_data->active_camera_entity];
+  CCamera* p_cam = entity_get_camera(p_cam_ent);
 
-  mvp_mat.model =
-      mat4_mul(mat4_from_quat(quat_from_euler((Vec3){0.0f, M_TO_RAD(x), M_TO_RAD(x)})),
-               mat4_transpose(model_tran));
-  */
-  mvp_mat.view = mat4_iden();
-  mvp_mat.proj = mat4_perspective(M_TO_RAD(90.0f),
+  MVPMat mvp_mat;
+  mvp_mat.view = mat4_transpose(mat4_inverse_transform(mat4_from_transform(p_cam_ent->transform)));
+  mvp_mat.proj = mat4_perspective(M_TO_RAD(p_cam->fov),
                                   (f32)vulkan_context.swapchain_extent.width /
                                   (f32)vulkan_context.swapchain_extent.height,
-                                  0.1f, 1000.0f);
+                                  p_cam->near_plane, p_cam->far_plane);
   mvp_mat.proj.e22 *= -1.0f;
 
   for (u32 i = 0; i < vulkan_context.uniform_object_count; i++) {
-    mvp_mat.model = mat4_from_transform(vulkan_context.scene_data->entities[vulkan_context.scene_data->drawable_handles[i]].transform);
+    mvp_mat.model = mat4_transpose(mat4_from_transform(vulkan_context.scene_data->entities[vulkan_context.scene_data->drawable_handles[i]].transform));
 
     mcopy_memory(vulkan_context.uniform_buf_mem_map[(i * MAX_FRAMES_IN_FLIGHT) + vulkan_context.current_frame_index],
                  &mvp_mat, sizeof(mvp_mat));
@@ -2304,7 +2299,7 @@ static VkFormat find_supported_format(const VkFormat* formats, u32 format_count,
     vkGetPhysicalDeviceFormatProperties(vulkan_context.physical_device, formats[i], &props);
 
     if (((tiling == VK_IMAGE_TILING_LINEAR) && ((props.linearTilingFeatures & flags) == flags)) ||
-	((tiling == VK_IMAGE_TILING_OPTIMAL) && ((props.optimalTilingFeatures & flags) == flags))) {
+        ((tiling == VK_IMAGE_TILING_OPTIMAL) && ((props.optimalTilingFeatures & flags) == flags))) {
       return formats[i];
     }
   }

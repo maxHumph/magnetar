@@ -17,11 +17,13 @@ static const ComponentTypeBit COMPONENT_TYPE_NONE      = 0x00000000ULL;
 static const ComponentTypeBit COMPONENT_TYPE_MESH      = 0x00000001ULL;
 static const ComponentTypeBit COMPONENT_TYPE_MATERIAL  = 0x00000002ULL;
 static const ComponentTypeBit COMPONENT_TYPE_CODE      = 0x00000004ULL;
+static const ComponentTypeBit COMPONENT_TYPE_CAMERA    = 0x00000008ULL;
 
 typedef enum ComponentIndex {
   COMPONENT_INDEX_MESH,
   COMPONENT_INDEX_MATERIAL,
-  COMPONENT_INDEXCODE,
+  COMPONENT_INDEX_CODE,
+  COMPONENT_INDEX_CAMERA,
 
   MAX_COMPONENT_INDEX,
 } ComponentIndex;
@@ -137,6 +139,14 @@ typedef struct CCTexture {
 
 } CCTexture;
 
+typedef struct CCamera {
+  const char* name;
+
+  f32 fov;
+  f32 near_plane;
+  f32 far_plane;
+} CCamera;
+
 /**
  * @struct SceneData
  * @brief Contains buffers for scene data (all entities and components)
@@ -144,10 +154,19 @@ typedef struct CCTexture {
  */
 typedef struct SceneData {
   Entity* entities;
-  Handle32* drawable_handles;
 
+  // IMPORTANT HANDLES
+  Handle32* drawable_handles;
+  Handle32 active_camera_entity;
+
+  // COMPONENT ARRAYS
   CCode* codes;
+
   CMesh* meshes;
+
   CMaterial* materials;
   CCTexture* textures;
+
+  CCamera* cameras;
+
 } SceneData;

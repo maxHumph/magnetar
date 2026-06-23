@@ -18,6 +18,7 @@ b8 scene_load(Scene* scene) {
   scene_data.meshes = darray_create(CMesh);
   scene_data.materials = darray_create(CMaterial);
   scene_data.textures = darray_create(CCTexture);
+  scene_data.cameras = darray_create(CCamera);
 
   for (u32 i = 0; i < scene->entity_count; i++) {
     if (!entity_load(scene->entity_handles[i])) {
@@ -43,11 +44,13 @@ b8 scene_unload(Scene* scene) {
   darray_destroy(scene_data.meshes);
   darray_destroy(scene_data.materials);
   darray_destroy(scene_data.textures);
+  darray_destroy(scene_data.cameras);
   scene_data.entities = NULL_PTR;
   scene_data.drawable_handles = NULL_PTR;
   scene_data.meshes = NULL_PTR;
   scene_data.materials = NULL_PTR;
   scene_data.textures = NULL_PTR;
+  scene_data.cameras = NULL_PTR;
 
   return TRUE;
 };
@@ -59,6 +62,7 @@ b8 scene_load_text(const char* path) {
   scene_data.meshes = darray_create(CMesh);
   scene_data.materials = darray_create(CMaterial);
   scene_data.textures = darray_create(CCTexture);
+  scene_data.cameras = darray_create(CCamera);
 
   FILE* file = fopen(path, "r");
   if (file == NULL_PTR) {
@@ -83,6 +87,14 @@ b8 scene_load_text(const char* path) {
 
 SceneData* get_scene_data_ptr() {
   return &scene_data;
+}
+
+MGAPI b8 camera_set_active(Handle32 entity_handle) {
+  if (scene_data.entities[entity_handle].components[COMPONENT_INDEX_CAMERA] != NULL_HANDLE_32) {
+    scene_data.active_camera_entity = entity_handle;
+    return TRUE;
+  }
+  return FALSE;
 }
 
 static b8 entity_load(Handle32 entity_handle) {
@@ -112,6 +124,7 @@ static b8 cmaterial_unload(Handle32 material_handle) {
   return TRUE;
 }
 
+
 MGAPI CMesh* entity_get_mesh(Entity* p_entity) {
   return &scene_data.meshes[entity_get_mesh_handle(p_entity)];
 }
@@ -122,4 +135,8 @@ MGAPI CMaterial* entity_get_material(Entity* p_entity) {
 
 MGAPI CCTexture* material_get_texture(CMaterial* p_material) {
   return &scene_data.textures[material_get_texture_handle(p_material)];
+}
+
+MGAPI CCamera* entity_get_camera(Entity* p_entity) {
+  return &scene_data.cameras[entity_get_camera_handle(p_entity)];
 }

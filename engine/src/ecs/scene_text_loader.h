@@ -51,6 +51,8 @@ static b8 parse_material(Handle32 handle, char* name);
  */
 static b8 parse_texture(Handle32 handle, char* name);
 
+static b8 parse_camera(Handle32 handle, char* name);
+
 /**
  * @brief Fills the drawable_handles buffer in scene_data with handles
  * of the entities which can be drawn by the renderer.

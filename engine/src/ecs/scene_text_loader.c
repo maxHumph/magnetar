@@ -53,69 +53,45 @@ static b8 parse_entity(Handle32 handle, char* name) {
   mcopy_memory(name_copy, name, name_len);
   Entity new_entity = {
     .name = name_copy,
-    .component_mask = NULL_MASK_64,
+    .components = {NULL_HANDLE_32},
   };
   darray_push(scene_data->entities, new_entity);
   Entity* p_entity = &scene_data->entities[handle];
-  u32 component_idx = 0;
   while ((line_len = getline(&line, &line_len, scene_file)) != -1) {
     get_tokens();
     if (strcmp(tokens[0], "TRANSFORM") == 0) {
       MTRACE("Parsing transform");
       while ((line_len = getline(&line, &line_len, scene_file)) != -1) {
-	get_tokens();
-	if (strcmp(tokens[0], "END_TRANSFORM") == 0) {
-	  break;
-	} else if (strcmp(tokens[0], "position") == 0) {
-	  p_entity->transform.position = (Vec3){
-	    .x = atof(tokens[1]),
-	    .y = atof(tokens[2]),
-	    .z = atof(tokens[3]),
-	  };
-	} else if (strcmp(tokens[0], "rotation") == 0) {
-	  p_entity->transform.rotation = (Quat){
-	    .x = atof(tokens[1]),
-	    .y = atof(tokens[2]),
-	    .z = atof(tokens[3]),
-	    .a = atof(tokens[4]),
-	  };
-	} else if (strcmp(tokens[0], "scale") == 0) {
-	  p_entity->transform.scale = (Vec3){
-	    .x = atof(tokens[1]),
-	    .y = atof(tokens[2]),
-	    .z = atof(tokens[3]),
-	  };
-	}
+        get_tokens();
+        if (strcmp(tokens[0], "END_TRANSFORM") == 0) {
+          break;
+        } else if (strcmp(tokens[0], "position") == 0) {
+          p_entity->transform.position = (Vec3){
+            .x = atof(tokens[1]),
+            .y = atof(tokens[2]),
+            .z = atof(tokens[3]),
+          };
+        } else if (strcmp(tokens[0], "rotation") == 0) {
+          p_entity->transform.rotation = (Quat){
+            .x = atof(tokens[1]),
+            .y = atof(tokens[2]),
+            .z = atof(tokens[3]),
+            .a = atof(tokens[4]),
+          };
+        } else if (strcmp(tokens[0], "scale") == 0) {
+          p_entity->transform.scale = (Vec3){
+            .x = atof(tokens[1]),
+            .y = atof(tokens[2]),
+            .z = atof(tokens[3]),
+          };
+        }
       }
-    } else if (strcmp(tokens[0], "component_count") == 0) {
-      p_entity->component_count = (u32)atol(tokens[1]);
-      p_entity->components =
-	mallocate(p_entity->component_count * sizeof(EComponent),
-		  MEMORY_TAG_ENTITY); // @TODO: Free mem
-
     } else if (strcmp(tokens[0], "component") == 0){
       // SET COMPONENTS
       if (strcmp(tokens[1], "mesh") == 0) {
-	p_entity->component_mask = p_entity->component_mask |
-	  COMPONENT_TYPE_MESH;
-
-	p_entity->components[component_idx].type = COMPONENT_TYPE_MESH;
-
-	p_entity->components[component_idx].handle =
-	  (u32)atol(tokens[2]);
-
-	component_idx++;
+        p_entity->components[COMPONENT_INDEX_MESH] = (u32)atol(tokens[2]);
       } else if (strcmp(tokens[1], "material") == 0) {
-	p_entity->component_mask = p_entity->component_mask |
-	  COMPONENT_TYPE_MATERIAL;
-
-	p_entity->components[component_idx].type =
-	  COMPONENT_TYPE_MATERIAL;
-
-	p_entity->components[component_idx].handle =
-	  (u32)atol(tokens[2]);
-
-	component_idx++;
+        p_entity->components[COMPONENT_INDEX_MATERIAL] = (u32)atol(tokens[2]);
       }
       
     } else if (strcmp(tokens[0], "END_ENTITY") == 0) {
@@ -150,8 +126,8 @@ static b8 parse_mesh(Handle32 handle, char* name) {
   }
 
   if (!mg3d_load(p_mesh->model_path, &p_mesh->vertices,
-		 &p_mesh->vertex_count, &p_mesh->indices,
-		 &p_mesh->index_count)) {
+                 &p_mesh->vertex_count, &p_mesh->indices,
+                 &p_mesh->index_count)) {
     MERROR_CORE("Failed to load mesh: %s", p_mesh->model_path);
     return FALSE;
   }
@@ -206,8 +182,8 @@ static b8 parse_texture(Handle32 handle, char* name) {
   }
 
   if (!load_texture(p_texture->image_path, &p_texture->texture_data,
-		    &p_texture->width, &p_texture->height,
-		    &p_texture->channels)) {
+                    &p_texture->width, &p_texture->height,
+                    &p_texture->channels)) {
     MERROR_CORE("Failed to load texture: %s", p_texture->image_path);
     return FALSE;
   }
@@ -218,7 +194,7 @@ static b8 parse_texture(Handle32 handle, char* name) {
 static b8 get_drawable_handles() {
 
   for (u32 i = 0; i < darray_get_length(scene_data->entities); i++) {
-    if (scene_data->entities[i].component_mask & COMPONENT_TYPE_MESH) {
+    if (scene_data->entities[i].components[COMPONENT_INDEX_MESH] != NULL_HANDLE_32) {
       darray_push(scene_data->drawable_handles, i);
     }
   }
@@ -251,10 +227,10 @@ static b8 get_tokens() {
     }
   }
   /*
-  if (line[line_len - 1] != ' ') {
+    if (line[line_len - 1] != ' ') {
     darray_push(buf, NULL_TERM);
     darray_push(tokens, buf);
-  }
+    }
   */
   buf = NULL_PTR;
   return TRUE;

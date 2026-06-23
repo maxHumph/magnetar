@@ -41,6 +41,7 @@ typedef u64 Handle64;
 #define FALSE 0
 
 #define ZERO 0
+#define ONE 1
 #define NULL_PTR (void*)0
 
 #define U8_MAX 255

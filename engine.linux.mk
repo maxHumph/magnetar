@@ -4,10 +4,11 @@ OBJ_DIR=$(BUILD_DIR)/obj
 
 ASSEMBLY=engine
 EXTENSION=.so
-COMPILE_FLAGS=-g -fdeclspec -fPIC
+DEPFLAGS=-MP -MD
+COMPILE_FLAGS=-g -fdeclspec -fPIC $(DEPFLAGS)
 CFLAGS_EXTRA=-Wall -Wextra -Werror
 INCLUDE_FLAGS=-Iengine/src -I$(VULKAN_SDK)/include
-LINKER_FLAGS=-shared -lvulkan -lxcb -lX11 -lX11-xcb -lxkbcommon -lm -L$(VULKAN_SDK)/lib -L/usr/X11R6/lib
+LINKER_FLAGS=-shared -lvulkan -lxcb -lX11 -lX11-xcb -lxkbcommon -lm -L$(VULKAN_SDK)/lib -L/usr/X11R6/lib $(DEPFLAGS)
 DEFINES=-D_DEBUG -DMEXPORT
 
 SRC_FILES=$(shell find $(ASSEMBLY) -name *.c)

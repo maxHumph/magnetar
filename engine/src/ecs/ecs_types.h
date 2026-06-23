@@ -12,10 +12,19 @@
 typedef Mask64 ComponentTypeMask;
 typedef Bit64 ComponentTypeBit;
 
+
 static const ComponentTypeBit COMPONENT_TYPE_NONE      = 0x00000000ULL;
 static const ComponentTypeBit COMPONENT_TYPE_MESH      = 0x00000001ULL;
 static const ComponentTypeBit COMPONENT_TYPE_MATERIAL  = 0x00000002ULL;
 static const ComponentTypeBit COMPONENT_TYPE_CODE      = 0x00000004ULL;
+
+typedef enum ComponentIndex {
+  COMPONENT_INDEX_MESH,
+  COMPONENT_INDEX_MATERIAL,
+  COMPONENT_INDEXCODE,
+
+  MAX_COMPONENT_INDEX,
+} ComponentIndex;
 
 typedef struct Entity Entity;
 typedef struct EComponent EComponent;
@@ -40,6 +49,14 @@ typedef struct Scene {
  * entity.
  */
 typedef struct Entity {
+  const char* name;
+  Transform transform;
+
+  Handle32 components[MAX_COMPONENT_INDEX];
+} Entity;
+
+/*
+typedef struct Entity {
 
   const char* name;
   Transform transform;
@@ -50,6 +67,7 @@ typedef struct Entity {
   EComponent* components;
 
 } Entity;
+*/
 
 /**
  * @struct EComponent

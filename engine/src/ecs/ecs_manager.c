@@ -26,6 +26,7 @@ b8 scene_load(Scene* scene) {
     }
   }
 
+
   return TRUE;
 };
 
@@ -111,34 +112,12 @@ static b8 cmaterial_unload(Handle32 material_handle) {
   return TRUE;
 }
 
-MGAPI Handle32 entity_get_mesh_handle(Entity* p_entity) {
-  for (u32 i = 0; i < p_entity->component_count; i++) {
-    if (p_entity->components[i].type == COMPONENT_TYPE_MESH) {
-      return p_entity->components[i].handle;
-    }
-  }
-  return NULL_HANDLE_32;
-}
-
 MGAPI CMesh* entity_get_mesh(Entity* p_entity) {
   return &scene_data.meshes[entity_get_mesh_handle(p_entity)];
 }
 
-MGAPI Handle32 entity_get_material_handle(Entity* p_entity) {
-  for (u32 i = 0; i < p_entity->component_count; i++) {
-    if (p_entity->components[i].type == COMPONENT_TYPE_MATERIAL) {
-      return p_entity->components[i].handle;
-    }
-  }
-  return NULL_HANDLE_32;
-}
-
 MGAPI CMaterial* entity_get_material(Entity* p_entity) {
   return &scene_data.materials[entity_get_material_handle(p_entity)];
-}
-
-MGAPI Handle32 material_get_texture_handle(CMaterial* p_material) {
-  return p_material->texture_handle;
 }
 
 MGAPI CCTexture* material_get_texture(CMaterial* p_material) {

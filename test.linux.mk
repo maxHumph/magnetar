@@ -4,10 +4,11 @@ OBJ_DIR=$(BUILD_DIR)/obj
 
 ASSEMBLY=test
 EXTENSION=
-COMPILE_FLAGS=-g -fdeclspec -fPIC 
+DEPFLAGS=-MP -MD
+COMPILE_FLAGS=-g -fdeclspec -fPIC $(DEPFLAGS)
 CFLAGS_EXTRA=-Wall -Wextra -Werror
 INCLUDE_FLAGS=-Iengine/src -I$(VULKAN_SDK)/include
-LINKER_FLAGS=-L./$(BUILD_DIR)/ -lengine -Wl,-rpath,.
+LINKER_FLAGS=-L./$(BUILD_DIR)/ -lengine -Wl,-rpath,. $(DEPFLAGS)
 DEFINES=-D_DEBUG -DMIMPORT
 
 SRC_FILES=$(shell find $(ASSEMBLY) -name *.c)

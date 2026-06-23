@@ -49,6 +49,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 
   vulkan_context.uniform_object_count = darray_get_length(vulkan_context.scene_data->drawable_handles);
 
+
   // @TODO: Free the stuff below
   vulkan_context.uniform_bufs = mallocate(vulkan_context.uniform_object_count * sizeof(VkBuffer) * MAX_FRAMES_IN_FLIGHT, MEMORY_TAG_RENDERER);
   vulkan_context.uniform_buf_mem = mallocate(vulkan_context.uniform_object_count * sizeof(VkDeviceMemory) * MAX_FRAMES_IN_FLIGHT, MEMORY_TAG_RENDERER);
@@ -236,6 +237,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 
   vulkan_context.current_image_index = 0;
   vulkan_context.current_frame_index = 0;
+  
   return TRUE;
 }
 

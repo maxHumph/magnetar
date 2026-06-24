@@ -3,6 +3,7 @@
 #include "vulkan_backend.h"
 
 #include <stddef.h>
+#include <vulkan/vulkan.h>
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "renderer/renderer_types.h"
@@ -11,8 +12,8 @@
 #include "core/mmemory.h"
 #include "define.h"
 #include "maths/maths_util.h"
-#include "renderer/vulkan/vulkan_helper.h"
-#include "vulkan/vulkan_core.h"
+#include "vulkan_device.h"
+#include "vulkan_pipeline.h"
 #include "vulkan_defines.h"
 #include "vulkan_wsi.h"
 #include "asset/mg3d.h"
@@ -101,19 +102,19 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   }
 
   // SELECT PHYSICAL DEVICE ----------
-  if (!vulkan_select_physical_device()) {
+  if (!vulkan_select_physical_device(&vulkan_context)) {
     MERROR_CORE("Vulkan Init: Failed to select physical device.");
     return FALSE;
   }
 
   // GET SURFACE
-  if (!vulkan_get_surface(platform_state)) {
+  if (!vulkan_get_surface(&vulkan_context, platform_state)) {
     MERROR_CORE("Vulkan Init: Failed to create surface.");
     return FALSE;
   }
 
   // SETUP LOGICAL DEVICE ----------
-  if (!vulkan_create_logical_device()) {
+  if (!vulkan_create_logical_device(&vulkan_context)) {
     MERROR_CORE("Vulkan Init: Failed to create logical device.");
     return FALSE;
   }
@@ -160,8 +161,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
     return FALSE;
   }
 
-  // CREATE GRAPHICS PIPELINE ----------
-  if (!vulkan_create_graphics_pipeline()) {
+  // CREATE OBJECT PIPELINE ----------
+  if (!vulkan_create_object_pipeline(&vulkan_context)) {
     MERROR_CORE("Vulkan Init: Failed to create graphics pipeline.");
     return FALSE;
   }
@@ -643,336 +644,9 @@ static b8 vulkan_create_debug_messenger() {
   return TRUE;
 }
 
-static b8 vulkan_select_physical_device() {
-  u32 physical_device_count = 0;
-  VkResult enumerate_physical_devices_result =
-    vkEnumeratePhysicalDevices(vulkan_context.instance, &physical_device_count, NULL_PTR);
-  if (enumerate_physical_devices_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to retrieve Vulkan physical device count: %s",
-                string_VkResult(enumerate_physical_devices_result));
-    return FALSE;
-  }
-  MDEBUG_CORE("Physical device count: %u", physical_device_count);
-
-  // Get list of physical devices
-  VkPhysicalDevice* physical_devices =
-    mallocate(physical_device_count * sizeof(VkPhysicalDevice), MEMORY_TAG_RENDERER);
-
-  enumerate_physical_devices_result =
-    vkEnumeratePhysicalDevices(vulkan_context.instance, &physical_device_count, physical_devices);
-  if (enumerate_physical_devices_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to retrieve Vulkan physical devices: %s",
-                string_VkResult(enumerate_physical_devices_result));
-    return FALSE;
-  }
-
-  // List physical devices and select suitable device to use
-  // @TODO: Select most suitable device more accurately
-  VkPhysicalDeviceProperties targeted_physical_device_properties;
-  VkPhysicalDeviceProperties suitable_physical_device_properties;
-  VkPhysicalDevice suitable_device = physical_devices[0];  // @TODO: Add this to vulkan_context
-  for (u32 i = 0; i < physical_device_count; i++) {
-    vkGetPhysicalDeviceProperties(physical_devices[i], &targeted_physical_device_properties);
-    vkGetPhysicalDeviceProperties(suitable_device, &suitable_physical_device_properties);
-    MDEBUG_CORE("%u. Physical Device: %s, %s", i + 1,
-                string_VkPhysicalDeviceType(targeted_physical_device_properties.deviceType),
-                targeted_physical_device_properties.deviceName);
-    if (targeted_physical_device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-      suitable_device = physical_devices[i];
-    } else if (targeted_physical_device_properties.deviceType ==
-               VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU &&
-               suitable_physical_device_properties.deviceType !=
-               VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-      suitable_device = physical_devices[i];
-    }
-  }
-  vulkan_context.physical_device = suitable_device;
-
-  vkGetPhysicalDeviceProperties(vulkan_context.physical_device, &vulkan_context.physical_device_properties);
-
-  mfree(physical_devices, physical_device_count * sizeof(VkPhysicalDevice), MEMORY_TAG_RENDERER);
-  return TRUE;
-}
-
-static b8 vulkan_get_surface(PlatformState* platform_state) {
-  if (!vulkan_create_platform_surface(&vulkan_context, platform_state)) {
-    MERROR_CORE("Failed to create vulkan platform surface");
-    return FALSE;
-  }
-
-  if (!vulkan_set_surface_extent(vulkan_context.swapchain_extent.width,
-                                 vulkan_context.swapchain_extent.height)) {
-    MERROR_CORE("Vulkan Get Surface: Failed to set surface extent.");
-    return FALSE;
-  }
-
-  // Get surface formats
-  u32 surface_format_count = 0;
-  VkResult get_physical_device_surface_formats_count_result = vkGetPhysicalDeviceSurfaceFormatsKHR(
-                                                                                                   vulkan_context.physical_device, vulkan_context.surface, &surface_format_count, NULL_PTR);
-  if (get_physical_device_surface_formats_count_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to get vulkan physical device surface format count: %s",
-                string_VkResult(get_physical_device_surface_formats_count_result));
-    return FALSE;
-  }
-  VkSurfaceFormatKHR surface_formats[surface_format_count];
-  VkResult get_physical_device_surface_formats_result =
-    vkGetPhysicalDeviceSurfaceFormatsKHR(vulkan_context.physical_device, vulkan_context.surface,
-                                         &surface_format_count, surface_formats);
-  if (get_physical_device_surface_formats_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to get vulkan physical device surface formats: %s",
-                string_VkResult(get_physical_device_surface_formats_result));
-    return FALSE;
-  }
-
-  MTRACE_CORE("Surface formats:");
-  for (u32 i = 0; i < surface_format_count; i++) {
-    MTRACE_CORE("%u: Format: %s, Colour space: %s", i + 1,
-                string_VkFormat(surface_formats[i].format),
-                string_VkColorSpaceKHR(surface_formats[i].colorSpace));
-  }
-  // The index in surface_formats to be used in swapchain creation
-  //@TODO: Maybe implement some sort of seletion algorithm?
-  const u32 selected_format = 0;  // @MAGIC_NUMBER
-  vulkan_context.surface_format = surface_formats[selected_format];
-  return TRUE;
-}
-
-static b8 vulkan_set_surface_extent(i16 width, i16 height) {
-  VkSurfaceCapabilitiesKHR surface_capabilities;
-  VkResult get_physical_device_surface_capabilities_result =
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkan_context.physical_device,
-                                              vulkan_context.surface, &surface_capabilities);
-
-  if (get_physical_device_surface_capabilities_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to get physical device surface capabilities: %s",
-                string_VkResult(get_physical_device_surface_capabilities_result));
-    return FALSE;
-  }
-
-  // Sets the image extent to an acceptable value
-  if (surface_capabilities.currentExtent.width != UINT32_MAX &&
-      surface_capabilities.currentExtent.width != 0) {  // Surface provides specific size
-    vulkan_context.swapchain_extent = surface_capabilities.currentExtent;
-  } else {  // Application can provide size
-    // Set width within acceptable Image Extent range
-    if ((u32)width > surface_capabilities.maxImageExtent.width) {
-      vulkan_context.swapchain_extent.width = surface_capabilities.maxImageExtent.width;
-    } else if ((u32)width < surface_capabilities.minImageExtent.width) {
-      vulkan_context.swapchain_extent.width = surface_capabilities.minImageExtent.width;
-    } else {
-      vulkan_context.swapchain_extent.width = (u32)width;
-    }
-
-    // Set width within acceptable Image Extent range
-    if ((u32)height > surface_capabilities.maxImageExtent.height) {
-      vulkan_context.swapchain_extent.height = surface_capabilities.maxImageExtent.height;
-    } else if ((u32)height < surface_capabilities.minImageExtent.height) {
-      vulkan_context.swapchain_extent.height = surface_capabilities.minImageExtent.height;
-    } else {
-      vulkan_context.swapchain_extent.height = (u32)height;
-    }
-  }
-  return TRUE;
-}
-
-static b8 vulkan_create_logical_device() {
-  u32 queue_family_properties_count = 0;
-  vkGetPhysicalDeviceQueueFamilyProperties(vulkan_context.physical_device,
-                                           &queue_family_properties_count, NULL_PTR);
-  VkQueueFamilyProperties queue_family_properties[queue_family_properties_count];
-  vkGetPhysicalDeviceQueueFamilyProperties(vulkan_context.physical_device,
-                                           &queue_family_properties_count, queue_family_properties);
-
-  VkBool32 queue_family_supported = VK_FALSE;
-  for (u32 i = 0; i < queue_family_properties_count; i++) {
-    VkResult get_physical_device_surface_support_result = vkGetPhysicalDeviceSurfaceSupportKHR(
-                                                                                               vulkan_context.physical_device, i, vulkan_context.surface, &queue_family_supported);
-
-    if (get_physical_device_surface_support_result != VK_SUCCESS) {
-      MERROR_CORE("Failed to get vulkan physical device surface support: %s",
-                  string_VkResult(get_physical_device_surface_support_result));
-      return FALSE;
-    }
-
-    if ((queue_family_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) && queue_family_supported) {
-      vulkan_context.graphics_queue_family_index = i;
-      break;
-    }
-  }
-  if (queue_family_supported == VK_FALSE) {
-    MERROR_CORE("Failed to find suitable queue family on vulkan physical device.");
-    return FALSE;
-  }
-
-  b8 transfer_queue_found = FALSE;
-  for (u32 i = 0; i < queue_family_properties_count; i++) {
-    VkQueueFlags flags = queue_family_properties[i].queueFlags;
-
-    // Prefer dedicated transfer queue
-    if ((flags & VK_QUEUE_TRANSFER_BIT) && !(flags & VK_QUEUE_GRAPHICS_BIT)) {
-      vulkan_context.transfer_queue_family_index = i;
-      transfer_queue_found = TRUE;
-      break;
-    }
-  }
-  if (transfer_queue_found == FALSE) {
-    vulkan_context.transfer_queue_family_index = vulkan_context.graphics_queue_family_index;
-  }
-
-  /* queue_family_supported = VK_FALSE; */
-  /* for (u32 i = 0; i < queue_family_properties_count; i++) { */
-  /*   VkResult get_physical_device_surface_support_result = vkGetPhysicalDeviceSurfaceSupportKHR(
-   */
-  /*       vulkan_context.physical_device, i, vulkan_context.surface, &queue_family_supported); */
-
-  /*   if (get_physical_device_surface_support_result != VK_SUCCESS) { */
-  /*     MERROR_CORE("Failed to get vulkan physical device surface support: %s", */
-  /*                 string_VkResult(get_physical_device_surface_support_result)); */
-  /*     return FALSE; */
-  /*   } */
-
-  /*   if ((queue_family_properties[i].queueFlags & VK_QUEUE_TRANSFER_BIT) &&
-   * queue_family_supported) { */
-  /*     vulkan_context.transfer_queue_family_index = i; */
-  /*     break; */
-  /*   } */
-  /* } */
-  /* if (queue_family_supported == VK_FALSE) { */
-  /*   MERROR_CORE("Failed to find suitable queue family on vulkan physical device."); */
-  /*   return FALSE; */
-  /* } */
-
-  // Set queue create info
-
-  f32 temp_priority = 1.0f;  // @MAGIC_NUMBER
-  VkDeviceQueueCreateInfo device_graphics_queue_create_info = {
-    VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
-  device_graphics_queue_create_info.queueFamilyIndex = vulkan_context.graphics_queue_family_index;
-  device_graphics_queue_create_info.queueCount = 1;  // @MAGIC_NUMBER
-  device_graphics_queue_create_info.pQueuePriorities = &temp_priority;
 
 
-  VkDeviceQueueCreateInfo device_queue_create_infos[2];
-  VkDeviceQueueCreateInfo device_transfer_queue_create_info = {
-    VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
-  
-  if (vulkan_context.graphics_queue_family_index == vulkan_context.transfer_queue_family_index) {
-    
-    vulkan_context.queue_family_index_count = 1;
-    device_queue_create_infos[0] = device_graphics_queue_create_info;
 
-  } else {
-    
-    device_transfer_queue_create_info.queueFamilyIndex = vulkan_context.transfer_queue_family_index;
-    device_transfer_queue_create_info.queueCount = 1;  // @MAGIC_NUMBER
-    device_transfer_queue_create_info.pQueuePriorities = &temp_priority;
-    
-    vulkan_context.queue_family_index_count = 2;
-    device_queue_create_infos[0] = device_graphics_queue_create_info;
-    device_queue_create_infos[1] = device_transfer_queue_create_info;
-  }
-
-  // Enable vulkan11 features
-  VkPhysicalDeviceVulkan11Features physical_device_vulkan_11_features = {
-    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES};
-  physical_device_vulkan_11_features.shaderDrawParameters = VK_TRUE;
-
-  // Enable vulkan13 features
-  VkPhysicalDeviceVulkan13Features physical_device_vulkan_13_features = {
-    .sType =  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
-    .pNext = &physical_device_vulkan_11_features,
-    .dynamicRendering = VK_TRUE,
-    .synchronization2 = VK_TRUE,
-  };
-  
-  // Enable extra features
-  VkPhysicalDeviceFeatures physical_device_features = {
-    .samplerAnisotropy = VK_TRUE,
-  };
-
-  VkPhysicalDeviceFeatures2 physical_device_features_2 = {
-    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-    .pNext = &physical_device_vulkan_13_features,
-    .features = physical_device_features,
-  };
-    
-
-  // Set logical device create info
-  const char* const device_extension_names[] = MVK_DEVICE_EXTENSION_NAMES;
-  VkDeviceCreateInfo device_create_info = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
-  device_create_info.pNext = &physical_device_features_2;
-  device_create_info.queueCreateInfoCount = vulkan_context.queue_family_index_count;
-  device_create_info.pQueueCreateInfos = device_queue_create_infos;
-  device_create_info.pEnabledFeatures = NULL_PTR;
-  device_create_info.enabledExtensionCount = MVK_DEVICE_EXTENSION_COUNT;
-  device_create_info.ppEnabledExtensionNames = device_extension_names;
-
-  // Create logical device
-  VkResult create_device_result =
-    vkCreateDevice(vulkan_context.physical_device, &device_create_info, vulkan_context.allocator,
-                   &vulkan_context.logical_device);
-
-  if (create_device_result == VK_SUCCESS) {
-    MINFO_CORE("Vulkan logical device created");
-  } else {
-    MERROR_CORE("Failed to create vulkan logical device: %s",
-                string_VkResult(create_device_result));
-    return FALSE;
-  }
-  vkGetDeviceQueue(vulkan_context.logical_device, vulkan_context.graphics_queue_family_index, 0,
-                   &vulkan_context.graphics_queue);
-
-  vkGetDeviceQueue(vulkan_context.logical_device, vulkan_context.transfer_queue_family_index, 0,
-                   &vulkan_context.transfer_queue);
-  return TRUE;
-}
-
-static b8 vulkan_create_swapchain(VkSwapchainKHR old_swapchain) {
-  VkSurfaceCapabilitiesKHR surface_capabilities;
-  VkResult get_physical_device_surface_capabilities_result =
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkan_context.physical_device,
-                                              vulkan_context.surface, &surface_capabilities);
-
-  if (get_physical_device_surface_capabilities_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to get physical device surface capabilities: %s",
-                string_VkResult(get_physical_device_surface_capabilities_result));
-    return FALSE;
-  }
-
-  VkImageUsageFlags image_usage_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-  VkSwapchainCreateInfoKHR swapchain_create_info = {VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR};
-  swapchain_create_info.pNext = NULL_PTR;
-  swapchain_create_info.surface = vulkan_context.surface;
-  swapchain_create_info.minImageCount =
-    surface_capabilities.minImageCount;  // @TODO: Add this as a setting in user code. (Maybe)
-  swapchain_create_info.imageFormat = vulkan_context.surface_format.format;
-  swapchain_create_info.imageColorSpace = vulkan_context.surface_format.colorSpace;
-  swapchain_create_info.imageExtent = vulkan_context.swapchain_extent;
-  swapchain_create_info.imageArrayLayers = 1;  // @MAGIC_NUMBER
-  swapchain_create_info.imageUsage = image_usage_flags;
-  swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-  swapchain_create_info.queueFamilyIndexCount = ZERO;
-  swapchain_create_info.pQueueFamilyIndices = NULL_PTR;
-  swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-  swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-  swapchain_create_info.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
-  swapchain_create_info.clipped = VK_TRUE;
-  swapchain_create_info.oldSwapchain = old_swapchain;
-
-  VkResult create_swapchain_result =
-    vkCreateSwapchainKHR(vulkan_context.logical_device, &swapchain_create_info,
-                         vulkan_context.allocator, &vulkan_context.swapchain);
-
-  if (create_swapchain_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to create Vulkan swapchain: %s", string_VkResult(create_swapchain_result));
-    return FALSE;
-  } else {
-    /* MINFO_CORE("Created Vulkan swapchain"); */
-  }
-  return TRUE;
-}
 
 static b8 vulkan_get_swapchain_images() {
   vulkan_context.swapchain_image_count = 0;
@@ -1094,214 +768,6 @@ static b8 vulkan_create_descriptor_set_layout() {
   return TRUE;
 }
 
-static b8 vulkan_create_graphics_pipeline() {
-  // Read shader byte code
-  u8* shader_bin = NULL_PTR;
-  u64 shader_bin_size = 0;
-  vulkan_read_shader_binary("../engine/src/renderer/vulkan/shaders/basic.spv", &shader_bin_size,
-                            &shader_bin);
-
-  // Create shader module
-  VkShaderModuleCreateInfo shader_module_create_info = {
-    VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
-  shader_module_create_info.pNext = NULL_PTR;
-  shader_module_create_info.codeSize = shader_bin_size;
-  shader_module_create_info.pCode = (u32*)shader_bin;
-
-  VkShaderModule shader_module;
-
-  VkResult create_shader_module_result =
-    vkCreateShaderModule(vulkan_context.logical_device, &shader_module_create_info,
-                         vulkan_context.allocator, &shader_module);
-  if (create_shader_module_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to create vulkan shader module: %s",
-                string_VkResult(create_shader_module_result));
-    return FALSE;
-  }
-
-  mfree(shader_bin, shader_bin_size * sizeof(u8), MEMORY_TAG_RENDERER);
-
-  // Create vertex shader stage create info
-  VkPipelineShaderStageCreateInfo vert_pipeline_shader_stage_create_info = {
-    VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
-  vert_pipeline_shader_stage_create_info.pNext = NULL_PTR;
-  vert_pipeline_shader_stage_create_info.flags = ZERO;
-  vert_pipeline_shader_stage_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-  vert_pipeline_shader_stage_create_info.module = shader_module;
-  vert_pipeline_shader_stage_create_info.pName = "vertMain";
-  vert_pipeline_shader_stage_create_info.pSpecializationInfo = NULL_PTR;
-
-  // Create fragment shader stage create info
-  VkPipelineShaderStageCreateInfo frag_pipeline_shader_stage_create_info = {
-    VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
-  frag_pipeline_shader_stage_create_info.pNext = NULL_PTR;
-  frag_pipeline_shader_stage_create_info.flags = ZERO;
-  frag_pipeline_shader_stage_create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-  frag_pipeline_shader_stage_create_info.module = shader_module;
-  frag_pipeline_shader_stage_create_info.pName = "fragMain";
-  frag_pipeline_shader_stage_create_info.pSpecializationInfo = NULL_PTR;
-
-  VkPipelineShaderStageCreateInfo shader_stage_create_infos[] = {
-    vert_pipeline_shader_stage_create_info, frag_pipeline_shader_stage_create_info};
-
-  // Set dynamic states
-  VkDynamicState dynamic_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-  VkPipelineDynamicStateCreateInfo dynamic_state_create_info = {
-    VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
-  dynamic_state_create_info.pNext = NULL_PTR;
-  dynamic_state_create_info.dynamicStateCount = sizeof(dynamic_states) / sizeof(VkDynamicState);
-  dynamic_state_create_info.pDynamicStates = dynamic_states;
-
-  // Set vertex input state create info
-  VkVertexInputBindingDescription vertex_binding_description = get_vertex_binding_description();
-  VkVertexInputAttributeDescription* vertex_attribute_descriptions =
-    get_vertex_attribute_descriptions();
-
-  VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info = {
-    VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
-  vertex_input_state_create_info.vertexBindingDescriptionCount = 1;
-  vertex_input_state_create_info.pVertexBindingDescriptions = &vertex_binding_description;
-  vertex_input_state_create_info.vertexAttributeDescriptionCount = MVK_VERTEX_ATTRIBUTE_COUNT;
-  vertex_input_state_create_info.pVertexAttributeDescriptions = vertex_attribute_descriptions;
-
-  // Set input assembly state create info
-  VkPipelineInputAssemblyStateCreateInfo input_assembly_state_create_info = {
-    VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
-  input_assembly_state_create_info.pNext = NULL_PTR;
-  input_assembly_state_create_info.primitiveRestartEnable = VK_FALSE;
-  input_assembly_state_create_info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-  // Create viewport
-  VkViewport viewport;
-  viewport.x = 0.0f;
-  viewport.y = 0.0f;
-  viewport.width = vulkan_context.swapchain_extent.width;
-  viewport.height = vulkan_context.swapchain_extent.height;
-  viewport.minDepth = 0.0f;
-  viewport.maxDepth = 1.0f;
-
-  // Specify scissor rect
-  VkOffset2D scissor_rect_offset;
-  scissor_rect_offset.x = 0;
-  scissor_rect_offset.y = 0;
-
-  VkRect2D scissor_rect;
-  scissor_rect.offset = scissor_rect_offset;
-  scissor_rect.extent = vulkan_context.swapchain_extent;
-
-  VkPipelineViewportStateCreateInfo viewport_state_create_info = {
-    VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
-  viewport_state_create_info.pNext = NULL_PTR;
-  viewport_state_create_info.viewportCount = 1;  // @MAGIC_NUMBER
-  /* viewport_state_create_info.pViewports = &viewport; */
-  viewport_state_create_info.scissorCount = 1;  //@MAGIC_NUMBER
-  /* viewport_state_create_info.pScissors = &scissor_rect; */
-
-  // Set rasteriser create info
-  VkCullModeFlags cull_mode_flags = VK_CULL_MODE_BACK_BIT;
-
-  VkPipelineRasterizationStateCreateInfo rasterization_state_create_info = {
-    VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
-  rasterization_state_create_info.pNext = NULL_PTR;
-  rasterization_state_create_info.depthClampEnable = VK_FALSE;
-  rasterization_state_create_info.rasterizerDiscardEnable = VK_FALSE;
-  rasterization_state_create_info.polygonMode = VK_POLYGON_MODE_FILL;
-  rasterization_state_create_info.cullMode = cull_mode_flags;
-  rasterization_state_create_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-  rasterization_state_create_info.depthBiasEnable = VK_FALSE;
-  rasterization_state_create_info.lineWidth = 1.0f;  // @MAGIC_NUMBER
-
-  VkPipelineDepthStencilStateCreateInfo depth_stencil_state_create_info = {
-    .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-    .depthTestEnable = VK_TRUE,
-    .depthWriteEnable = VK_TRUE,
-    .depthCompareOp = VK_COMPARE_OP_LESS,
-    .depthBoundsTestEnable = VK_FALSE,
-    .stencilTestEnable = VK_FALSE,
-  };
-
-  // Set multisampling opts
-  VkPipelineMultisampleStateCreateInfo multisample_state_create_info = {
-    VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
-  multisample_state_create_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-  multisample_state_create_info.sampleShadingEnable = VK_FALSE;
-
-  // Specify colour blending options
-  VkColorComponentFlags color_component_flags = VK_COLOR_COMPONENT_R_BIT |
-    VK_COLOR_COMPONENT_G_BIT |
-    VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-
-  VkPipelineColorBlendAttachmentState color_blend_attachment_state;
-  color_blend_attachment_state.blendEnable = VK_TRUE;
-  color_blend_attachment_state.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-  color_blend_attachment_state.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-  color_blend_attachment_state.colorBlendOp = VK_BLEND_OP_ADD;
-  color_blend_attachment_state.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-  color_blend_attachment_state.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-  color_blend_attachment_state.alphaBlendOp = VK_BLEND_OP_ADD;
-  color_blend_attachment_state.colorWriteMask = color_component_flags;
-
-  VkPipelineColorBlendStateCreateInfo color_blend_state_create_info = {
-    VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};
-  color_blend_state_create_info.logicOpEnable = VK_FALSE;
-  color_blend_state_create_info.logicOp = VK_LOGIC_OP_COPY;
-  color_blend_state_create_info.attachmentCount = 1;  // @MAGIC_NUMBER
-  color_blend_state_create_info.pAttachments = &color_blend_attachment_state;
-
-  // Create pipeline layout
-  VkPipelineLayoutCreateInfo pipeline_layout_create_info = {
-    VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
-  pipeline_layout_create_info.pNext = NULL_PTR;
-  pipeline_layout_create_info.setLayoutCount = 1;
-  pipeline_layout_create_info.pSetLayouts = &vulkan_context.descriptor_set_layout;
-  pipeline_layout_create_info.pushConstantRangeCount = 0;
-
-  VkResult create_pipeline_layout_result =
-    vkCreatePipelineLayout(vulkan_context.logical_device, &pipeline_layout_create_info,
-                           vulkan_context.allocator, &vulkan_context.pipeline_layout);
-  if (create_pipeline_layout_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to create vulkan pipeline layout: %s",
-                string_VkResult(create_pipeline_layout_result));
-    return FALSE;
-  }
-
-  // Set graphics pipeline create info
-  VkPipelineRenderingCreateInfo pipeline_rendering_create_info = {
-    VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};
-  pipeline_rendering_create_info.pNext = NULL_PTR;
-  pipeline_rendering_create_info.colorAttachmentCount = 1;
-  pipeline_rendering_create_info.pColorAttachmentFormats = &vulkan_context.surface_format.format;
-  pipeline_rendering_create_info.depthAttachmentFormat = vulkan_context.depth_format;
-
-  VkGraphicsPipelineCreateInfo graphics_pipeline_create_info = {
-    VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
-  graphics_pipeline_create_info.pNext = &pipeline_rendering_create_info;
-  graphics_pipeline_create_info.stageCount = 2;  // @MAGIC_NUMBER
-  graphics_pipeline_create_info.pStages = shader_stage_create_infos;
-  graphics_pipeline_create_info.pVertexInputState = &vertex_input_state_create_info;
-  graphics_pipeline_create_info.pInputAssemblyState = &input_assembly_state_create_info;
-  graphics_pipeline_create_info.pTessellationState = NULL_PTR;
-  graphics_pipeline_create_info.pViewportState = &viewport_state_create_info;
-  graphics_pipeline_create_info.pRasterizationState = &rasterization_state_create_info;
-  graphics_pipeline_create_info.pMultisampleState = &multisample_state_create_info;
-  graphics_pipeline_create_info.pDepthStencilState = &depth_stencil_state_create_info;
-  graphics_pipeline_create_info.pColorBlendState = &color_blend_state_create_info;
-  graphics_pipeline_create_info.pDynamicState = &dynamic_state_create_info;
-  graphics_pipeline_create_info.layout = vulkan_context.pipeline_layout;
-  graphics_pipeline_create_info.renderPass = NULL_PTR;
-
-  // Create graphics pipeline
-  VkResult create_graphics_pipelines_result = vkCreateGraphicsPipelines(
-                                                                        vulkan_context.logical_device, NULL_PTR, 1, &graphics_pipeline_create_info,
-                                                                        vulkan_context.allocator, &vulkan_context.graphics_pipeline);
-
-  if (create_graphics_pipelines_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to create vulkan graphics pipeline: %s",
-                string_VkResult(create_graphics_pipelines_result));
-    return FALSE;
-  }
-  return TRUE;
-}
 
 static b8 vulkan_create_command_pools() {
   VkCommandPoolCreateFlags graphics_command_pool_create_flags =
@@ -1841,6 +1307,52 @@ static b8 vulkan_create_sync_primatives() {
   return TRUE;
 }
 
+static b8 vulkan_create_swapchain(VkSwapchainKHR old_swapchain) {
+  VkSurfaceCapabilitiesKHR surface_capabilities;
+  VkResult get_physical_device_surface_capabilities_result =
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkan_context.physical_device,
+                                              vulkan_context.surface, &surface_capabilities);
+
+  if (get_physical_device_surface_capabilities_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to get physical device surface capabilities: %s",
+                string_VkResult(get_physical_device_surface_capabilities_result));
+    return FALSE;
+  }
+
+  VkImageUsageFlags image_usage_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+  VkSwapchainCreateInfoKHR swapchain_create_info = {VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR};
+  swapchain_create_info.pNext = NULL_PTR;
+  swapchain_create_info.surface = vulkan_context.surface;
+  swapchain_create_info.minImageCount =
+    surface_capabilities.minImageCount;  // @TODO: Add this as a setting in user code. (Maybe)
+  swapchain_create_info.imageFormat = vulkan_context.surface_format.format;
+  swapchain_create_info.imageColorSpace = vulkan_context.surface_format.colorSpace;
+  swapchain_create_info.imageExtent = vulkan_context.swapchain_extent;
+  swapchain_create_info.imageArrayLayers = 1;  // @MAGIC_NUMBER
+  swapchain_create_info.imageUsage = image_usage_flags;
+  swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  swapchain_create_info.queueFamilyIndexCount = ZERO;
+  swapchain_create_info.pQueueFamilyIndices = NULL_PTR;
+  swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+  swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+  swapchain_create_info.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+  swapchain_create_info.clipped = VK_TRUE;
+  swapchain_create_info.oldSwapchain = old_swapchain;
+
+  VkResult create_swapchain_result =
+    vkCreateSwapchainKHR(vulkan_context.logical_device, &swapchain_create_info,
+                         vulkan_context.allocator, &vulkan_context.swapchain);
+
+  if (create_swapchain_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to create Vulkan swapchain: %s", string_VkResult(create_swapchain_result));
+    return FALSE;
+  } else {
+    /* MINFO_CORE("Created Vulkan swapchain"); */
+  }
+  return TRUE;
+}
+
 static b8 vulkan_recreate_swapchain(u16 width, u16 height) {
   VkResult queue_wait_idle_result = vkQueueWaitIdle(vulkan_context.graphics_queue);
   if (queue_wait_idle_result != VK_SUCCESS) {
@@ -1848,7 +1360,7 @@ static b8 vulkan_recreate_swapchain(u16 width, u16 height) {
                string_VkResult(queue_wait_idle_result));
   }
 
-  if (!vulkan_set_surface_extent(width, height)) {
+  if (!vulkan_set_surface_extent(&vulkan_context, width, height)) {
     MERROR_CORE("Failed to set surface extent while recreating vulkan swapchain");
     return FALSE;
   }
@@ -2016,38 +1528,7 @@ static b8 copy_buffer(VkBuffer* src_buffer, VkBuffer* dst_buffer, VkDeviceSize s
   return TRUE;
 }
 
-static VkVertexInputBindingDescription get_vertex_binding_description() {
-  VkVertexInputBindingDescription out;
-  out.binding = 0;
-  out.stride = sizeof(Vertex);
-  out.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-  return out;
-}
 
-static VkVertexInputAttributeDescription* get_vertex_attribute_descriptions() {
-  static VkVertexInputAttributeDescription out[] = {
-    {
-      .location = 0,
-      .binding = 0,
-      .format = VK_FORMAT_R32G32B32_SFLOAT,
-      .offset = offsetof(Vertex, position),
-    },
-    {
-      .location = 1,
-      .binding = 0,
-      .format = VK_FORMAT_R32G32B32_SFLOAT,
-      .offset = offsetof(Vertex, colour),
-    },
-    {
-      .location = 2,
-      .binding = 0,
-      .format = VK_FORMAT_R32G32_SFLOAT,
-      .offset = offsetof(Vertex, texture_coord),
-
-    },
-  };
-  return out;
-}
 
 static u32 get_memory_type(u32 type_filter, VkMemoryPropertyFlags props) {
   VkPhysicalDeviceMemoryProperties memory_properties;

@@ -1,7 +1,7 @@
 SCENE default_scene
 
 // ================================
-// 	ENTITIES
+// 	@ENTITIES
 // ================================
 
 ENTITY 0 crate
@@ -14,13 +14,13 @@ component mesh 0 crate_mesh
 component material 0 crate_mat
 END_ENTITY
 
-ENTITY 1 dognut
+ENTITY 1 dognut_01
 TRANSFORM
 position 2.5 0.0 -3.0
 scale 1.0 1.0 1.0
 rotation 0.0 0.0 0.0
 END_TRANSFORM
-component mesh 1 dognut_mesh
+component mesh 1 dognut_01_mesh
 component material 1 dognut_mat
 END_ENTITY
 
@@ -28,66 +28,102 @@ ENTITY 2 player
 TRANSFORM
 position 1.0 1.0 1.0
 scale 1.0 1.0 1.0
-rotation -45.0 0.0 0.0
+rotation -30.0 0.0 0.0
 END_TRANSFORM
 component camera 0 first_person_camera
 END_ENTITY
 
-ENTITY 3 dognut
+ENTITY 3 dognut_02
 TRANSFORM
 position -8.5 0.0 -3.0
 scale 1.0 1.0 1.0
 rotation 0.0 0.0 0.0
 END_TRANSFORM
-component mesh 1 dognut_mesh
-component material 1 dognut_mat
+component mesh 2 dognut_02_mesh
+component material 2 dognut_02_mat
 END_ENTITY
 
 // ================================
-//  CAMERAS
+//  @CAMERAS
 // ================================
 
 CAMERA 0 first_person_camera
 entity 2 player
-fov 120.0
+fov 90.0
 near_plane 0.1
 far_plane 1000.0
 END_CAMERA
 
 // ================================
-// 	MESHES
+// 	@MESHES
 // ================================
 
 MESH 0 crate_mesh
-path ../test/res/models/crate.mg3d
+handle 0 crate_model
 END_MESH
 
-MESH 1 dognut_mesh
-path ../test/res/models/torus.mg3d
+MESH 1 dognut_01_mesh
+handle 1 dognut_model
+END_MESH
+
+MESH 2 dognut_02_mesh
+handle 1 dognut_model
 END_MESH
 
 // ================================
-//	MATERIALS	
+//	@MATERIALS	
 // ================================
 
 MATERIAL 0 crate_mat
 texture 0
 END_MATERIAL
 
-MATERIAL 1 dognut_mat
+MATERIAL 1 dognut_01_mat
 texture 1
 END_MATERIAL
 
+MATERIAL 2 dognut_02_mat
+texture 2
+END_MATERIAL
+
 // ================================
-//	TEXTURES
+//	@TEXTURES
 // ================================
 
 TEXTURE 0 crate_tex
-path ../test/res/textures/crate.png
+handle 0 crate_tex_img
 END_TEXTURE
 
-TEXTURE 1 dognut_tex
-path ../test/res/textures/torus.png
+TEXTURE 1 dognut_01_tex
+handle 1 dognut_tex_img
 END_TEXTURE
+
+TEXTURE 2 dognut_02_tex
+handle 1 dognut_tex_img
+END_TEXTURE
+
+// ================================
+//  @ASSETS
+// ================================
+
+// MESH
+
+AMESH 0 crate_model
+path ../test/res/models/crate.mg3d
+END_AMESH
+
+AMESH 1 dognut_model
+path ../test/res/models/torus.mg3d
+END_AMESH
+
+// TEXTURE
+
+ATEXTURE 0 crate_tex_img
+path ../test/res/textures/crate.png
+END_ATEXTURE
+
+ATEXTURE 1 dognut_tex_img
+path ../test/res/textures/torus.png
+END_ATEXTURE
 
 END_SCENE

@@ -43,8 +43,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 
   MTRACE("%s", get_memory_usage_string());
   MTRACE("%s", vulkan_context.scene_data->meshes[0].name);
-  for (u32 i = 0; i < vulkan_context.scene_data->meshes[0].vertex_count; i++) {
-    vulkan_context.scene_data->meshes[0].vertices[i].colour = (Vec3){0.3f, 0.5f, 0.8f};
+  for (u32 i = 0; i < vulkan_context.scene_data->mesh_assets[0].vertex_count; i++) {
+    vulkan_context.scene_data->mesh_assets[0].vertices[i].colour = (Vec3){0.3f, 0.5f, 0.8f};
   }
 
   vulkan_context.uniform_object_count = darray_get_length(vulkan_context.scene_data->drawable_handles);
@@ -439,7 +439,7 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
                             NULL_PTR);
     
     vkCmdDrawIndexed(vulkan_context.command_buffers[vulkan_context.current_frame_index],
-                     vulkan_context.scene_data->meshes[object.vbuf_handle].index_count, 1, 0, 0, 0);
+                     vulkan_context.scene_data->mesh_assets[object.vbuf_handle].index_count, 1, 0, 0, 0);
   }
 
   return TRUE;
@@ -1046,11 +1046,11 @@ static b8 vulkan_create_drawable_objects() {
 
   for (u32 i = 0; i < darray_get_length(vulkan_context.scene_data->drawable_handles); i++) {
     Entity* p_entity = &vulkan_context.scene_data->entities[vulkan_context.scene_data->drawable_handles[i]];
-    Handle32 mesh_handle = entity_get_mesh_handle(p_entity);
+    Handle32 mesh_handle = vulkan_context.scene_data->meshes[entity_get_mesh_handle(p_entity)].mesh_asset_handle;
     VulkanDrawable object = {
       .vbuf_handle = mesh_handle,
       .ibuf_handle = mesh_handle,
-      .texture_handle = material_get_texture_handle(entity_get_material(p_entity)),
+      .texture_handle = vulkan_context.scene_data->textures[material_get_texture_handle(entity_get_material(p_entity))].texture_asset_handle,
     };
     darray_push(vulkan_context.objects, object);
   }
@@ -1365,13 +1365,13 @@ static b8 vulkan_create_depth_resources() {
 
 static b8 vulkan_create_texture_image() {
 
-  u32 texture_count = darray_get_length(vulkan_context.scene_data->textures);
+  u32 texture_count = darray_get_length(vulkan_context.scene_data->texture_assets);
   vulkan_context.texture_images = mallocate(texture_count * sizeof(VkImage), MEMORY_TAG_RENDERER); // @TODO: Free
   vulkan_context.texture_image_mem = mallocate(texture_count * sizeof(VkDeviceMemory), MEMORY_TAG_RENDERER); // @TODO: Free
   
   for(u32 i = 0; i < texture_count; i++) {
-    CCTexture* p_texture =
-      &vulkan_context.scene_data->textures[i];
+    ATexture* p_texture =
+      &vulkan_context.scene_data->texture_assets[i];
     
     VkDeviceSize image_size = p_texture->width * p_texture->height * 4;
     
@@ -1460,7 +1460,7 @@ static b8 vulkan_create_texture_image() {
 
 static b8 vulkan_create_texture_image_view() {
 
-  u32 texture_count = darray_get_length(vulkan_context.scene_data->textures);
+  u32 texture_count = darray_get_length(vulkan_context.scene_data->texture_assets);
 
   vulkan_context.texture_image_views = mallocate(texture_count * sizeof(VkImageView), MEMORY_TAG_RENDERER); // @TODO: Free
     
@@ -1536,14 +1536,14 @@ static b8 vulkan_create_vertex_buffers() {
   /* vulkan_context.staging_vertex_buffer = NULL_PTR; */
   /* vulkan_context.staging_vertex_buffer_mem = NULL_PTR; */
 
-  u32 mesh_count = darray_get_length(vulkan_context.scene_data->meshes);
+  u32 mesh_count = darray_get_length(vulkan_context.scene_data->mesh_assets);
 
   vulkan_context.vertex_bufs = mallocate(mesh_count * sizeof(VkBuffer), MEMORY_TAG_RENDERER); // @TODO: Free
   vulkan_context.vertex_buf_mem = mallocate(mesh_count * sizeof(VkDeviceMemory), MEMORY_TAG_RENDERER); // @TODO: Free
 
   for (u32 i = 0; i < mesh_count;i++) {
     
-    VkDeviceSize buffer_size = vulkan_context.scene_data->meshes[i].vertex_count * sizeof(Vertex);
+    VkDeviceSize buffer_size = vulkan_context.scene_data->mesh_assets[i].vertex_count * sizeof(Vertex);
  
     if (!create_buffer(&vulkan_context.staging_vertex_buffer,
                        &vulkan_context.staging_vertex_buffer_mem, buffer_size,
@@ -1564,7 +1564,7 @@ static b8 vulkan_create_vertex_buffers() {
       return FALSE;
     }
 
-    mcopy_memory(vertex_data, vulkan_context.scene_data->meshes[i].vertices, buffer_size);
+    mcopy_memory(vertex_data, vulkan_context.scene_data->mesh_assets[i].vertices, buffer_size);
     vkUnmapMemory(vulkan_context.logical_device, vulkan_context.staging_vertex_buffer_mem);
 
     if (!create_buffer(&vulkan_context.vertex_bufs[i], &vulkan_context.vertex_buf_mem[i],
@@ -1587,14 +1587,14 @@ static b8 vulkan_create_vertex_buffers() {
 
 static b8 vulkan_create_index_buffer() {
 
-  u32 mesh_count = darray_get_length(vulkan_context.scene_data->meshes);
+  u32 mesh_count = darray_get_length(vulkan_context.scene_data->mesh_assets);
 
   vulkan_context.index_bufs = mallocate(mesh_count * sizeof(VkBuffer), MEMORY_TAG_RENDERER); // @TODO: Free
   vulkan_context.index_buf_mem = mallocate(mesh_count * sizeof(VkDeviceMemory), MEMORY_TAG_RENDERER); // @TODO: Free
 
   for (u32 i = 0; i < mesh_count; i++) {
 
-    VkDeviceSize buffer_size = sizeof(u32) * vulkan_context.scene_data->meshes[i].index_count;
+    VkDeviceSize buffer_size = sizeof(u32) * vulkan_context.scene_data->mesh_assets[i].index_count;
 
     if (!create_buffer(&vulkan_context.staging_index_buffer, &vulkan_context.staging_index_buffer_mem,
                        buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -1612,7 +1612,7 @@ static b8 vulkan_create_index_buffer() {
                   string_VkResult(map_mem_res));
       return FALSE;
     }
-    mcopy_memory(index_data, vulkan_context.scene_data->meshes[i].indices, buffer_size);
+    mcopy_memory(index_data, vulkan_context.scene_data->mesh_assets[i].indices, buffer_size);
     vkUnmapMemory(vulkan_context.logical_device, vulkan_context.staging_index_buffer_mem);
 
     if (!create_buffer(&vulkan_context.index_bufs[i], &vulkan_context.index_buf_mem[i], buffer_size,

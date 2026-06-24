@@ -37,6 +37,10 @@ b8 parse_scene(SceneData* data, FILE* file) {
       parse_texture((Handle32)atol(tokens[1]), tokens[2]);
     } else if (strcmp(tokens[0], "CAMERA") == 0) {
       parse_camera((Handle32)atol(tokens[1]), tokens[2]);
+    } else if (strcmp(tokens[0], "AMESH") == 0) {
+      parse_mesh_asset((Handle32)atol(tokens[1]), tokens[2]);
+    } else if (strcmp(tokens[0], "ATEXTURE") == 0) {
+      parse_texture_asset((Handle32)atol(tokens[1]), tokens[2]);
     }
   }
 
@@ -114,21 +118,10 @@ static b8 parse_mesh(Handle32 handle, char* name) {
     get_tokens();
     if (strcmp(tokens[0], "END_MESH") == 0) {
       break;
-    } else if (strcmp(tokens[0], "path") == 0) {
-      u64 path_len = strlen(tokens[1]) + 1;
-      char* path_copy = mallocate(path_len, MEMORY_TAG_COMPONENT);
-      mcopy_memory(path_copy, tokens[1], path_len);
-      p_mesh->model_path = path_copy;
+    } else if (strcmp(tokens[0], "handle") == 0) {
+      p_mesh->mesh_asset_handle= (Handle32)atol(tokens[1]);
     }
   }
-
-  if (!mg3d_load(p_mesh->model_path, &p_mesh->vertices,
-                 &p_mesh->vertex_count, &p_mesh->indices,
-                 &p_mesh->index_count)) {
-    MERROR_CORE("Failed to load mesh: %s", p_mesh->model_path);
-    return FALSE;
-  }
-
   return TRUE;
 }
 
@@ -170,20 +163,11 @@ static b8 parse_texture(Handle32 handle, char* name) {
     get_tokens();
     if (strcmp(tokens[0], "END_TEXTURE") == 0) {
       break;
-    } else if (strcmp(tokens[0], "path") == 0) {
-      u64 path_len = strlen(tokens[1]) + 1;
-      char* path_copy = mallocate(path_len, MEMORY_TAG_COMPONENT);
-      mcopy_memory(path_copy, tokens[1], path_len);
-      p_texture->image_path = path_copy;
+    } else if (strcmp(tokens[0], "handle") == 0) {
+      p_texture->texture_asset_handle = (Handle32)atol(tokens[1]);
     }
   }
 
-  if (!load_texture(p_texture->image_path, &p_texture->texture_data,
-                    &p_texture->width, &p_texture->height,
-                    &p_texture->channels)) {
-    MERROR_CORE("Failed to load texture: %s", p_texture->image_path);
-    return FALSE;
-  }
 
   return TRUE;
 }
@@ -213,6 +197,72 @@ static b8 parse_camera(Handle32 handle, char* name) {
     } else if (strcmp(tokens[0], "far_plane") == 0) {
       p_camera->far_plane = atof(tokens[1]);
     }
+  }
+
+  return TRUE;
+}
+
+static b8 parse_mesh_asset(Handle32 handle, char* name) {
+  MTRACE("Parsing mesh: %u, %s", handle, name);
+  u64 name_len = strlen(name) + 1;
+  char* name_copy = mallocate(name_len, MEMORY_TAG_MODEL);
+  mcopy_memory(name_copy, name, name_len);
+  AMesh new_mesh = {
+    .name = name_copy,
+  };
+  darray_push(scene_data->mesh_assets, new_mesh);
+  AMesh* p_mesh = &scene_data->mesh_assets[handle];
+
+  while ((line_len = getline(&line, &line_len, scene_file)) != -1) {
+    get_tokens();
+    if (strcmp(tokens[0], "END_AMESH") == 0) {
+      break;
+    } else if (strcmp(tokens[0], "path") == 0) {
+      u64 path_len = strlen(tokens[1]) + 1;
+      char* path_copy = mallocate(path_len, MEMORY_TAG_MODEL);
+      mcopy_memory(path_copy, tokens[1], path_len);
+      p_mesh->model_path = path_copy;
+    }
+  }
+
+  if (!mg3d_load(p_mesh->model_path, &p_mesh->vertices,
+                 &p_mesh->vertex_count, &p_mesh->indices,
+                 &p_mesh->index_count)) {
+    MERROR_CORE("Failed to load mesh: %s", p_mesh->model_path);
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+static b8  parse_texture_asset(Handle32 handle, char* name) {
+  MTRACE("Parsing texture asset: %u, %s", handle, name);
+  u64 name_len = strlen(name) + 1;
+  char* name_copy = mallocate(name_len, MEMORY_TAG_COMPONENT);
+  mcopy_memory(name_copy, name, name_len);
+  ATexture new_texture = {
+    .name = name_copy,
+  };
+  darray_push(scene_data->texture_assets, new_texture);
+  ATexture* p_texture = &scene_data->texture_assets[handle];
+
+  while ((line_len = getline(&line, &line_len, scene_file)) != -1) {
+    get_tokens();
+    if (strcmp(tokens[0], "END_ATEXTURE") == 0) {
+      break;
+    } else if (strcmp(tokens[0], "path") == 0) {
+      u64 path_len = strlen(tokens[1]) + 1;
+      char* path_copy = mallocate(path_len, MEMORY_TAG_COMPONENT);
+      mcopy_memory(path_copy, tokens[1], path_len);
+      p_texture->image_path = path_copy;
+    }
+  }
+
+  if (!load_texture(p_texture->image_path, &p_texture->texture_data,
+                    &p_texture->width, &p_texture->height,
+                    &p_texture->channels)) {
+    MERROR_CORE("Failed to load texture: %s", p_texture->image_path);
+    return FALSE;
   }
 
   return TRUE;

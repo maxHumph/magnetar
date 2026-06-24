@@ -57,52 +57,26 @@ typedef struct Entity {
   Handle32 components[MAX_COMPONENT_INDEX];
 } Entity;
 
-/*
-typedef struct Entity {
-
-  const char* name;
-  Transform transform;
-
-  ComponentTypeMask component_mask;
-
-  u32 component_count;
-  EComponent* components;
-
-} Entity;
-*/
-
-/**
- * @struct EComponent
- * @brief Contains the type and handle of a component.
- */
-typedef struct EComponent {
-  ComponentTypeBit type;
-  Handle32 handle;
-} EComponent;
+// ================
+// COMPONENTS
+// ================
 
 /**
  * Unimplemented
  */
 typedef struct CCode {
+  const char* name;
   Entity* entity;
 } CCode;
 
 
 /**
  * @struct CMesh
- * @brief Contains vertex and index data of a model.
+ * @brief Contains handles to mesh assets
  */
 typedef struct CMesh {
-  Entity* entity;
   const char* name;
-
-  const char* model_path;
-
-  u32 vertex_count;
-  Vertex* vertices;
-
-  u32 index_count;
-  u32* indices;
+  Handle32 mesh_asset_handle;
 } CMesh;
 
 /**
@@ -112,31 +86,17 @@ typedef struct CMesh {
  * @see CMesh
  */
 typedef struct CMaterial {
-  Entity* entity;
-
   const char* name;
-
   Handle32 texture_handle;
-
 } CMaterial;
 
 /**
  * @struct CCTexture
- * @brief Contains information and pixel data of a texture image.
+ * @brief Contains handles to texture assets.
  */
 typedef struct CCTexture {
-  CMaterial* material;
-
   const char* name;
-
-  const char* image_path;
-
-  u32 width;
-  u32 height;
-  u32 channels;
-
-  u8* texture_data;
-
+  Handle32 texture_asset_handle;
 } CCTexture;
 
 typedef struct CCamera {
@@ -146,6 +106,34 @@ typedef struct CCamera {
   f32 near_plane;
   f32 far_plane;
 } CCamera;
+
+// ================
+// ASSETS
+// ================
+
+typedef struct AMesh {
+  const char* name;
+
+  const char* model_path;
+
+  u32 vertex_count;
+  Vertex* vertices;
+
+  u32 index_count;
+  u32* indices;
+} AMesh;
+
+typedef struct ATexture {
+  const char* name;
+
+  const char* image_path;
+
+  u32 width;
+  u32 height;
+  u32 channels;
+
+  u8* texture_data;
+} ATexture;
 
 /**
  * @struct SceneData
@@ -168,5 +156,9 @@ typedef struct SceneData {
   CCTexture* textures;
 
   CCamera* cameras;
+
+  // ASSET ARRAYS
+  AMesh* mesh_assets;
+  ATexture* texture_assets;
 
 } SceneData;

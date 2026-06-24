@@ -34,6 +34,8 @@ MGINLINE Handle32 entity_get_mesh_handle(Entity* p_entity) {
 
 MGAPI CMesh* entity_get_mesh(Entity* p_entity);
 
+MGAPI AMesh* mesh_get_asset(CMesh* p_mesh);
+
 MGINLINE Handle32 entity_get_material_handle(Entity* p_entity) {
   return p_entity->components[COMPONENT_INDEX_MATERIAL];
 }
@@ -46,8 +48,11 @@ MGINLINE Handle32 material_get_texture_handle(CMaterial* p_material) {
 
 MGAPI CCTexture* material_get_texture(CMaterial* p_material);
 
+MGAPI ATexture* texture_get_asset(CCTexture* p_texture);
+
 MGINLINE Handle32 entity_get_camera_handle(Entity* p_entity) {
   return p_entity->components[COMPONENT_INDEX_CAMERA];
 }
 
 MGAPI CCamera* entity_get_camera(Entity* p_entity);
+

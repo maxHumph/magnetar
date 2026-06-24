@@ -14,11 +14,15 @@ static SceneData scene_data = {};
 b8 scene_load(Scene* scene) {
   scene_data.entities = darray_create(Entity);
   scene_data.drawable_handles = darray_create(Handle32);
+
   scene_data.codes = darray_create(CCode);
   scene_data.meshes = darray_create(CMesh);
   scene_data.materials = darray_create(CMaterial);
   scene_data.textures = darray_create(CCTexture);
   scene_data.cameras = darray_create(CCamera);
+
+  scene_data.mesh_assets = darray_create(AMesh);
+  scene_data.texture_assets = darray_create(ATexture);
 
   for (u32 i = 0; i < scene->entity_count; i++) {
     if (!entity_load(scene->entity_handles[i])) {
@@ -40,17 +44,26 @@ b8 scene_unload(Scene* scene) {
   }
 
   darray_destroy(scene_data.entities);
+
   darray_destroy(scene_data.drawable_handles);
   darray_destroy(scene_data.meshes);
   darray_destroy(scene_data.materials);
   darray_destroy(scene_data.textures);
   darray_destroy(scene_data.cameras);
+
+  darray_destroy(scene_data.mesh_assets);
+  darray_destroy(scene_data.texture_assets);
+
   scene_data.entities = NULL_PTR;
+
   scene_data.drawable_handles = NULL_PTR;
   scene_data.meshes = NULL_PTR;
   scene_data.materials = NULL_PTR;
   scene_data.textures = NULL_PTR;
   scene_data.cameras = NULL_PTR;
+
+  scene_data.mesh_assets = NULL_PTR;
+  scene_data.texture_assets = NULL_PTR;
 
   return TRUE;
 };
@@ -58,11 +71,15 @@ b8 scene_unload(Scene* scene) {
 b8 scene_load_text(const char* path) {
 
   scene_data.entities = darray_create(Entity);
+
   scene_data.drawable_handles = darray_create(Handle32);
   scene_data.meshes = darray_create(CMesh);
   scene_data.materials = darray_create(CMaterial);
   scene_data.textures = darray_create(CCTexture);
   scene_data.cameras = darray_create(CCamera);
+
+  scene_data.mesh_assets = darray_create(AMesh);
+  scene_data.texture_assets = darray_create(ATexture);
 
   FILE* file = fopen(path, "r");
   if (file == NULL_PTR) {
@@ -125,18 +142,27 @@ static b8 cmaterial_unload(Handle32 material_handle) {
 }
 
 
-MGAPI CMesh* entity_get_mesh(Entity* p_entity) {
+CMesh* entity_get_mesh(Entity* p_entity) {
   return &scene_data.meshes[entity_get_mesh_handle(p_entity)];
 }
 
-MGAPI CMaterial* entity_get_material(Entity* p_entity) {
+AMesh* mesh_get_asset(CMesh* p_mesh) {
+  return &scene_data.mesh_assets[p_mesh->mesh_asset_handle];
+}
+
+
+CMaterial* entity_get_material(Entity* p_entity) {
   return &scene_data.materials[entity_get_material_handle(p_entity)];
 }
 
-MGAPI CCTexture* material_get_texture(CMaterial* p_material) {
+CCTexture* material_get_texture(CMaterial* p_material) {
   return &scene_data.textures[material_get_texture_handle(p_material)];
 }
 
-MGAPI CCamera* entity_get_camera(Entity* p_entity) {
+ATexture* texture_get_asset(CCTexture* p_texture) {
+  return &scene_data.texture_assets[p_texture->texture_asset_handle];
+}
+
+CCamera* entity_get_camera(Entity* p_entity) {
   return &scene_data.cameras[entity_get_camera_handle(p_entity)];
 }

@@ -86,6 +86,14 @@ MGINLINE Mat3 mat3_sub(Mat3 mat_1, Mat3 mat_2) {
   };
 }
 
+MGINLINE Mat3 mat3_scale(Mat3 mat, f32 scale) {
+  return (Mat3) {
+    mat.e11 * scale, mat.e12 * scale, mat.e13 * scale, 
+    mat.e21 * scale, mat.e22 * scale, mat.e23 * scale, 
+    mat.e31 * scale, mat.e32 * scale, mat.e33 * scale, 
+  };
+}
+
 // MAT 4
 
 typedef union Mat4f32 {

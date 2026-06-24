@@ -129,8 +129,21 @@ MGINLINE Vec3 vec3_sub(Vec3 vec_1, Vec3 vec_2) {
   return (Vec3){vec_1.x - vec_2.x, vec_1.y - vec_2.y, vec_1.z - vec_2.z};
 }
 
+MGINLINE Vec3 vec3_scale(Vec3 vec, f32 scale) {
+  return (Vec3){vec.x * scale, vec.y * scale, vec.z * scale};
+}
+
 MGINLINE Vec3 vec3_dot_prod(Vec3 vec_1, Vec3 vec_2) {
   return (Vec3){vec_1.x * vec_2.x, vec_1.y * vec_2.y, vec_1.z * vec_2.z};
+}
+MGINLINE Vec3 vec3_cross(Vec3 a, Vec3 b) {
+    Vec3 r;
+
+    r.x = a.y * b.z - a.z * b.y;
+    r.y = a.z * b.x - a.x * b.z;
+    r.z = a.x * b.y - a.y * b.x;
+
+    return r;
 }
 
 MGINLINE f32 vec3_mag_squared(Vec3 vec) {
@@ -212,6 +225,23 @@ typedef Vec4f32 Quat;
 
 MGINLINE Quat quat_create(f32 x, f32 i, f32 j, f32 k) { return (Quat){x, i, j, k}; }
 
+MGINLINE Quat quat_mul(Quat a, Quat b) {
+    Quat r;
+
+    r.x = a.w*b.x + a.x*b.w + a.y*b.z - a.z*b.y;
+    r.y = a.w*b.y - a.x*b.z + a.y*b.w + a.z*b.x;
+    r.z = a.w*b.z + a.x*b.y - a.y*b.x + a.z*b.w;
+    r.w = a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z;
+
+    f32 len = msqrt(r.x*r.x + r.y*r.y + r.z*r.z + r.w*r.w);
+    if (len > 0.0f) {
+        f32 inv = 1.0f / len;
+        r.x *= inv; r.y *= inv; r.z *= inv; r.w *= inv;
+    }
+
+    return r;
+}
+
 MGINLINE Quat quat_from_euler(Vec3 euler) {
   f32 cx = mcos(euler.x * 0.5f);
   f32 cy = mcos(euler.y * 0.5f);
@@ -227,4 +257,18 @@ MGINLINE Quat quat_from_euler(Vec3 euler) {
     (cx * cy * cz) + (sx * sy * sz),
   };
 }
- 
+
+MGINLINE Vec3 quat_rotate(Quat q, Vec3 v) {
+    Vec3 qv = { q.x, q.y, q.z };
+
+    Vec3 t = vec3_scale(vec3_cross(qv, v), 2.0f);
+    Vec3 t2 = vec3_cross(qv, t);
+
+    Vec3 result;
+
+    result.x = v.x + q.w * t.x + t2.x;
+    result.y = v.y + q.w * t.y + t2.y;
+    result.z = v.z + q.w * t.z + t2.z;
+
+    return result;
+}

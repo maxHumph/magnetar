@@ -19,3 +19,5 @@ b8 vulkan_create_ui_pipeline(VulkanContext* context);
 VkVertexInputBindingDescription get_vertex_binding_description();
 
 VkVertexInputAttributeDescription* get_vertex_attribute_descriptions();
+
+b8 vulkan_create_shader_module(VulkanContext* context, VkShaderModule* module, const char* path);

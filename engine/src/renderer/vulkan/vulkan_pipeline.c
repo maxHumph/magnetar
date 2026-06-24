@@ -7,32 +7,13 @@
 #include "vulkan_helper.h"
 
 b8 vulkan_create_object_pipeline(VulkanContext* context) {
-  // Read shader byte code
-  u8* shader_bin = NULL_PTR;
-  u64 shader_bin_size = 0;
-  vulkan_read_shader_binary("../engine/src/renderer/vulkan/shaders/basic.spv", &shader_bin_size,
-                            &shader_bin);
-
-  // Create shader module
-  VkShaderModuleCreateInfo shader_module_create_info = {
-    .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-    .pNext = NULL_PTR,
-    .codeSize = shader_bin_size,
-    .pCode = (u32*)shader_bin,
-  };
 
   VkShaderModule shader_module;
-
-  VkResult create_shader_module_result =
-    vkCreateShaderModule(context->logical_device, &shader_module_create_info,
-                         context->allocator, &shader_module);
-  if (create_shader_module_result != VK_SUCCESS) {
-    MERROR_CORE("Failed to create vulkan shader module: %s",
-                string_VkResult(create_shader_module_result));
+  if(!vulkan_create_shader_module(context, &shader_module,
+                                  "../engine/src/renderer/vulkan/shaders/basic.spv")) {
+    MERROR_CORE("Failed to create shader module for object pipeline");
     return FALSE;
   }
-
-  mfree(shader_bin, shader_bin_size * sizeof(u8), MEMORY_TAG_RENDERER);
 
   // Create vertex shader stage create info
   VkPipelineShaderStageCreateInfo vert_pipeline_shader_stage_create_info = {
@@ -238,6 +219,47 @@ b8 vulkan_create_object_pipeline(VulkanContext* context) {
   return TRUE;
 }
 
+b8 vulkan_create_ui_pipeline(VulkanContext* context) {
+  VkShaderModule shader_module;
+  if(!vulkan_create_shader_module(context, &shader_module,
+                                  "../engine/src/renderer/vulkan/shaders/basic.spv")) {
+    MERROR_CORE("Failes to create shader module for UI pipeline");
+    return FALSE;
+  }
+
+  VkPipelineShaderStageCreateInfo vert_stage_create_info = {
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+    .pNext = NULL_PTR,
+    .flags = ZERO,
+    .stage = VK_SHADER_STAGE_VERTEX_BIT,
+    .module = shader_module,
+    .pName = "vertMain",
+    .pSpecializationInfo = NULL_PTR,
+  };
+
+  VkPipelineShaderStageCreateInfo frag_stage_create_info = {
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+    .pNext = NULL_PTR,
+    .flags = ZERO,
+    .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+    .module = shader_module,
+    .pName = "fragMain",
+    .pSpecializationInfo = NULL_PTR,
+  };
+
+  VkPipelineShaderStageCreateInfo shader_stage_create_infos[] = {
+    vert_stage_create_info,
+    frag_stage_create_info,
+  };
+
+  VkDynamicState dynamic_state[] = {
+    VK_DYNAMIC_STATE_VIEWPORT,
+    VK_DYNAMIC_STATE_SCISSOR,
+  };
+
+  
+}
+
 VkVertexInputBindingDescription get_vertex_binding_description() {
   VkVertexInputBindingDescription out = {
     .binding = 0,
@@ -270,4 +292,33 @@ VkVertexInputAttributeDescription* get_vertex_attribute_descriptions() {
     },
   };
   return out;
+}
+
+b8 vulkan_create_shader_module(VulkanContext* context, VkShaderModule* module, const char* path){
+  // Read shader byte code
+  u8* shader_bin = NULL_PTR;
+  u64 shader_bin_size = 0;
+  vulkan_read_shader_binary(path, &shader_bin_size,
+                            &shader_bin);
+
+  // Create shader module
+  VkShaderModuleCreateInfo shader_module_create_info = {
+    .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+    .pNext = NULL_PTR,
+    .codeSize = shader_bin_size,
+    .pCode = (u32*)shader_bin,
+  };
+
+
+  VkResult create_shader_module_result =
+    vkCreateShaderModule(context->logical_device, &shader_module_create_info,
+                         context->allocator, module);
+  if (create_shader_module_result != VK_SUCCESS) {
+    MERROR_CORE("Failed to create vulkan shader module: %s",
+                string_VkResult(create_shader_module_result));
+    return FALSE;
+  }
+
+  mfree(shader_bin, shader_bin_size * sizeof(u8), MEMORY_TAG_RENDERER);
+  return TRUE;
 }

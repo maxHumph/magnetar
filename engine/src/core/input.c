@@ -101,7 +101,7 @@ MGAPI Vec2f32 mouse_pos_prev() {
 void input_process_button(Buttons button, b8 is_pressed) {
   if (s_input_state.mouse_state_curr.buttons[button] != is_pressed) {
     s_input_state.mouse_state_curr.buttons[button] = is_pressed;
-
+    
     EventData event_data;
     event_data.data.u16[0] = button;
 

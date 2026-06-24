@@ -38,15 +38,12 @@ b8 game_initalize(Game* game_instance) {
 }
 
 b8 on_update(Game* game_instance, f64 delta_time) {
-  if (key_down(KEY_S)) {
-    MTRACE("ASODJ");
-  }
 
   if (key_down(KEY_W)) {
-    player->transform.position.z += 0.1f;
+    player->transform.position.z -= 0.1f;
   }
   if (key_down(KEY_S)) {
-    player->transform.position.z -= 0.1f;
+    player->transform.position.z += 0.1f;
   }
   if (key_down(KEY_A)) {
     player->transform.position.x -= 0.1f;

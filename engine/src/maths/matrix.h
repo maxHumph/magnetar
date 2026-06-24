@@ -280,7 +280,6 @@ MGINLINE Mat4 mat4_from_transform(Transform transform) {
   };
   */
 
-  return (mat4_mul(mat4_from_quat(transform.rotation),
-                   translate));
+  return (mat4_mul(translate, mat4_from_quat(transform.rotation)));
 
 }

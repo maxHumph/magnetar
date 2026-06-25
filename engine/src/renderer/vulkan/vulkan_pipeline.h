@@ -6,6 +6,7 @@
 
 #include "define.h"
 #include "vulkan_defines.h"
+#include "renderer/renderer_types.h"
 
 /**
  * @brief Creates the vulkan pipeline for objects within the 3D world.
@@ -16,7 +17,7 @@ b8 vulkan_create_object_pipeline(VulkanContext* context);  // @TODO: Split this 
 
 b8 vulkan_create_ui_pipeline(VulkanContext* context);
 
-VkVertexInputBindingDescription get_vertex_binding_description();
+VkVertexInputBindingDescription get_vertex_binding_description(VertexType type);
 
 VkVertexInputAttributeDescription* get_vertex_attribute_descriptions();
 

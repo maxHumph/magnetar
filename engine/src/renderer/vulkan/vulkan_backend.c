@@ -436,7 +436,7 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
     
     vkCmdBindDescriptorSets(vulkan_context.command_buffers[vulkan_context.current_frame_index],
                             VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_context.pbr_pipeline_layout, 0, 1,
-                            &vulkan_context.descriptor_sets[(i * MAX_FRAMES_IN_FLIGHT) + vulkan_context.current_frame_index], 0,
+                            &vulkan_context.pbr_descriptor_sets[(i * MAX_FRAMES_IN_FLIGHT) + vulkan_context.current_frame_index], 0,
                             NULL_PTR);
     
     vkCmdDrawIndexed(vulkan_context.command_buffers[vulkan_context.current_frame_index],
@@ -758,7 +758,7 @@ static b8 vulkan_create_descriptor_set_layout() {
 
   VkResult create_descriptor_set_layout_res =
     vkCreateDescriptorSetLayout(vulkan_context.logical_device, &descriptor_set_layout_create_info,
-                                vulkan_context.allocator, &vulkan_context.descriptor_set_layout);
+                                vulkan_context.allocator, &vulkan_context.pbr_descriptor_set_layout);
   if (create_descriptor_set_layout_res != VK_SUCCESS) {
     MERROR_CORE("Failed to create descriptor set layout: %s",
                 string_VkResult(create_descriptor_set_layout_res));
@@ -1002,6 +1002,8 @@ static b8 vulkan_create_vertex_buffers() {
   /* vulkan_context.staging_vertex_buffer = NULL_PTR; */
   /* vulkan_context.staging_vertex_buffer_mem = NULL_PTR; */
 
+  // PBR
+
   u32 mesh_count = darray_get_length(vulkan_context.scene_data->mesh_assets);
 
   vulkan_context.vertex_bufs = mallocate(mesh_count * sizeof(VkBuffer), MEMORY_TAG_RENDERER); // @TODO: Free
@@ -1047,6 +1049,8 @@ static b8 vulkan_create_vertex_buffers() {
       return FALSE;
     }
   }
+
+  // UI
 
   return TRUE;
 }
@@ -1167,7 +1171,7 @@ static b8 vulkan_create_descriptor_sets() {
 
   u32 object_count = darray_get_length(vulkan_context.objects);
 
-  vulkan_context.descriptor_sets = mallocate(object_count * sizeof(VkDescriptorSet) * MAX_FRAMES_IN_FLIGHT,
+  vulkan_context.pbr_descriptor_sets = mallocate(object_count * sizeof(VkDescriptorSet) * MAX_FRAMES_IN_FLIGHT,
                                              MEMORY_TAG_RENDERER);// @TODO: Free mem
 
   for (u32 i = 0; i < object_count; i++) {
@@ -1177,7 +1181,7 @@ static b8 vulkan_create_descriptor_sets() {
     VkDescriptorSetLayout layouts[MAX_FRAMES_IN_FLIGHT];
     
     for (u32 j = 0; j < MAX_FRAMES_IN_FLIGHT; j++) {
-      layouts[j] = vulkan_context.descriptor_set_layout;
+      layouts[j] = vulkan_context.pbr_descriptor_set_layout;
     }
 
     VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
@@ -1186,7 +1190,7 @@ static b8 vulkan_create_descriptor_sets() {
     alloc_info.pSetLayouts = layouts;
 
     VkResult alloc_descriptor_set_res = vkAllocateDescriptorSets(vulkan_context.logical_device, &alloc_info,
-                                                                 &vulkan_context.descriptor_sets[i * MAX_FRAMES_IN_FLIGHT]);
+                                                                 &vulkan_context.pbr_descriptor_sets[i * MAX_FRAMES_IN_FLIGHT]);
     if (alloc_descriptor_set_res != VK_SUCCESS) {
       MERROR_CORE("Failed to allocate descriptor sets: %s",
                   string_VkResult(alloc_descriptor_set_res));
@@ -1206,7 +1210,7 @@ static b8 vulkan_create_descriptor_sets() {
       };
 
       VkWriteDescriptorSet uniform_write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
-      uniform_write.dstSet = vulkan_context.descriptor_sets[(i * MAX_FRAMES_IN_FLIGHT) + j];
+      uniform_write.dstSet = vulkan_context.pbr_descriptor_sets[(i * MAX_FRAMES_IN_FLIGHT) + j];
       uniform_write.dstBinding = 0;
       uniform_write.dstArrayElement = 0;
       uniform_write.descriptorCount = 1;
@@ -1215,7 +1219,7 @@ static b8 vulkan_create_descriptor_sets() {
 
       VkWriteDescriptorSet image_write = {
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = vulkan_context.descriptor_sets[(i * MAX_FRAMES_IN_FLIGHT) + j],
+        .dstSet = vulkan_context.pbr_descriptor_sets[(i * MAX_FRAMES_IN_FLIGHT) + j],
         .dstBinding = 1,
         .dstArrayElement = 0,
         .descriptorCount = 1,

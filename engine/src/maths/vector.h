@@ -22,6 +22,21 @@ typedef union Vec2i16 {
   };
 } Vec2i16;
 
+typedef union Vec2u32 {
+  u32 index[2];
+  struct {
+    union {
+      u32 x, r;
+    };
+    union {
+      u32 y, g;
+    };
+  };
+
+} Vec2u32;
+
+typedef Vec2u32 Vec2u;
+
 typedef union Vec2i32 {
   i32 index[2];
   struct {
@@ -34,6 +49,8 @@ typedef union Vec2i32 {
   };
 
 } Vec2i32;
+
+typedef Vec2i32 Vec2i;
 
 typedef union Vec2f32 {
   f32 index[2];

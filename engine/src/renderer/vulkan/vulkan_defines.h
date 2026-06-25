@@ -104,22 +104,27 @@ typedef struct VulkanContext {
   u32 current_image_index;
   VkExtent2D swapchain_extent;
 
-  VkPipeline pbr_pipeline;
-  VkPipelineLayout pbr_pipeline_layout;
-  VkPipeline ui_pipeline;
-  VkPipelineLayout ui_pipeline_layout;
+  u32 current_frame_index;
 
   VkCommandPool graphics_command_pool;
   VkCommandPool transfer_command_pool;
   VkCommandBuffer command_buffers[MAX_FRAMES_IN_FLIGHT];
 
-  u32 current_frame_index;
-
   VkSemaphore present_complete_semaphores[MAX_FRAMES_IN_FLIGHT];
   VkSemaphore* render_complete_semaphores;
   VkFence draw_fences[MAX_FRAMES_IN_FLIGHT];
 
-  VkVertexInputBindingDescription vertex_binding_description;
+  // ================
+  // PIPELINES
+  // ================
+
+  // PBR
+  VkDescriptorSet* pbr_descriptor_sets;
+  VkDescriptorSetLayout pbr_descriptor_set_layout;
+
+  VkPipeline pbr_pipeline;
+  VkPipelineLayout pbr_pipeline_layout;
+
   VkBuffer staging_vertex_buffer;
   VkDeviceMemory staging_vertex_buffer_mem;
   VkBuffer* vertex_bufs;
@@ -129,6 +134,22 @@ typedef struct VulkanContext {
   VkDeviceMemory staging_index_buffer_mem;
   VkBuffer* index_bufs;
   VkDeviceMemory* index_buf_mem;
+
+  // UI
+  VkDescriptorSet* ui_descriptor_sets;
+  VkDescriptorSetLayout ui_descriptor_set_layout;
+
+  VkPipeline ui_pipeline;
+  VkPipelineLayout ui_pipeline_layout;
+
+  VkBuffer ui_vbuf;
+  VkDeviceMemory ui_vbuf_mem;
+
+  VkBuffer ui_ibuf;
+  VkDeviceMemory ui_ibuf_mem;
+
+
+
 
   VkBuffer staging_texture_buf;
   VkDeviceMemory staging_texture_buf_mem;
@@ -142,19 +163,11 @@ typedef struct VulkanContext {
   VkImageView depth_image_view;
   VkFormat depth_format;
 
-  VkDescriptorSetLayout descriptor_set_layout;
   VkDescriptorPool descriptor_pool;
-  VkDescriptorSet* descriptor_sets;
 
   u32 uniform_object_count;
   VkBuffer* uniform_bufs;
   VkDeviceMemory* uniform_buf_mem;
   void** uniform_buf_mem_map;
-
-  /*
-  VkBuffer uniform_buffers[MAX_FRAMES_IN_FLIGHT];
-  VkDeviceMemory uniform_buffer_mem[MAX_FRAMES_IN_FLIGHT];
-  void* uniform_buffer_mem_mapped[MAX_FRAMES_IN_FLIGHT];
-  */
 
 } VulkanContext;

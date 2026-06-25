@@ -5,6 +5,7 @@
 #include "core/mmemory.h"
 
 #include "vulkan_helper.h"
+#include "vulkan_util.h"
 
 b8 vulkan_create_object_pipeline(VulkanContext* context) {
 
@@ -53,9 +54,12 @@ b8 vulkan_create_object_pipeline(VulkanContext* context) {
   };
 
   // Set vertex input state create info
-  VkVertexInputBindingDescription vertex_binding_description = get_vertex_binding_description();
-  VkVertexInputAttributeDescription* vertex_attribute_descriptions =
-    get_vertex_attribute_descriptions();
+  VkVertexInputBindingDescription vertex_binding_description = get_vertex_binding_description(VERTEX_TYPE_MESH);
+  VkVertexInputAttributeDescription vertex_attribute_descriptions[3] = {
+    vec3_attribute(0, 0, offsetof(Vertex, position)),
+    vec3_attribute(1, 0, offsetof(Vertex, colour)),
+    vec2_attribute(2, 0, offsetof(Vertex, texture_coord)),
+  };
 
   VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info = {
    .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -166,7 +170,7 @@ b8 vulkan_create_object_pipeline(VulkanContext* context) {
     .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
     .pNext = NULL_PTR,
     .setLayoutCount = 1,
-    .pSetLayouts = &context->descriptor_set_layout,
+    .pSetLayouts = &context->pbr_descriptor_set_layout,
     .pushConstantRangeCount = 0,
   };
 
@@ -243,8 +247,12 @@ b8 vulkan_create_ui_pipeline(VulkanContext* context) {
 
   // VERTEX INPUT
 
-  VkVertexInputBindingDescription vert_binding_desc = get_vertex_binding_description();
-  VkVertexInputAttributeDescription* vert_attr_descs = get_vertex_attribute_descriptions();
+  VkVertexInputBindingDescription vert_binding_desc = get_vertex_binding_description(VERTEX_TYPE_UI);
+  VkVertexInputAttributeDescription vert_attr_descs[] = {
+    vec2_attribute(0, 0, offsetof(UiVertex, pos)),
+    vec2_attribute(1, 0, offsetof(UiVertex, uv)),
+    vec2_attribute(2, 0, offsetof(UiVertex, color)),
+  };
 
   VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info = {
     .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -392,7 +400,7 @@ b8 vulkan_create_ui_pipeline(VulkanContext* context) {
     .pNext = NULL_PTR,
     .flags = 0,
     .setLayoutCount = 1,
-    .pSetLayouts = &context->descriptor_set_layout, // @TODO: Create separate descriptor layout for ui.
+    .pSetLayouts = &context->ui_descriptor_set_layout, // @TODO: Create separate descriptor layout for ui.
     .pushConstantRangeCount = 0,
   };
 
@@ -454,12 +462,23 @@ b8 vulkan_create_ui_pipeline(VulkanContext* context) {
   return TRUE; 
 }
 
-VkVertexInputBindingDescription get_vertex_binding_description() {
+VkVertexInputBindingDescription get_vertex_binding_description(VertexType type) {
   VkVertexInputBindingDescription out = {
     .binding = 0,
     .stride = sizeof(Vertex),
     .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
   };
+  switch (type) {
+  case VERTEX_TYPE_MESH:
+    out.stride = sizeof(Vertex);
+    break;
+  case VERTEX_TYPE_UI:
+    out.stride = sizeof(UiVertex);
+    break;
+
+  default:
+    break;
+  }
   return out;
 }
 

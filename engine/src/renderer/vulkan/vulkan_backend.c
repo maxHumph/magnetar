@@ -254,7 +254,7 @@ void vulkan_backend_shutdown(RendererBackend* renderer_backend) {
 
   vkDestroyCommandPool(vulkan_context.logical_device, vulkan_context.graphics_command_pool,
                        vulkan_context.allocator);
-  vkDestroyPipeline(vulkan_context.logical_device, vulkan_context.graphics_pipeline,
+  vkDestroyPipeline(vulkan_context.logical_device, vulkan_context.pbr_pipeline,
                     vulkan_context.allocator);
   vkDestroySwapchainKHR(vulkan_context.logical_device, vulkan_context.swapchain,
                         vulkan_context.allocator);
@@ -390,7 +390,7 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
   vkCmdBeginRendering(vulkan_context.command_buffers[vulkan_context.current_frame_index],
                       &rendering_info);
   vkCmdBindPipeline(vulkan_context.command_buffers[vulkan_context.current_frame_index],
-                    VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_context.graphics_pipeline);
+                    VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_context.pbr_pipeline);
 
   // Set viewport as scissor values
   VkViewport viewport = {.x = 0.0f,
@@ -435,7 +435,7 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
     
     
     vkCmdBindDescriptorSets(vulkan_context.command_buffers[vulkan_context.current_frame_index],
-                            VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_context.pipeline_layout, 0, 1,
+                            VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_context.pbr_pipeline_layout, 0, 1,
                             &vulkan_context.descriptor_sets[(i * MAX_FRAMES_IN_FLIGHT) + vulkan_context.current_frame_index], 0,
                             NULL_PTR);
     

@@ -56,7 +56,10 @@
 
 #define MVK_VERTEX_ATTRIBUTE_COUNT 3
 
-// Not used
+/**
+ * @struct VulkanDrawable
+ * @brief Containes information about an object to be used during rendering.
+ */
 typedef struct VulkanDrawable {
   Handle32 vbuf_handle;
   Handle32 ibuf_handle;
@@ -101,8 +104,10 @@ typedef struct VulkanContext {
   u32 current_image_index;
   VkExtent2D swapchain_extent;
 
-  VkPipeline graphics_pipeline;
-  VkPipelineLayout pipeline_layout;
+  VkPipeline pbr_pipeline;
+  VkPipelineLayout pbr_pipeline_layout;
+  VkPipeline ui_pipeline;
+  VkPipelineLayout ui_pipeline_layout;
 
   VkCommandPool graphics_command_pool;
   VkCommandPool transfer_command_pool;

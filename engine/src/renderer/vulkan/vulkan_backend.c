@@ -53,11 +53,16 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
     vulkan_context.scene_data->mesh_assets[0].vertices[i].colour = (Vec3){0.3f, 0.5f, 0.8f};
   }
 
-  vulkan_context.uniform_object_count = darray_get_length(vulkan_context.scene_data->drawable_handles);
+  vulkan_context.uniform_object_count =
+    darray_get_length(vulkan_context.scene_data->drawable_handles);
 
 
   // @TODO: Free the stuff below
-  vulkan_context.uniform_bufs = mallocate(vulkan_context.uniform_object_count * sizeof(VkBuffer) * MAX_FRAMES_IN_FLIGHT, MEMORY_TAG_RENDERER);
+  vulkan_context.uniform_bufs =
+    mallocate(vulkan_context.uniform_object_count *
+	      sizeof(VkBuffer) * MAX_FRAMES_IN_FLIGHT,
+	      MEMORY_TAG_RENDERER);
+
   vulkan_context.uniform_buf_mem = mallocate(vulkan_context.uniform_object_count * sizeof(VkDeviceMemory) * MAX_FRAMES_IN_FLIGHT, MEMORY_TAG_RENDERER);
   vulkan_context.uniform_buf_mem_map = mallocate(vulkan_context.uniform_object_count * sizeof(void*) * MAX_FRAMES_IN_FLIGHT, MEMORY_TAG_RENDERER);
 
@@ -76,6 +81,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
     });
 
   ui_root_add_rect(ui_root, ui_square);  
+
+  ui_gen_vertices(ui_root);
 
 
 

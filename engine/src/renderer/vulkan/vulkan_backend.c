@@ -21,6 +21,7 @@
 #include "default_scene.h"
 #include "ecs/scene_text_loader.h"
 #include "ecs/ecs.h"
+#include "ui/ui.h"
 
 static VulkanContext vulkan_context = {};
 
@@ -28,6 +29,7 @@ static f32 viewport_scale = 2.0f;
 static f32 x = 0;
 static b8 toggle = TRUE;
 
+// @TODO!: Make it so scenes and ui can be loaded after backend is init without crashing.
 b8 vulkan_backend_init(RendererBackend* renderer_backend,
                        const char* application_name, i16 start_width,
                        i16 start_height, PlatformState* platform_state) {
@@ -37,6 +39,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   vulkan_context.debug_messenger = NULL_PTR;
   vulkan_context.swapchain_extent.width = start_width;
   vulkan_context.swapchain_extent.height = start_height;
+
 
 
   scene_load_text("../engine/src/ecs/default.txt");
@@ -55,6 +58,17 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   vulkan_context.uniform_bufs = mallocate(vulkan_context.uniform_object_count * sizeof(VkBuffer) * MAX_FRAMES_IN_FLIGHT, MEMORY_TAG_RENDERER);
   vulkan_context.uniform_buf_mem = mallocate(vulkan_context.uniform_object_count * sizeof(VkDeviceMemory) * MAX_FRAMES_IN_FLIGHT, MEMORY_TAG_RENDERER);
   vulkan_context.uniform_buf_mem_map = mallocate(vulkan_context.uniform_object_count * sizeof(void*) * MAX_FRAMES_IN_FLIGHT, MEMORY_TAG_RENDERER);
+
+  // UI TEST
+
+  UiRoot* ui_root = ui_root_create("HUD", (Vec2u) {1920, 1080});
+  UiRect* ui_bottom_bar =
+    ui_rect_create_aligned((Vec2){1.0f, 200.0f},
+                           UI_SIZE_REL,
+                           UI_SIZE_ABS,
+                           UI_ALIGN_BOTTOM);
+
+  UiData* ui_data = get_ui_data_ptr();
 
 
   /*

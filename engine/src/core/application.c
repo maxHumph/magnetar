@@ -8,6 +8,7 @@
 #include "log.h"
 #include "platform/platform.h"
 #include "renderer/renderer_frontend.h"
+#include "ui/ui_core.h"
 
 #include <math.h>
 #include <time.h>
@@ -74,9 +75,17 @@ MGAPI b8 application_create(Game* game_instance) {
     return FALSE;
   }
 
+  // INIT UI
+  if (!ui_init()) {
+    MERROR_CORE("UI subsystem failed to init.");
+    return FALSE;
+  }
+
+
   // INIT RENDERER
   if (!renderer_init(game_instance, &s_application_state.platform_state)) {
-    MFATAL_CORE("Renderer failed to init.");
+    MFATAL_CORE("Renderer subsystem failed to init.");
+    return FALSE;
   }
 
   // Initialize game.

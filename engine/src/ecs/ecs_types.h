@@ -13,7 +13,7 @@ typedef Mask64 ComponentTypeMask;
 typedef Bit64 ComponentTypeBit;
 
 
-static const ComponentTypeBit COMPONENT_TYPE_NONE      = 0x00000000ULL;
+static const ComponentTypeMask COMPONENT_TYPE_NONE     = 0x00000000ULL;
 static const ComponentTypeBit COMPONENT_TYPE_MESH      = 0x00000001ULL;
 static const ComponentTypeBit COMPONENT_TYPE_MATERIAL  = 0x00000002ULL;
 static const ComponentTypeBit COMPONENT_TYPE_CODE      = 0x00000004ULL;

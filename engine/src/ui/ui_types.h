@@ -6,11 +6,12 @@
 
 #include "define.h"
 #include "maths/vector.h"
+#include "renderer/renderer_types.h"
 
 typedef Mask32 UiAttributeMask;
 typedef Bit32 UiAttributeBit;
 
-static const UiAttributeMask UI_ATTRIBUTR_NONE     = 0x00000000U;
+static const UiAttributeMask UI_ATTRIBUTR_NONE = 0x00000000U;
 static const UiAttributeBit UI_ATTRIBUTE_COLOR_BIT = 0x00000001U;
 static const UiAttributeBit UI_ATTRIBUTE_IMAGE_BIT = 0x00000002U;
 
@@ -20,7 +21,7 @@ typedef enum UiSizeType {
 
   MAX_UI_SIZE
 } UiSizeType;
- 
+
 typedef enum UiAlignType {
   UI_ALIGN_NONE,
 
@@ -40,7 +41,6 @@ typedef enum UiAlignType {
 
   MAX_UI_ALIGN,
 } UiAlignType;
-
 
 typedef enum UiColorGradType {
   UI_COLOR_GRAD_SOLID,
@@ -68,13 +68,10 @@ typedef struct UiColor {
 } UiColor;
 
 typedef struct UiRect {
-  Vec2 extent;
-  UiSizeType w_type;
-  UiSizeType h_type;
+  Vec2u extent;
+  Vec2u offset;
 
-  Vec2 offset;
-  UiSizeType x_type;
-  UiSizeType y_type;
+  Vec2u total_offset;
 
   UiAlignType align;
 
@@ -82,6 +79,9 @@ typedef struct UiRect {
 
   UiColor color;
 
+  b8 rooted;
+
+  UiRect* parent;
   UiRect** children;
 
 } UiRect;
@@ -89,4 +89,7 @@ typedef struct UiRect {
 typedef struct UiData {
   UiRoot* roots;
   UiRect* rects;
+
+  UiVertex* rect_vertices;
+  u32* rect_indices;
 } UiData;

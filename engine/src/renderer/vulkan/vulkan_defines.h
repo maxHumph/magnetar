@@ -11,6 +11,7 @@
 #include "maths/vector.h"
 #include "vulkan/vulkan_core.h"
 #include "ecs/ecs_types.h"
+#include "ui/ui_types.h"
 #include "renderer/renderer_types.h"
 
 // MacOS Extensions
@@ -72,6 +73,7 @@ typedef struct VulkanDrawable {
  */
 typedef struct VulkanContext {
   SceneData* scene_data;
+  UiData* ui_data;
 
   VulkanDrawable* objects;
 
@@ -135,6 +137,11 @@ typedef struct VulkanContext {
   VkBuffer* index_bufs;
   VkDeviceMemory* index_buf_mem;
 
+  u32 uniform_object_count;
+  VkBuffer* uniform_bufs;
+  VkDeviceMemory* uniform_buf_mem;
+  void** uniform_buf_mem_map;
+
   // UI
   VkDescriptorSet* ui_descriptor_sets;
   VkDescriptorSetLayout ui_descriptor_set_layout;
@@ -144,9 +151,15 @@ typedef struct VulkanContext {
 
   VkBuffer ui_vbuf;
   VkDeviceMemory ui_vbuf_mem;
+  void* ui_vdata;
 
   VkBuffer ui_ibuf;
   VkDeviceMemory ui_ibuf_mem;
+  void* ui_idata;
+
+  VkBuffer* ui_ubufs;
+  VkDeviceMemory* ui_ubuf_mem;
+  void** ui_ubuf_mem_map;
 
 
 
@@ -165,9 +178,5 @@ typedef struct VulkanContext {
 
   VkDescriptorPool descriptor_pool;
 
-  u32 uniform_object_count;
-  VkBuffer* uniform_bufs;
-  VkDeviceMemory* uniform_buf_mem;
-  void** uniform_buf_mem_map;
 
 } VulkanContext;

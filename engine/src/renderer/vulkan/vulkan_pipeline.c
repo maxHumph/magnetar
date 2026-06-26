@@ -7,7 +7,7 @@
 #include "vulkan_helper.h"
 #include "vulkan_util.h"
 
-b8 vulkan_create_object_pipeline(VulkanContext* context) {
+b8 vulkan_create_pbr_pipeline(VulkanContext* context) {
 
   VkShaderModule shader_module;
   if(!vulkan_create_shader_module(context, &shader_module,
@@ -226,7 +226,7 @@ b8 vulkan_create_object_pipeline(VulkanContext* context) {
 b8 vulkan_create_ui_pipeline(VulkanContext* context) {
   VkShaderModule shader_module;
   if(!vulkan_create_shader_module(context, &shader_module,
-                                  "../engine/src/renderer/vulkan/shaders/basic.spv")) {
+                                  "../engine/src/renderer/vulkan/shaders/basic_ui.spv")) {
     MERROR_CORE("Failes to create shader module for UI pipeline");
     return FALSE;
   }
@@ -321,7 +321,7 @@ b8 vulkan_create_ui_pipeline(VulkanContext* context) {
     .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
     .pNext = NULL_PTR,
     .flags = 0,
-    .depthClampEnable = VK_TRUE,
+    .depthClampEnable = VK_FALSE,
     .rasterizerDiscardEnable = VK_FALSE,
     .polygonMode = VK_POLYGON_MODE_FILL,
     .cullMode = VK_CULL_MODE_BACK_BIT,

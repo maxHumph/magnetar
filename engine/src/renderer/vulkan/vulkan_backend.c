@@ -1,3 +1,4 @@
+#include "ui/ui_types.h"
 #define STB_IMAGE_IMPLEMENTATION
 
 #include "vulkan_backend.h"
@@ -41,6 +42,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   vulkan_context.swapchain_extent.height = start_height;
 
 
+  vulkan_context.ui_data = get_ui_data_ptr();
 
   scene_load_text("../engine/src/ecs/default.txt");
   vulkan_request_scene_data();
@@ -62,13 +64,19 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   // UI TEST
 
   UiRoot* ui_root = ui_root_create("HUD", (Vec2u) {1920, 1080});
-  UiRect* ui_bottom_bar =
-    ui_rect_create_aligned((Vec2){1.0f, 200.0f},
-                           UI_SIZE_REL,
-                           UI_SIZE_ABS,
-                           UI_ALIGN_BOTTOM);
+  UiRect* ui_square = ui_rect_create_floating((Vec2u){200, 200},
+					      (Vec2u){10, 10,});
+  ui_rect_set_color(ui_square, (UiColor){
+      .primary_color = {
+	.r = 1.0f,
+	.g = 0.0f,
+	.b = 0.0f,                                             
+      },                                             
+      .gradient = UI_COLOR_GRAD_SOLID,
+    });
 
-  UiData* ui_data = get_ui_data_ptr();
+  ui_root_add_rect(ui_root, ui_square);  
+
 
 
   /*
@@ -176,10 +184,16 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   }
 
   // CREATE OBJECT PIPELINE ----------
-  if (!vulkan_create_object_pipeline(&vulkan_context)) {
-    MERROR_CORE("Vulkan Init: Failed to create graphics pipeline.");
+  if (!vulkan_create_pbr_pipeline(&vulkan_context)) {
+    MERROR_CORE("Vulkan Init: Failed to create pbr pipeline.");
     return FALSE;
   }
+
+  // CREATE UI PIPELINE
+  if (!vulkan_create_ui_pipeline(&vulkan_context)) {
+    MERROR_CORE("Vulkan Init: Failed to create UI pipeline");
+    return FALSE;    
+  }    
 
   // CREATE COMMAND POOLS ----------
   if (!vulkan_create_command_pools()) {
@@ -747,6 +761,7 @@ static b8 vulkan_create_drawable_objects() {
 }
 
 static b8 vulkan_create_descriptor_set_layout() {
+  //PBR
   VkDescriptorSetLayoutBinding mvp_layout_binding = {};
   mvp_layout_binding.binding = 0;
   mvp_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -778,6 +793,31 @@ static b8 vulkan_create_descriptor_set_layout() {
                 string_VkResult(create_descriptor_set_layout_res));
     return FALSE;
   }
+
+  //UI
+  VkDescriptorSetLayoutBinding ui_uniform_layout_binding = {
+    .binding = 0,
+    .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    .descriptorCount = 1,
+    .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+  };
+
+  VkDescriptorSetLayoutBinding ui_layout_bindings[1] = {
+    ui_uniform_layout_binding,
+  };
+
+  VkDescriptorSetLayoutCreateInfo ui_layout_create_info = {
+    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+    .bindingCount = 1,
+    .pBindings = ui_layout_bindings,
+  };
+
+  if (vkCreateDescriptorSetLayout(vulkan_context.logical_device, &ui_layout_create_info,
+                                  vulkan_context.allocator,
+                                  &vulkan_context.ui_descriptor_set_layout) != VK_SUCCESS) {
+    MERROR_CORE("Failed to create UI descriptor set layout: %s");
+    return FALSE; 
+  }    
 
   return TRUE;
 }
@@ -1018,26 +1058,37 @@ static b8 vulkan_create_vertex_buffers() {
 
   // PBR
 
-  u32 mesh_count = darray_get_length(vulkan_context.scene_data->mesh_assets);
+  u32 mesh_count =
+    darray_get_length(vulkan_context.scene_data->mesh_assets);
 
-  vulkan_context.vertex_bufs = mallocate(mesh_count * sizeof(VkBuffer), MEMORY_TAG_RENDERER); // @TODO: Free
-  vulkan_context.vertex_buf_mem = mallocate(mesh_count * sizeof(VkDeviceMemory), MEMORY_TAG_RENDERER); // @TODO: Free
+  vulkan_context.vertex_bufs =
+    mallocate(mesh_count * sizeof(VkBuffer),
+	      MEMORY_TAG_RENDERER); // @TODO: Free
+
+  vulkan_context.vertex_buf_mem =
+    mallocate(mesh_count * sizeof(VkDeviceMemory),
+	      MEMORY_TAG_RENDERER); // @TODO: Free
 
   for (u32 i = 0; i < mesh_count;i++) {
     
-    VkDeviceSize buffer_size = vulkan_context.scene_data->mesh_assets[i].vertex_count * sizeof(Vertex);
+    VkDeviceSize buffer_size =
+      vulkan_context.scene_data->mesh_assets[i].vertex_count *
+      sizeof(Vertex);
  
     if (!create_buffer(&vulkan_context.staging_vertex_buffer,
-                       &vulkan_context.staging_vertex_buffer_mem, buffer_size,
+                       &vulkan_context.staging_vertex_buffer_mem,
+		       buffer_size,
                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+		       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
       MERROR_CORE("Failed to create staging buffer");
       return FALSE;
     }
 
     void* vertex_data = NULL_PTR;
     VkResult map_staging_mem_res =
-      vkMapMemory(vulkan_context.logical_device, vulkan_context.staging_vertex_buffer_mem, 0,
+      vkMapMemory(vulkan_context.logical_device,
+		  vulkan_context.staging_vertex_buffer_mem, 0,
                   buffer_size, ZERO, &vertex_data);
 
     if (map_staging_mem_res != VK_SUCCESS) {
@@ -1046,18 +1097,24 @@ static b8 vulkan_create_vertex_buffers() {
       return FALSE;
     }
 
-    mcopy_memory(vertex_data, vulkan_context.scene_data->mesh_assets[i].vertices, buffer_size);
-    vkUnmapMemory(vulkan_context.logical_device, vulkan_context.staging_vertex_buffer_mem);
+    mcopy_memory(vertex_data,
+		 vulkan_context.scene_data->mesh_assets[i].vertices,
+		 buffer_size);
+    vkUnmapMemory(vulkan_context.logical_device,
+		  vulkan_context.staging_vertex_buffer_mem);
 
-    if (!create_buffer(&vulkan_context.vertex_bufs[i], &vulkan_context.vertex_buf_mem[i],
+    if (!create_buffer(&vulkan_context.vertex_bufs[i],
+		       &vulkan_context.vertex_buf_mem[i],
                        buffer_size,
-                       VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                       VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+		       VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
       MERROR_CORE("Failed to create vertex buffer");
       return FALSE;
     }
 
-    if (!copy_buffer(&vulkan_context.staging_vertex_buffer, &vulkan_context.vertex_bufs[i],
+    if (!copy_buffer(&vulkan_context.staging_vertex_buffer,
+		     &vulkan_context.vertex_bufs[i],
                      buffer_size)) {
       MERROR_CORE("Failed to copy staging buffer to vertex buffer");
       return FALSE;
@@ -1065,6 +1122,38 @@ static b8 vulkan_create_vertex_buffers() {
   }
 
   // UI
+  vulkan_context.ui_vdata = NULL_PTR;
+
+  VkDeviceSize ui_buf_size =
+    darray_get_length(vulkan_context.ui_data->rect_vertices) *
+    sizeof(UiVertex);
+
+  if (!create_buffer(&vulkan_context.ui_vbuf,
+		     &vulkan_context.ui_vbuf_mem,
+		     ui_buf_size,
+		     VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+		     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+    MERROR_CORE("Failed to create UI vertex buffer");
+    return FALSE;
+  }
+
+  VkResult ui_buf_map_mem_res =
+    vkMapMemory(vulkan_context.logical_device,
+		vulkan_context.ui_vbuf_mem, 0,
+		ui_buf_size, 0,
+		&vulkan_context.ui_vdata);
+  
+  if (ui_buf_map_mem_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to map memory to ui vertices: %s",
+		string_VkResult(ui_buf_map_mem_res));
+    return FALSE;
+  }
+
+  mcopy_memory(vulkan_context.ui_vdata,
+	vulkan_context.ui_data->rect_vertices,
+	ui_buf_size);
+
 
   return TRUE;
 }
@@ -1118,6 +1207,7 @@ static b8 vulkan_create_index_buffer() {
 static b8 vulkan_create_uniform_buffers() {
 
   
+  // PBR
   for (u32 i = 0; i < vulkan_context.uniform_object_count; i++) {
     for (u32 j = 0; j < MAX_FRAMES_IN_FLIGHT; j++) {
       VkDeviceSize buffer_size = sizeof(MVPMat);
@@ -1142,6 +1232,8 @@ static b8 vulkan_create_uniform_buffers() {
       }
     }
   }
+
+  // UI
   
   return TRUE;
 }

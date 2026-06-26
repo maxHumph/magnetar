@@ -9,6 +9,7 @@ struct MVPMat {
     float4x4 view;
     float4x4 proj;
 };
+
 ConstantBuffer<MVPMat> mvp_mat;
 
 struct VSOutput {

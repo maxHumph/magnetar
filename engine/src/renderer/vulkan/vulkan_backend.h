@@ -195,8 +195,11 @@ static void transition_image_layout(VkImage image, VkImageLayout old_layout,
                                     VkPipelineStageFlags2 dst_stage_mask,
 				    VkImageAspectFlags aspect);
 
-static b8 create_buffer(VkBuffer* buffer, VkDeviceMemory* device_memory, VkDeviceSize size,
-                        VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags prop_flags);
+static b8 create_buffer(VkBuffer* buffer,
+			VkDeviceMemory* device_memory,
+			VkDeviceSize size,
+                        VkBufferUsageFlags usage_flags,
+			VkMemoryPropertyFlags prop_flags);
 
 static b8 copy_buffer(VkBuffer* src_buffer, VkBuffer* dst_buffer, VkDeviceSize size);
 

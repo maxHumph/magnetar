@@ -37,6 +37,10 @@ typedef union Vec2u32 {
 
 typedef Vec2u32 Vec2u;
 
+MGINLINE Vec2u vec2u_add(Vec2u v1, Vec2u v2) {
+  return (Vec2u) {v1.x + v2.x, v1.y + v2.y};
+}  
+
 typedef union Vec2i32 {
   i32 index[2];
   struct {

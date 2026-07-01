@@ -62,7 +62,8 @@
 
 /**
  * @struct VulkanDrawable
- * @brief Containes information about an object to be used during rendering.
+ * @brief Containes information about an object to be used during
+ * rendering.
  */
 typedef struct VulkanDrawable {
   Handle32 vbuf_handle;

@@ -27,8 +27,8 @@ typedef struct Vertex {
 
 typedef struct UiVertex {
   Vec2 pos;
-  Vec2 uv;
   Vec3 color;
+  Vec2 uv;
 } UiVertex;
 
 typedef struct MVPMat {

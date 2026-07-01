@@ -255,8 +255,8 @@ b8 vulkan_create_ui_pipeline(VulkanContext* context) {
   VkVertexInputBindingDescription vert_binding_desc = get_vertex_binding_description(VERTEX_TYPE_UI);
   VkVertexInputAttributeDescription vert_attr_descs[] = {
     vec2_attribute(0, 0, offsetof(UiVertex, pos)),
-    vec2_attribute(1, 0, offsetof(UiVertex, uv)),
-    vec2_attribute(2, 0, offsetof(UiVertex, color)),
+    vec3_attribute(1, 0, offsetof(UiVertex, color)),
+    vec2_attribute(2, 0, offsetof(UiVertex, uv)),
   };
 
   VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info = {

@@ -4,7 +4,7 @@ OBJ_DIR=$(BUILD_DIR)/obj
 
 ASSEMBLY=test
 EXTENSION=
-DEPFLAGS=-MP -MD
+DEPFLAGS=-MMD -MP
 COMPILE_FLAGS=-g -fdeclspec -fPIC $(DEPFLAGS)
 CFLAGS_EXTRA=-Wall -Wextra -Werror
 INCLUDE_FLAGS=-Iengine/src -I$(VULKAN_SDK)/include
@@ -39,4 +39,7 @@ clean:
 
 $(OBJ_DIR)/%.c.o: %.c
 	@echo $<...
+	@mkdir -p $(dir $@)
 	@$(CC) $< $(COMPILE_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
+
+-include $(OBJ_FILES:.o=.d)

@@ -1,4 +1,7 @@
 /**
+ * Copyright 2026 Your Name
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * @file application.h
  * @brief Contains things for creating and starting the application.
  */

@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 Max Humphreys
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "scene_text_loader.h"
 
 #include <stddef.h>

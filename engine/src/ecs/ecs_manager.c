@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 Max Humphreys
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "ecs_manager.h"
 
 #include <stdio.h>

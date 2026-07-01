@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 Max Humphreys
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "ui/ui_types.h"
 #define STB_IMAGE_IMPLEMENTATION
 

@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 Your Name
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "clock.h"
 
 #include "platform/platform.h"

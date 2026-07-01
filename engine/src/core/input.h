@@ -1,4 +1,7 @@
 /**
+ * Copyright 2026 Max Humphreys
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * @file input.h
  * @brief Contains functions for polling input, sending platform api input data to the engine and
  * defines the key and button codes used by the engine.

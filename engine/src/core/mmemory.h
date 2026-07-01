@@ -1,4 +1,7 @@
 /**
+ * Copyright 2026 Max Humphreys
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * @file mmemory.h
  * @brief Handles memory allocation within the game engine.
  */

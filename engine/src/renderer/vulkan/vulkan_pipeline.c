@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 Max Humphreys
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "vulkan_pipeline.h"
 
 #include <vulkan/vk_enum_string_helper.h>

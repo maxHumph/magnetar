@@ -1,4 +1,7 @@
 /**
+ * Copyright 2026 Max Humphreys
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * @file log.h
  * @brief Contains stuff used form console and file logging.
  */

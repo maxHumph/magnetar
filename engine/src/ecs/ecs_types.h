@@ -1,4 +1,7 @@
 /**
+ * Copyright 2026 Max Humphreys
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * @file ecs_types.h
  * @brief Contains types for the "entity component system"
  */

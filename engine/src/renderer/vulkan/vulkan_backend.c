@@ -435,6 +435,8 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
   // Start rendering
   vkCmdBeginRendering(vulkan_context.command_buffers[vulkan_context.current_frame_index],
                       &rendering_info);
+
+  // PBR RENDER
   vkCmdBindPipeline(vulkan_context.command_buffers[vulkan_context.current_frame_index],
                     VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_context.pbr_pipeline);
 
@@ -474,20 +476,67 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend, f64 delta_time)
     VulkanDrawable object = vulkan_context.objects[i];
 
     VkDeviceSize temp_offsets[] = {0};  // @TODO: stuff
-    vkCmdBindVertexBuffers(vulkan_context.command_buffers[vulkan_context.current_frame_index], 0, 1,
-                           &vulkan_context.vertex_bufs[object.vbuf_handle], temp_offsets);
-    vkCmdBindIndexBuffer(vulkan_context.command_buffers[vulkan_context.current_frame_index],
-                         vulkan_context.index_bufs[object.ibuf_handle], 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindVertexBuffers(vulkan_context.command_buffers
+                           [vulkan_context.current_frame_index],
+                           0, 1,
+                           &vulkan_context.vertex_bufs
+                           [object.vbuf_handle], temp_offsets);
+
+    vkCmdBindIndexBuffer(vulkan_context.command_buffers
+                         [vulkan_context.current_frame_index],
+                         vulkan_context.index_bufs[object.ibuf_handle],
+                         0, VK_INDEX_TYPE_UINT32);
     
     
-    vkCmdBindDescriptorSets(vulkan_context.command_buffers[vulkan_context.current_frame_index],
-                            VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_context.pbr_pipeline_layout, 0, 1,
-                            &vulkan_context.pbr_descriptor_sets[(i * MAX_FRAMES_IN_FLIGHT) + vulkan_context.current_frame_index], 0,
-                            NULL_PTR);
+    vkCmdBindDescriptorSets(vulkan_context.command_buffers
+                            [vulkan_context.current_frame_index],
+                            VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            vulkan_context.pbr_pipeline_layout, 0, 1,
+                            &vulkan_context.pbr_descriptor_sets
+                            [(i * MAX_FRAMES_IN_FLIGHT) +
+                             vulkan_context.current_frame_index],
+                            0, NULL_PTR);
     
-    vkCmdDrawIndexed(vulkan_context.command_buffers[vulkan_context.current_frame_index],
-                     vulkan_context.scene_data->mesh_assets[object.vbuf_handle].index_count, 1, 0, 0, 0);
+    vkCmdDrawIndexed(vulkan_context.command_buffers
+                     [vulkan_context.current_frame_index],
+                     vulkan_context.scene_data->mesh_assets
+                     [object.vbuf_handle].index_count,
+                     1, 0, 0, 0);
   }
+
+  // UI RENDER
+
+  vkCmdBindPipeline(vulkan_context.command_buffers
+                    [vulkan_context.current_frame_index],
+                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    vulkan_context.ui_pipeline);
+  
+
+  vkCmdSetViewport(vulkan_context.command_buffers
+                   [vulkan_context.current_frame_index], 0, 1,
+                   &viewport);
+
+  vkCmdSetScissor(vulkan_context.command_buffers
+                  [vulkan_context.current_frame_index],
+                  0, 1,
+                  &scissor);
+
+  VkDeviceSize temp_offset[] = {0};
+  vkCmdBindVertexBuffers(vulkan_context.command_buffers
+                         [vulkan_context.current_frame_index],
+                         0, 1, &vulkan_context.ui_vbuf, temp_offset);
+
+  vkCmdBindIndexBuffer(vulkan_context.command_buffers
+                       [vulkan_context.current_frame_index],
+                       vulkan_context.ui_ibuf, 0, VK_INDEX_TYPE_UINT32);
+
+  vkCmdDrawIndexed(vulkan_context.command_buffers
+                   [vulkan_context.current_frame_index],
+                   darray_get_length(vulkan_context.ui_data->
+                                     rect_indices),
+                   1, 0, 0, 0);
+
+                         
 
   return TRUE;
 }

@@ -1463,7 +1463,7 @@ static b8 vulkan_create_descriptor_pool() {
   VkDescriptorPoolSize img_sampler_pool_size = {
     .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
     .descriptorCount = MAX_FRAMES_IN_FLIGHT *
-    vulkan_context.uniform_object_count,
+    (vulkan_context.uniform_object_count + 1),
   };
 
   VkDescriptorPoolSize pool_sizes[2] = {

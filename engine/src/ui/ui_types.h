@@ -56,6 +56,10 @@ typedef enum UiColorGradType {
   MAX_UI_COLOR_GRAD,
 } UiColorGradType;
 
+typedef enum UiScaleRule {
+  MAX_UI_SCALE_RULE,
+} UiScaleRule;
+
 typedef struct UiRect UiRect;
 
 typedef struct UiRoot {

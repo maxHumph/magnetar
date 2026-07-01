@@ -26,6 +26,8 @@ MGAPI b8 ui_add_rect(UiRect* src_rect, UiRect* sub_rect);
 
 MGAPI void ui_rect_set_color(UiRect* rect, UiColor color);
 
+MGAPI void /*or b8*/ ui_submit_tree(UiRoot* root);
+
 void ui_gen_vertices(UiRoot* root);
 
-void ui_gen_rect_vertices(UiRect* rect);
+void ui_gen_rect_vertices(UiRect* rect, UiRoot* root);

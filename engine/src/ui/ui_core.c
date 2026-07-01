@@ -98,11 +98,12 @@ void ui_gen_vertices(UiRoot* root) {
   data.rect_vertices = darray_create(UiVertex);
   data.rect_indices = darray_create(u32);
   for (u32 i = 0; i < darray_get_length(root->children); i++) {
-    ui_gen_rect_vertices(root->children[i]);
+    ui_gen_rect_vertices(root->children[i], root);
   }
 }
 
-void ui_gen_rect_vertices(UiRect* rect) {
+void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
+
   UiVertex v1 = {
       .pos =
           {
@@ -152,7 +153,7 @@ void ui_gen_rect_vertices(UiRect* rect) {
 
   if (rect->children != NULL_PTR) {
     for (u32 i = 0; i < darray_get_length(rect->children); i++) {
-      ui_gen_rect_vertices(rect->children[i]);
+      ui_gen_rect_vertices(rect->children[i], root);
     }
   }
 }

@@ -1446,7 +1446,7 @@ static b8 vulkan_create_uniform_buffers() {
 
   // UI
   for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    VkDeviceSize buffer_size = sizeof(Vec2);
+    VkDeviceSize buffer_size = sizeof(Mat4);
     
     if (!create_buffer(&vulkan_context.ui_ubufs[i],
                        &vulkan_context.ui_ubuf_mem[i],
@@ -2082,19 +2082,18 @@ static b8 update_uniform_buffer() {
 
   // UI
 
-  // @TODO: simplify
-  Vec2 ui_aspect = (Vec2) {
-    (((f32)vulkan_context.swapchain_extent.width) /
-     ((f32)vulkan_context.ui_data->roots[0].reference_res.x)) /
-    (f32)vulkan_context.swapchain_extent.width,
-    (((f32)vulkan_context.swapchain_extent.height) /
-     ((f32)vulkan_context.ui_data->roots[0].reference_res.y)) /
-    (f32)vulkan_context.swapchain_extent.height,
-  };
+  Mat4 ui_mat = mat4_transpose(mat4_ui((Vec2){
+        (f32)vulkan_context.ui_data->roots[0].reference_res.x,
+        (f32)vulkan_context.ui_data->roots[0].reference_res.y
+      }));
 
   mcopy_memory(vulkan_context.ui_ubuf_mem_map
                [vulkan_context.current_frame_index],
-               &ui_aspect, sizeof(Vec2));
+               &ui_mat, sizeof(Mat4));
+
+  MTRACE("%s", mat4_get_str(ui_mat));
+  MTRACE("%f, %f", vulkan_context.ui_data->rect_vertices[0].pos.x,
+         vulkan_context.ui_data->rect_vertices[0].pos.y);
 
 
   return TRUE;

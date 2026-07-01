@@ -8,6 +8,8 @@
 
 - [ ] Implement UI layout alignment and scaling modes(fixed, flex).
 
+- [ ] Rebuild UI tree on window resize.
+
 - [ ] Implement UI textures.
 
 - [ ] Implement UI updates.

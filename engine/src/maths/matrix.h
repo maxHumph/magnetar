@@ -31,13 +31,13 @@ MGINLINE Mat2 mat2_iden() {
 }
 
 MGINLINE Mat2 mat2_add(Mat2 mat_1, Mat2 mat_2) {
-  return (Mat2){mat_1.e11 + mat_2.e11, mat_1.e12 + mat_2.e12, mat_1.e21 + mat_2.e21,
-                mat_1.e22 + mat_2.e22};
+  return (Mat2){mat_1.e11 + mat_2.e11, mat_1.e12 + mat_2.e12,
+                mat_1.e21 + mat_2.e21, mat_1.e22 + mat_2.e22};
 }
 
 MGINLINE Mat2 mat2_sub(Mat2 mat_1, Mat2 mat_2) {
-  return (Mat2){mat_1.e11 - mat_2.e11, mat_1.e12 - mat_2.e12, mat_1.e21 - mat_2.e21,
-                mat_1.e22 - mat_2.e22};
+  return (Mat2){mat_1.e11 - mat_2.e11, mat_1.e12 - mat_2.e12,
+                mat_1.e21 - mat_2.e21, mat_1.e22 - mat_2.e22};
 }
 
 // MAT 3
@@ -290,4 +290,13 @@ MGINLINE Mat4 mat4_from_transform(Transform transform) {
 
   return (mat4_mul(translate, mat4_from_quat(transform.rotation)));
 
+}
+
+MGINLINE Mat4 mat4_ui(Vec2 vres) {
+  return (Mat4) {
+    (2.0f / vres.x), 0.0f, 0.0f, -1.0f,
+    0.0f, (2.0f / vres.y), 0.0f, -1.0f,
+    0.0f, 0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 1.0f,
+  };
 }

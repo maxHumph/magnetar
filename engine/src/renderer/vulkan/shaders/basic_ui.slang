@@ -4,7 +4,7 @@ struct VSInput {
   float2 uv;
 };
 
-ConstantBuffer<float2> aspect;
+ConstantBuffer<float4x4> ui_mat;
 
 struct VSOutput {
   float4 pos : SV_Position;
@@ -15,9 +15,8 @@ struct VSOutput {
 [shader("vertex")]
 VSOutput vertMain(VSInput in) {
   VSOutput out;
-  out.pos = float4((2.0 * (in.pos.x * aspect.x)) - 1.0,
-                   (2.0 * (in.pos.y * aspect.y)) - 1.0,
-                   0.0, 1.0f);
+  out.pos = mul(ui_mat, float4(in.pos.x, in.pos.y, 0.0, 1.0));
+
   out.col = in.col;
   out.uv = in.uv;
   return out;

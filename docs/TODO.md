@@ -42,6 +42,8 @@
 
 - [ ] KHR vulkan error messages when initialising vulkan on MacOS.
 
+- [ ] Screen tearing on MacOS.
+
 ---
 
 ## Completed

@@ -15,7 +15,12 @@ SRC_FILES=$(shell find $(ASSEMBLY) -name *.c)
 DIRS=$(shell find $(ASSEMBLY) -type d)
 OBJ_FILES=$(SRC_FILES:%=$(OBJ_DIR)/%.o)
 
-all: scaffold compile link
+all: shaders scaffold compile link
+
+.PHONY: shaders
+shaders:
+	@./compile-shader.sh engine/src/renderer/vulkan/shaders/basic
+	@./compile-shader.sh engine/src/renderer/vulkan/shaders/basic_ui
 
 .PHONY: scaffold
 scaffold:

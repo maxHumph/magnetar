@@ -1,4 +1,7 @@
 # Magnetar
+
+**This project is very early in progress and does not do most things needed to make a basic 3D game!!!**
+
 A lightweight game engine written in C using Vulkan (for now).
 
 ## Build and Run Instructions
@@ -14,6 +17,8 @@ then
 echo $VULKAN_SDK
 ```
 to check.
+
+You will also need a the **slangc** compiler for the [Slang Shading language](https://shader-slang.org/).
 
 
 ### Windows

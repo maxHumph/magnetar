@@ -1014,6 +1014,27 @@ static b8 vulkan_create_depth_resources() {
   return TRUE;
 }
 
+static b8 vulkan_recreate_depth_resources() {
+
+  vkDestroyImage(vulkan_context.logical_device,
+                 vulkan_context.depth_image, vulkan_context.allocator);
+
+  vkDestroyImageView(vulkan_context.logical_device,
+                     vulkan_context.depth_image_view,
+                     vulkan_context.allocator);
+
+  vkFreeMemory(vulkan_context.logical_device,
+               vulkan_context.depth_image_mem,
+               vulkan_context.allocator);
+  
+  if (!vulkan_create_depth_resources()) {
+    MERROR_CORE("Failed to recreate_depth_resources (recreation)");
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
 static b8 vulkan_create_texture_image() {
 
   u32 texture_count = darray_get_length(vulkan_context.scene_data->texture_assets);
@@ -1732,7 +1753,7 @@ static b8 vulkan_create_swapchain(VkSwapchainKHR old_swapchain) {
   VkResult get_physical_device_surface_capabilities_result =
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkan_context.physical_device,
                                               vulkan_context.surface,
-					      &surface_capabilities);
+                                              &surface_capabilities);
 
   if (get_physical_device_surface_capabilities_result != VK_SUCCESS) {
     MERROR_CORE("Failed to get phys dev surface capabilities: %s",
@@ -1810,6 +1831,10 @@ static b8 vulkan_recreate_swapchain(u16 width, u16 height) {
   vkDestroySwapchainKHR(vulkan_context.logical_device,
 			old_swapchain, vulkan_context.allocator);
 
+  mfree(vulkan_context.swapchain_image_views,
+        vulkan_context.swapchain_image_count * sizeof(VkImageView),
+        MEMORY_TAG_RENDERER);
+
   if (!vulkan_get_swapchain_images()) {
     MERROR_CORE("Failed to get swapchain images");
     return FALSE;
@@ -1820,8 +1845,8 @@ static b8 vulkan_recreate_swapchain(u16 width, u16 height) {
     return FALSE;
   }
 
-  if (!vulkan_create_depth_resources()) {
-    MERROR_CORE("Failed to  create depth resources");
+  if (!vulkan_recreate_depth_resources()) {
+    MERROR_CORE("Failed to recreate depth resources");
     return FALSE;
   }
 

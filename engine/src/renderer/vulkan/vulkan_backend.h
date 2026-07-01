@@ -137,6 +137,8 @@ static b8 vulkan_create_drawable_objects();
 
 static b8 vulkan_create_depth_resources();
 
+static b8 vulkan_recreate_depth_resources();
+
 static b8 vulkan_create_texture_image();
 
 static b8 vulkan_create_texture_image_view();

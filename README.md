@@ -1,6 +1,6 @@
 # Magnetar
 
-**This project is very early in progress and does not do most things needed to make a basic 3D game!!!**
+**This project is very early in progress and is not functional!!!**
 
 A lightweight game engine written in C using Vulkan (for now).
 

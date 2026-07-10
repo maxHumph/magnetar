@@ -29,6 +29,8 @@
             vulkan-tools
             vulkan-utility-libraries
 
+            shader-slang
+
             xorg.libX11
             xorg.libXrandr
             xorg.libXinerama

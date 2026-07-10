@@ -37,6 +37,18 @@ typedef union Vec2u32 {
 
 typedef Vec2u32 Vec2u;
 
+typedef union Vec2u64 {
+  u64 index[2];
+  struct {
+    union {
+      u64 x, r;
+    };
+    union {
+      u64 y, g;
+    };
+  };
+} Vec2u64;
+
 MGINLINE Vec2u vec2u_add(Vec2u v1, Vec2u v2) {
   return (Vec2u) {v1.x + v2.x, v1.y + v2.y};
 }  
@@ -104,6 +116,7 @@ MGINLINE Vec2 vec2_normalized(Vec2 vec) {
   const f32 len = vec2_mag(vec);
   return (Vec2){vec.x / len, vec.y / len};
 }
+
 
 // VEC 3
 

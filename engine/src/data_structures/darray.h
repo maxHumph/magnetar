@@ -54,8 +54,8 @@ MGAPI void _darray_destroy(void* darray);
  * @see darray_get_length()
  * @see darray_get_stride()
  */
-MGAPI u64 _darray_get(void* darray, u64 field);
-MGAPI void _darray_set(void* darray, u64 field, u64 val);
+MGAPI u64 _darray_get_field(void* darray, u64 field);
+MGAPI void _darray_set_field(void* darray, u64 field, u64 val);
 
 MGAPI void* _darray_resize(void* darray);
 
@@ -88,12 +88,12 @@ MGAPI void* _darray_pop_at(void* darray, u64 index, void* dest);
 
 #define darray_pop_at(darray, index, dest) _darray_pop_at(darray, index, dest)
 
-#define darray_clear(darray) _darray_set(darray, DARRAY_LENGTH, 0)
+#define darray_clear(darray) _darray_set_field(darray, DARRAY_LENGTH, 0)
 
-#define darray_get_capacity(darray) _darray_get(darray, DARRAY_CAPACITY)
+#define darray_get_capacity(darray) _darray_get_field(darray, DARRAY_CAPACITY)
 
-#define darray_get_length(darray) _darray_get(darray, DARRAY_LENGTH)
+#define darray_get_length(darray) _darray_get_field(darray, DARRAY_LENGTH)
 
-#define darray_get_stride(darray) _darray_get(darray, DARRAY_STRIDE)
+#define darray_get_stride(darray) _darray_get_field(darray, DARRAY_STRIDE)
 
-#define darray_set_length(darray, length) _darray_set(darray, DARRAY_LENGTH, length)
+#define darray_set_length(darray, length) _darray_set_field(darray, DARRAY_LENGTH, length)

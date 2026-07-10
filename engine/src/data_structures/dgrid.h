@@ -23,3 +23,12 @@ MGAPI void _dgrid_set_field(void* dgrid, u64 field, u64 val);
 
 MGAPI void _dgrid_set(void* dgrid, Vec2u64 pos, void* val_ptr);
 MGAPI void* _dgrid_get(void* dgrid, Vec2u64 pos);
+
+#define dgrid_create(type, width, height) _dgrid_create(width, height, sizeof(type))
+#define dgrid_destroy(dgrid) _dgrid_destroy(dgrid)
+
+#define dgrid_set(dgrid, pos, val) \
+  {                                \
+    __auto_type temp = val;        \
+    _dgrid_set(dgrid, pos, temp);  \
+  }                                \

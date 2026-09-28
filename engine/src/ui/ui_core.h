@@ -18,7 +18,8 @@ MGAPI UiRoot* ui_root_create(const char* name, Vec2u ref_res);
 
 MGAPI UiRect* ui_rect_create_aligned(Vec2u extent, UiAlignType align);
 
-MGAPI UiRect* ui_rect_create_floating(Vec2u extent, Vec2u offset);
+MGAPI UiRect* ui_rect_create_floating(Vec2u extent, Vec2u offset,
+				      UiAttributeMask attribute_mask);
 
 MGAPI void ui_root_add_rect(UiRoot* root, UiRect* rect);
 
@@ -32,4 +33,3 @@ void ui_gen_vertices(UiRoot* root);
 
 void ui_gen_rect_vertices(UiRect* rect, UiRoot* root);
 
-b8 ui_update();

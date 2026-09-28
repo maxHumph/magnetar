@@ -9,12 +9,25 @@
 #include "define.h"
 #include "renderer/renderer_types.h"
 #include "ui_types.h"
+#include "core/events.h"
+#include "core/input.h"
 
 static UiData data = {};
+
+// Event handler defs
+
+b8 ui_on_button(u16 code, void* sender,
+		void* listener, EventData event_data);
+
+// Functions
 
 b8 ui_init() {
   data.roots = darray_create(UiRoot);
   data.rects = darray_create(UiRect);
+  data.clickables = darray_create(Handle32);
+
+  event_register(EVENT_CODE_BUTTON_DOWN, 0, ui_on_button);
+
   return TRUE;
 }
 
@@ -43,16 +56,22 @@ UiRect* ui_rect_create_aligned(Vec2u extent, UiAlignType align) {
   return &data.rects[darray_get_length(data.rects) - 1];
 }
 
-UiRect* ui_rect_create_floating(Vec2u extent, Vec2u offset) {
+UiRect* ui_rect_create_floating(Vec2u extent, Vec2u offset,
+			       UiAttributeMask attribute_mask) {
   UiRect rect = {
       .extent = extent,
       .offset = offset,
       .align = UI_ALIGN_NONE,
+      .attribute_mask = attribute_mask,
       .rooted = FALSE,
       .parent = NULL_PTR,
       .children = NULL_PTR,
   };
   darray_push(data.rects, rect);
+  if (rect.attribute_mask & UI_ATTRIBUTE_CLICKABLE_BIT) {
+    darray_push(data.clickables,
+		(Handle32)(darray_get_length(data.rects) - 1));
+  }
   return &data.rects[darray_get_length(data.rects) - 1];
 }
 
@@ -158,9 +177,16 @@ void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
   }
 }
 
-b8 ui_update() {
-
-
-
-  return TRUE;
+b8 ui_on_button(u16 code, void* sender,
+		void* listener, EventData event_data) {
+  if (code == EVENT_CODE_BUTTON_DOWN) {
+    Buttons buttoncode = event_data.data.u16[0];
+    switch (buttoncode) {
+    case BUTTON_0:
+      break;
+    default:
+      break;
+    }
+  }
+  return FALSE;
 }

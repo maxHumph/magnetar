@@ -98,7 +98,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 
   UiRoot* ui_root = ui_root_create("HUD", (Vec2u) {1920, 1080});
   UiRect* ui_square = ui_rect_create_floating((Vec2u){100, 100},
-					      (Vec2u){0, 0});
+					      (Vec2u){0, 0},
+					      UI_ATTRIBUTE_COLOR_BIT);
   ui_rect_set_color(ui_square, (UiColor){
       .primary_color = {
         .r = 0.2f,

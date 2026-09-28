@@ -14,9 +14,10 @@
 typedef Mask32 UiAttributeMask;
 typedef Bit32 UiAttributeBit;
 
-static const UiAttributeMask UI_ATTRIBUTR_NONE = 0x00000000U;
+static const UiAttributeMask UI_ATTRIBUTE_NONE = 0x00000000U;
 static const UiAttributeBit UI_ATTRIBUTE_COLOR_BIT = 0x00000001U;
 static const UiAttributeBit UI_ATTRIBUTE_IMAGE_BIT = 0x00000002U;
+static const UiAttributeBit UI_ATTRIBUTE_CLICKABLE_BIT = 0x00000004U;
 
 typedef enum UiSizeType {
   UI_SIZE_ABS,
@@ -96,6 +97,8 @@ typedef struct UiRect {
 typedef struct UiData {
   UiRoot* roots;
   UiRect* rects;
+  Handle32* clickables;
+  
 
   UiVertex* rect_vertices;
   u32* rect_indices;

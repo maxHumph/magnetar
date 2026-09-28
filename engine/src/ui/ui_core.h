@@ -16,10 +16,14 @@ MGAPI UiData* get_ui_data_ptr();
 
 MGAPI UiRoot* ui_root_create(const char* name, Vec2u ref_res); 
 
-MGAPI UiRect* ui_rect_create_aligned(Vec2u extent, UiAlignType align);
 
-MGAPI UiRect* ui_rect_create_floating(Vec2u extent, Vec2u offset,
-				      UiAttributeMask attribute_mask);
+MGAPI UiRect* ui_rect_create(Vec2u extent, Vec2u offset,
+			     UiAnchorMask anchor_mask,
+			     UiAttributeMask attribute_mask);
+
+MGAPI b8 ui_root_attach(UiRoot* root, UiRect* rect);
+
+MGAPI b8 ui_rect_attach(UiRect* rect, UiRect* rect);
 
 MGAPI void ui_root_add_rect(UiRoot* root, UiRect* rect);
 

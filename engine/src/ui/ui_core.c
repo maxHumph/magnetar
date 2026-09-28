@@ -43,27 +43,15 @@ UiRoot* ui_root_create(const char* name, Vec2u ref_res) {
   return &data.roots[darray_get_length(data.roots) - 1];
 }
 
-UiRect* ui_rect_create_aligned(Vec2u extent, UiAlignType align) {
-  UiRect rect = {
-      .extent = extent,
-      .offset = (Vec2u){0.0f, 0.0f},
-      .align = align,
-      .rooted = FALSE,
-      .parent = NULL_PTR,
-      .children = NULL_PTR,
-  };
-  darray_push(data.rects, rect);
-  return &data.rects[darray_get_length(data.rects) - 1];
-}
 
-UiRect* ui_rect_create_floating(Vec2u extent, Vec2u offset,
-			       UiAttributeMask attribute_mask) {
+UiRect* ui_rect_create(Vec2u extent, Vec2u offset,
+		       UiAnchorMask anchor_mask,
+		       UiAttributeMask attribute_mask) {
   UiRect rect = {
       .extent = extent,
       .offset = offset,
-      .align = UI_ALIGN_NONE,
+      .anchor_mask - anchor_mask,
       .attribute_mask = attribute_mask,
-      .rooted = FALSE,
       .parent = NULL_PTR,
       .children = NULL_PTR,
   };
@@ -74,6 +62,12 @@ UiRect* ui_rect_create_floating(Vec2u extent, Vec2u offset,
   }
   return &data.rects[darray_get_length(data.rects) - 1];
 }
+
+MGAPI b8 ui_root_attach(UiRoot* root, UiRect* rect) {
+  
+}
+
+MGAPI b8 ui_rect_attach(UiRect* rect, UiRect* rect);
 
 void ui_root_add_rect(UiRoot* root, UiRect* rect) {
   if (root->children == NULL_PTR) {
@@ -121,8 +115,71 @@ void ui_gen_vertices(UiRoot* root) {
   }
 }
 
+// @TODO: Remove when ui_gen_vertices rewritten.
+
+/* 
 void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
 
+  UiVertex v1 = {
+      .pos =
+          {
+              .x = (f32)rect->total_offset.x,
+              .y = (f32)rect->total_offset.y,
+          },
+      .color = rect->color.primary_color,
+  };
+  UiVertex v2 = {
+      .pos =
+          {
+              .x = (f32)(rect->total_offset.x + rect->extent.x),
+              .y = (f32)rect->total_offset.y,
+          },
+      .color = rect->color.primary_color,
+  };
+  UiVertex v3 = {
+      .pos =
+          {
+              .x = (f32)(rect->total_offset.x + rect->extent.x),
+              .y = (f32)(rect->total_offset.y + rect->extent.y),
+          },
+      .color = rect->color.primary_color,
+  };
+  UiVertex v4 = {
+      .pos =
+          {
+              .x = (f32)rect->total_offset.x,
+              .y = (f32)(rect->total_offset.y + rect->extent.y),
+          },
+      .color = rect->color.primary_color,
+  };
+
+  darray_push(data.rect_vertices, v1);
+  darray_push(data.rect_vertices, v2);
+  darray_push(data.rect_vertices, v3);
+  darray_push(data.rect_vertices, v4);
+  u32 vertex_count = darray_get_length(data.rect_vertices) - 1;
+
+  darray_push(data.rect_indices, vertex_count - 3);
+  darray_push(data.rect_indices, vertex_count - 2);
+  darray_push(data.rect_indices, vertex_count - 1);
+  darray_push(data.rect_indices, vertex_count - 3);
+  darray_push(data.rect_indices, vertex_count - 1);
+  darray_push(data.rect_indices, vertex_count);
+
+
+  if (rect->children != NULL_PTR) {
+    for (u32 i = 0; i < darray_get_length(rect->children); i++) {
+      ui_gen_rect_vertices(rect->children[i], root);
+    }
+  }
+}
+*/
+
+void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
+
+  if (rect->anchor_mask & UI_ANCHOR_TOP) {
+
+  }
   UiVertex v1 = {
       .pos =
           {

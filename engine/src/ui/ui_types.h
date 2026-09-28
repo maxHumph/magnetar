@@ -19,32 +19,21 @@ static const UiAttributeBit UI_ATTRIBUTE_COLOR_BIT = 0x00000001U;
 static const UiAttributeBit UI_ATTRIBUTE_IMAGE_BIT = 0x00000002U;
 static const UiAttributeBit UI_ATTRIBUTE_CLICKABLE_BIT = 0x00000004U;
 
+typedef Mask32 UiAnchorMask;
+typedef Bit32 UiAnchorBit;
+
+static const UiAnchorMask UI_ANCHOR_NONE = 0x00000000U;
+static const UiAnchorBit UI_ANCHOR_TOP = 0x00000001U;
+static const UiAnchorBit UI_ANCHOR_BOTTOM = 0x00000002U;
+static const UiAnchorBit UI_ANCHOR_LEFT = 0x00000004U;
+static const UiAnchorBit UI_ANCHOR_RIGHT = 0x00000008U;
+
 typedef enum UiSizeType {
   UI_SIZE_ABS,
   UI_SIZE_REL,
 
   MAX_UI_SIZE
 } UiSizeType;
-
-typedef enum UiAlignType {
-  UI_ALIGN_NONE,
-
-  UI_ALIGN_LEFT,
-  UI_ALIGN_RIGHT,
-  UI_ALIGN_TOP,
-  UI_ALIGN_BOTTOM,
-  UI_ALIGN_CENTER,
-  UI_ALIGN_TOP_LEFT,
-  UI_ALIGN_TOP_CENTER,
-  UI_ALIGN_TOP_RIGHT,
-  UI_ALIGN_CENTER_LEFT,
-  UI_ALIGN_CENTER_RIGHT,
-  UI_ALIGN_BOTTOM_LEFT,
-  UI_ALIGN_BOTTOM_CENTER,
-  UI_ALIGN_BOTTOM_RIGHT,
-
-  MAX_UI_ALIGN,
-} UiAlignType;
 
 typedef enum UiColorGradType {
   UI_COLOR_GRAD_SOLID,
@@ -81,13 +70,11 @@ typedef struct UiRect {
 
   Vec2u total_offset;
 
-  UiAlignType align;
 
+  UiAnchorMask anchor_mask;
   UiAttributeMask attribute_mask;
 
   UiColor color;
-
-  b8 rooted;
 
   UiRect* parent;
   UiRect** children;

@@ -41,6 +41,7 @@ static ApplicationState s_application_state;
 
 b8 application_on_event(u16 code, void* sender, void* listener, EventData event_data);
 b8 application_on_key(u16 code, void* sender, void* listener, EventData event_data);
+b8 application_on_button(u16 code, void* sender, void* listener, EventData event_data);
 
 MGAPI b8 application_create(Game* game_instance) {
   if (s_initialized) {
@@ -70,6 +71,7 @@ MGAPI b8 application_create(Game* game_instance) {
   event_register(EVENT_CODE_WINDOW_RESIZED, 0, application_on_event);
   event_register(EVENT_CODE_KEY_DOWN, 0, application_on_key);
   event_register(EVENT_CODE_KEY_UP, 0, application_on_key);
+  event_register(EVENT_CODE_BUTTON_DOWN, 0, application_on_button);
 
   // Setup window and other platform specific things.
   if (!platform_startup(
@@ -195,6 +197,17 @@ b8 application_on_key(u16 code, void* sender, void* listener, EventData event_da
     if (keycode == KEY_ESCAPE && key_down(KEY_LSHIFT)) {
       EventData data = {};
       fire_event(EVENT_CODE_APPLICATION_QUIT, 0, data);
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+b8 application_on_button(u16 code, void* sender, void* listener, EventData event_data) {
+  if (code == EVENT_CODE_BUTTON_DOWN) {
+    Buttons buttoncode = event_data.data.u16[0];
+    if (buttoncode == BUTTON_0) {
+      MTRACE("Unfinished code in application_on_button()");
       return TRUE;
     }
   }

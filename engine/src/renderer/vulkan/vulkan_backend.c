@@ -97,13 +97,13 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   // UI TEST
 
   UiRoot* ui_root = ui_root_create("HUD", (Vec2u) {1920, 1080});
-  UiRect* ui_square = ui_rect_create_floating((Vec2u){1920, 80},
-					      (Vec2u){0, 1000});
+  UiRect* ui_square = ui_rect_create_floating((Vec2u){100, 100},
+					      (Vec2u){0, 0});
   ui_rect_set_color(ui_square, (UiColor){
       .primary_color = {
-        .r = 0.02f,
-        .g = 0.02f,
-        .b = 0.02f,                                             
+        .r = 0.2f,
+        .g = 0.2f,
+        .b = 0.2f,                                             
       },                                             
       .gradient = UI_COLOR_GRAD_SOLID,
     });
@@ -2090,10 +2090,11 @@ static b8 update_uniform_buffer() {
   mcopy_memory(vulkan_context.ui_ubuf_mem_map
                [vulkan_context.current_frame_index],
                &ui_mat, sizeof(Mat4));
-
+  /*
   MTRACE("%s", mat4_get_str(ui_mat));
   MTRACE("%f, %f", vulkan_context.ui_data->rect_vertices[0].pos.x,
          vulkan_context.ui_data->rect_vertices[0].pos.y);
+  */
 
 
   return TRUE;

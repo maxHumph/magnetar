@@ -157,3 +157,10 @@ void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
     }
   }
 }
+
+b8 ui_update() {
+
+
+
+  return TRUE;
+}

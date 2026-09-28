@@ -31,3 +31,5 @@ MGAPI void /*or b8*/ ui_submit_tree(UiRoot* root);
 void ui_gen_vertices(UiRoot* root);
 
 void ui_gen_rect_vertices(UiRect* rect, UiRoot* root);
+
+b8 ui_update();

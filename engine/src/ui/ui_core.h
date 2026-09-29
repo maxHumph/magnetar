@@ -21,10 +21,6 @@ MGAPI UiRect* ui_rect_create(Vec2u extent, Vec2u offset,
 			     UiAnchorMask anchor_mask,
 			     UiAttributeMask attribute_mask);
 
-MGAPI b8 ui_root_attach(UiRoot* root, UiRect* rect);
-
-MGAPI b8 ui_rect_attach(UiRect* rect, UiRect* rect);
-
 MGAPI void ui_root_add_rect(UiRoot* root, UiRect* rect);
 
 MGAPI b8 ui_add_rect(UiRect* src_rect, UiRect* sub_rect);
@@ -37,3 +33,4 @@ void ui_gen_vertices(UiRoot* root);
 
 void ui_gen_rect_vertices(UiRect* rect, UiRoot* root);
 
+Handle32 ui_check_interaction_boxes();

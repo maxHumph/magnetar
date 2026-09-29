@@ -97,7 +97,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   // UI TEST
 
   UiRoot* ui_root = ui_root_create("HUD", (Vec2u) {1920, 1080});
-  UiRect* ui_square = ui_rect_create((Vec2u){100, 100},
+  UiRect* ui_square = ui_rect_create((Vec2u){1000, 800},
 				     (Vec2u){0, 0},
 				     UI_ANCHOR_RIGHT_BIT,
 				     UI_ATTRIBUTE_COLOR_BIT);

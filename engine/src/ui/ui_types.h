@@ -23,10 +23,10 @@ typedef Mask32 UiAnchorMask;
 typedef Bit32 UiAnchorBit;
 
 static const UiAnchorMask UI_ANCHOR_NONE = 0x00000000U;
-static const UiAnchorBit UI_ANCHOR_TOP = 0x00000001U;
-static const UiAnchorBit UI_ANCHOR_BOTTOM = 0x00000002U;
-static const UiAnchorBit UI_ANCHOR_LEFT = 0x00000004U;
-static const UiAnchorBit UI_ANCHOR_RIGHT = 0x00000008U;
+static const UiAnchorBit UI_ANCHOR_TOP_BIT = 0x00000001U;
+static const UiAnchorBit UI_ANCHOR_BOTTOM_BIT = 0x00000002U;
+static const UiAnchorBit UI_ANCHOR_LEFT_BIT = 0x00000004U;
+static const UiAnchorBit UI_ANCHOR_RIGHT_BIT = 0x00000008U;
 
 typedef enum UiSizeType {
   UI_SIZE_ABS,
@@ -76,6 +76,7 @@ typedef struct UiRect {
 
   UiColor color;
 
+  b8 rooted;
   UiRect* parent;
   UiRect** children;
 

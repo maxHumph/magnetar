@@ -50,8 +50,9 @@ UiRect* ui_rect_create(Vec2u extent, Vec2u offset,
   UiRect rect = {
       .extent = extent,
       .offset = offset,
-      .anchor_mask - anchor_mask,
+      .anchor_mask = anchor_mask,
       .attribute_mask = attribute_mask,
+      .rooted = FALSE,
       .parent = NULL_PTR,
       .children = NULL_PTR,
   };
@@ -62,12 +63,6 @@ UiRect* ui_rect_create(Vec2u extent, Vec2u offset,
   }
   return &data.rects[darray_get_length(data.rects) - 1];
 }
-
-MGAPI b8 ui_root_attach(UiRoot* root, UiRect* rect) {
-  
-}
-
-MGAPI b8 ui_rect_attach(UiRect* rect, UiRect* rect);
 
 void ui_root_add_rect(UiRoot* root, UiRect* rect) {
   if (root->children == NULL_PTR) {
@@ -86,13 +81,15 @@ b8 ui_add_rect(UiRect* src_rect, UiRect* sub_rect) {
   if (src_rect->children == NULL_PTR) {
     src_rect->children = darray_create(UiRect*);
   }
-  switch (sub_rect->align) {
-    case UI_ALIGN_NONE:
-      sub_rect->total_offset = vec2u_add(src_rect->total_offset, sub_rect->offset);
+  switch (sub_rect->anchor_mask) {
+    case UI_ANCHOR_NONE:
+      sub_rect->total_offset =
+	vec2u_add(src_rect->total_offset, sub_rect->offset);
       break;
 
     default:
-      sub_rect->total_offset = vec2u_add(src_rect->total_offset, sub_rect->offset);
+      sub_rect->total_offset =
+	vec2u_add(src_rect->total_offset, sub_rect->offset);
       break;
   }
   sub_rect->parent = src_rect;
@@ -102,7 +99,8 @@ b8 ui_add_rect(UiRect* src_rect, UiRect* sub_rect) {
 
 void ui_rect_set_color(UiRect* rect, UiColor color) {
   if (!(rect->attribute_mask & UI_ATTRIBUTE_COLOR_BIT)) {
-    rect->attribute_mask = rect->attribute_mask | UI_ATTRIBUTE_COLOR_BIT;
+    rect->attribute_mask =
+      rect->attribute_mask | UI_ATTRIBUTE_COLOR_BIT;
   }
   rect->color = color;
 }
@@ -115,7 +113,7 @@ void ui_gen_vertices(UiRoot* root) {
   }
 }
 
-// @TODO: Remove when ui_gen_vertices rewritten.
+// @TODO: Remove when ui_gen_rect_vertices rewritten.
 
 /* 
 void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
@@ -177,7 +175,7 @@ void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
 
 void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
 
-  if (rect->anchor_mask & UI_ANCHOR_TOP) {
+  if (rect->anchor_mask & UI_ANCHOR_TOP_BIT) {
 
   }
   UiVertex v1 = {
@@ -246,4 +244,10 @@ b8 ui_on_button(u16 code, void* sender,
     }
   }
   return FALSE;
+}
+
+Handle32 ui_check_interaction_boxes() {
+  for (u32 i = 0; i < darray_get_length(data.clickables); i++) {
+    MTRACE("%d", i);
+  }
 }

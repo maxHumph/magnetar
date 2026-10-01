@@ -119,13 +119,21 @@ void ui_calc_rects(UiRect* rect) {
 
   } else if (!(rect->anchor_mask & UI_ANCHOR_TOP_BIT) &&
 	     (rect->anchor_mask & UI_ANCHOR_BOTTOM_BIT)) {
-  } else if (rect->anchor_mask & (UI_ANCHOR_TOP_BIT | UI_ANCHOR_BOTTOM_BIT)) {
+  } else if (rect->anchor_mask &
+	     (UI_ANCHOR_TOP_BIT | UI_ANCHOR_BOTTOM_BIT)) {
   } else {
+
   }
 
-  if ((rect->anchor_mask & UI_ANCHOR_LEFT_BIT) && !(rect->anchor_mask & UI_ANCHOR_RIGHT_BIT)) {
-  } else if (!(rect->anchor_mask & UI_ANCHOR_LEFT_BIT) && (rect->anchor_mask & UI_ANCHOR_RIGHT_BIT)) {
-  } else if (rect->anchor_mask & (UI_ANCHOR_LEFT_BIT | UI_ANCHOR_RIGHT_BIT)) {
+  if ((rect->anchor_mask & UI_ANCHOR_LEFT_BIT) &&
+      !(rect->anchor_mask & UI_ANCHOR_RIGHT_BIT)) {
+
+  } else if (!(rect->anchor_mask & UI_ANCHOR_LEFT_BIT) &&
+	     (rect->anchor_mask & UI_ANCHOR_RIGHT_BIT)) {
+
+  } else if (rect->anchor_mask &
+	     (UI_ANCHOR_LEFT_BIT | UI_ANCHOR_RIGHT_BIT)) {
+
   } else {
   }
   
@@ -139,65 +147,6 @@ void ui_gen_vertices(UiRoot* root) {
   }
 }
 
-// @TODO: Remove when ui_gen_rect_vertices rewritten.
-
-/* 
-void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
-
-  UiVertex v1 = {
-      .pos =
-          {
-              .x = (f32)rect->total_offset.x,
-              .y = (f32)rect->total_offset.y,
-          },
-      .color = rect->color.primary_color,
-  };
-  UiVertex v2 = {
-      .pos =
-          {
-              .x = (f32)(rect->total_offset.x + rect->extent.x),
-              .y = (f32)rect->total_offset.y,
-          },
-      .color = rect->color.primary_color,
-  };
-  UiVertex v3 = {
-      .pos =
-          {
-              .x = (f32)(rect->total_offset.x + rect->extent.x),
-              .y = (f32)(rect->total_offset.y + rect->extent.y),
-          },
-      .color = rect->color.primary_color,
-  };
-  UiVertex v4 = {
-      .pos =
-          {
-              .x = (f32)rect->total_offset.x,
-              .y = (f32)(rect->total_offset.y + rect->extent.y),
-          },
-      .color = rect->color.primary_color,
-  };
-
-  darray_push(data.rect_vertices, v1);
-  darray_push(data.rect_vertices, v2);
-  darray_push(data.rect_vertices, v3);
-  darray_push(data.rect_vertices, v4);
-  u32 vertex_count = darray_get_length(data.rect_vertices) - 1;
-
-  darray_push(data.rect_indices, vertex_count - 3);
-  darray_push(data.rect_indices, vertex_count - 2);
-  darray_push(data.rect_indices, vertex_count - 1);
-  darray_push(data.rect_indices, vertex_count - 3);
-  darray_push(data.rect_indices, vertex_count - 1);
-  darray_push(data.rect_indices, vertex_count);
-
-
-  if (rect->children != NULL_PTR) {
-    for (u32 i = 0; i < darray_get_length(rect->children); i++) {
-      ui_gen_rect_vertices(rect->children[i], root);
-    }
-  }
-}
-*/
 
 void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
 
@@ -235,9 +184,9 @@ void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
   };
 
 
-  // @THOUGHT this could maybe be more efficient.
-  // @TODO fill in the if statements with vertex calcs.
 
+
+  /*
   if ((rect->anchor_mask & UI_ANCHOR_TOP_BIT) &&
       !(rect->anchor_mask & UI_ANCHOR_BOTTOM_BIT)) {
 
@@ -248,12 +197,10 @@ void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
 
   } else if (!(rect->anchor_mask & UI_ANCHOR_TOP_BIT) &&
 	     (rect->anchor_mask & UI_ANCHOR_BOTTOM_BIT)) {
-    /*
     v1.pos.y -= (((f32)rect->parent->offset.y + (f32)rect->parent->extent.y) -
 		 ((f32)rect->offset.y + (f32)rect->extent.y));
     v2.pos.y -= (((f32)rect->parent->offset.y + (f32)rect->parent->extent.y) -
 		 ((f32)rect->offset.y + (f32)rect->extent.y));
-    */
     v3.pos.y = (f32)rect->parent->offset.y + (f32)rect->parent->extent.y;
     v4.pos.y = (f32)rect->parent->offset.y + (f32)rect->parent->extent.y;
   } else if (rect->anchor_mask & (UI_ANCHOR_TOP_BIT | UI_ANCHOR_BOTTOM_BIT)) {
@@ -265,6 +212,8 @@ void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
   } else if (rect->anchor_mask & (UI_ANCHOR_LEFT_BIT | UI_ANCHOR_RIGHT_BIT)) {
   } else {
   }
+  */
+
 
   darray_push(data.rect_vertices, v1);
   darray_push(data.rect_vertices, v2);

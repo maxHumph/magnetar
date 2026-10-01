@@ -29,8 +29,16 @@ MGAPI void ui_rect_set_color(UiRect* rect, UiColor color);
 
 MGAPI void /*or b8*/ ui_submit_tree(UiRoot* root);
 
+/**
+ * @brief Generates vertex data for a UI tree.
+ */
 void ui_gen_vertices(UiRoot* root);
 
+/**
+ * @brief Recursively generates the vertext data for a UiRect and pushes
+ * it onto the UI vertex array before doing the same for any children of
+ * the UiRect.
+ */
 void ui_gen_rect_vertices(UiRect* rect, UiRoot* root);
 
 Handle32 ui_check_interaction_boxes();

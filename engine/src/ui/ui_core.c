@@ -175,9 +175,6 @@ void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
 
 void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
 
-  if (rect->anchor_mask & UI_ANCHOR_TOP_BIT) {
-
-  }
   UiVertex v1 = {
       .pos =
           {
@@ -211,6 +208,23 @@ void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
       .color = rect->color.primary_color,
   };
 
+
+  // @THOUGHT this could maybe be more efficient.
+  // @TODO fill in the if statements with vertex calcs.
+
+  if ((rect->anchor_mask & UI_ANCHOR_TOP_BIT) && !(rect->anchor_mask & UI_ANCHOR_BOTTOM_BIT)) {
+    v1.y += (f32)root->
+  } else if (!(rect->anchor_mask & UI_ANCHOR_TOP_BIT) && (rect->anchor_mask & UI_ANCHOR_TOP_BIT)) {
+  } else if (rect->anchor_mask & (UI_ANCHOR_TOP_BIT | UI_ANCHOR_BOTTOM_BIT)) {
+  } else {
+  }
+
+  if ((rect->anchor_mask & UI_ANCHOR_LEFT_BIT) && !(rect->anchor_mask & UI_ANCHOR_RIGHT_BIT)) {
+  } else if (!(rect->anchor_mask & UI_ANCHOR_LEFT_BIT) && (rect->anchor_mask & UI_ANCHOR_RIGHT_BIT)) {
+  } else if (rect->anchor_mask & (UI_ANCHOR_LEFT_BIT | UI_ANCHOR_RIGHT_BIT)) {
+  } else {
+  }
+
   darray_push(data.rect_vertices, v1);
   darray_push(data.rect_vertices, v2);
   darray_push(data.rect_vertices, v3);
@@ -223,7 +237,6 @@ void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
   darray_push(data.rect_indices, vertex_count - 3);
   darray_push(data.rect_indices, vertex_count - 1);
   darray_push(data.rect_indices, vertex_count);
-
 
   if (rect->children != NULL_PTR) {
     for (u32 i = 0; i < darray_get_length(rect->children); i++) {

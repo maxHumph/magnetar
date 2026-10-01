@@ -19,7 +19,7 @@ static UiData data = {};
 b8 ui_on_button(u16 code, void* sender,
 		void* listener, EventData event_data);
 
-// Functions
+// API FUNCTIONS
 
 b8 ui_init() {
   data.roots = darray_create(UiRoot);
@@ -103,6 +103,32 @@ void ui_rect_set_color(UiRect* rect, UiColor color) {
       rect->attribute_mask | UI_ATTRIBUTE_COLOR_BIT;
   }
   rect->color = color;
+}
+
+b8 ui_submit_tree(UiRoot* root) {
+  return TRUE;
+}
+
+// INTERNAL FUNCTIONS
+
+void ui_calc_rects(UiRect* rect) {
+
+  if ((rect->anchor_mask & UI_ANCHOR_TOP_BIT) &&
+      !(rect->anchor_mask & UI_ANCHOR_BOTTOM_BIT)) {
+
+
+  } else if (!(rect->anchor_mask & UI_ANCHOR_TOP_BIT) &&
+	     (rect->anchor_mask & UI_ANCHOR_BOTTOM_BIT)) {
+  } else if (rect->anchor_mask & (UI_ANCHOR_TOP_BIT | UI_ANCHOR_BOTTOM_BIT)) {
+  } else {
+  }
+
+  if ((rect->anchor_mask & UI_ANCHOR_LEFT_BIT) && !(rect->anchor_mask & UI_ANCHOR_RIGHT_BIT)) {
+  } else if (!(rect->anchor_mask & UI_ANCHOR_LEFT_BIT) && (rect->anchor_mask & UI_ANCHOR_RIGHT_BIT)) {
+  } else if (rect->anchor_mask & (UI_ANCHOR_LEFT_BIT | UI_ANCHOR_RIGHT_BIT)) {
+  } else {
+  }
+  
 }
 
 void ui_gen_vertices(UiRoot* root) {
@@ -212,9 +238,24 @@ void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
   // @THOUGHT this could maybe be more efficient.
   // @TODO fill in the if statements with vertex calcs.
 
-  if ((rect->anchor_mask & UI_ANCHOR_TOP_BIT) && !(rect->anchor_mask & UI_ANCHOR_BOTTOM_BIT)) {
-    v1.y += (f32)root->
-  } else if (!(rect->anchor_mask & UI_ANCHOR_TOP_BIT) && (rect->anchor_mask & UI_ANCHOR_TOP_BIT)) {
+  if ((rect->anchor_mask & UI_ANCHOR_TOP_BIT) &&
+      !(rect->anchor_mask & UI_ANCHOR_BOTTOM_BIT)) {
+
+    v1.pos.y = (f32)rect->parent->offset.y;
+    v2.pos.y = (f32)rect->parent->offset.y;
+    v3.pos.y += ((f32)rect->parent->offset.y - (f32)rect->offset.y);
+    v4.pos.y += ((f32)rect->parent->offset.y - (f32)rect->offset.y);
+
+  } else if (!(rect->anchor_mask & UI_ANCHOR_TOP_BIT) &&
+	     (rect->anchor_mask & UI_ANCHOR_BOTTOM_BIT)) {
+    /*
+    v1.pos.y -= (((f32)rect->parent->offset.y + (f32)rect->parent->extent.y) -
+		 ((f32)rect->offset.y + (f32)rect->extent.y));
+    v2.pos.y -= (((f32)rect->parent->offset.y + (f32)rect->parent->extent.y) -
+		 ((f32)rect->offset.y + (f32)rect->extent.y));
+    */
+    v3.pos.y = (f32)rect->parent->offset.y + (f32)rect->parent->extent.y;
+    v4.pos.y = (f32)rect->parent->offset.y + (f32)rect->parent->extent.y;
   } else if (rect->anchor_mask & (UI_ANCHOR_TOP_BIT | UI_ANCHOR_BOTTOM_BIT)) {
   } else {
   }

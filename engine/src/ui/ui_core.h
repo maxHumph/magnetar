@@ -27,7 +27,9 @@ MGAPI b8 ui_add_rect(UiRect* src_rect, UiRect* sub_rect);
 
 MGAPI void ui_rect_set_color(UiRect* rect, UiColor color);
 
-MGAPI void /*or b8*/ ui_submit_tree(UiRoot* root);
+MGAPI b8 ui_submit_tree(UiRoot* root);
+
+void ui_calc_rects(UiRect* rect);
 
 /**
  * @brief Generates vertex data for a UI tree.

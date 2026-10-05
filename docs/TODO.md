@@ -29,11 +29,12 @@
 
 - [ ] **@MAJOR** Add basic lighting to the PBR pipeline.
 
-- [ ] **@MAJOR** Add metallic-roughness to the PBR pipeline.
 
 ### Secordary
 
 - [ ] Add platform layer for windows.
+
+- [ ] **@MAJOR** Add metallic-roughness to the PBR pipeline.
 
 ---
 
@@ -41,7 +42,7 @@
 
 ### Major
 
-- [ ] Fix UiRect pointers becoming invalid. *Use handles instead*.
+- [ ] UiRect not rendering when using `UI_ANCHOR_BOTTOM_BIT` or `UI_ANCHOR_RIGHT_BIT`.
 
 ### Minor
 
@@ -56,3 +57,5 @@
 - [X] Scale UI with window. **01/07/2026**
 
 - [X] **Huge GPU memory leak** during Vulkan swapchain resize. **01/07/2026**
+
+- [X] Fix UiRect pointers becoming invalid. *Use handles instead*. **05/10/2026**

@@ -102,14 +102,17 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 				   (Vec2u){0, 0},
 				   UI_ANCHOR_NONE,
 				   UI_ATTRIBUTE_NONE);
-  MTRACE("EXTENT Y: %f", (f32)ui_base->extent.y);
+  MTRACE("EXTENT Y: %u", ui_base->extent.y);
 
-  UiRect* ui_square = ui_rect_create((Vec2u){1000, 800},
-				     (Vec2u){0, 190},
-		//UI_ANCHOR_TOP_BIT |
-				     UI_ANCHOR_BOTTOM_BIT |
-				     UI_ANCHOR_RIGHT_BIT,
+  UiRect* ui_square = ui_rect_create((Vec2u){1700, 800},
+				     (Vec2u){100, 100},
+				     UI_ANCHOR_TOP_BIT,
 				     UI_ATTRIBUTE_COLOR_BIT);
+
+  UiRect* ui_box = ui_rect_create((Vec2u){20, 20},
+				  (Vec2u){100, 100},
+				  UI_ANCHOR_NONE,
+				  UI_ATTRIBUTE_COLOR_BIT);
 
   ui_rect_set_color(ui_square, (UiColor){
       .primary_color = {
@@ -120,12 +123,23 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
       .gradient = UI_COLOR_GRAD_SOLID,
     });
 
+  ui_rect_set_color(ui_box, (UiColor) {
+      .primary_color = {
+        .r = 0.2f,
+        .g = 0.8f,
+        .b = 0.2f,                                             
+      },
+      .gradient = UI_COLOR_GRAD_SOLID,
+    });
+
   ui_root_add_rect(ui_root, ui_base);  
   ui_add_rect(ui_base, ui_square);
+  ui_add_rect(ui_square, ui_box);
 
-
+  ui_calc_rects(ui_base);
   ui_gen_vertices(ui_root);
 
+  MTRACE("EXTENT Y: %u", ui_base->extent.y);
 
 
   /*

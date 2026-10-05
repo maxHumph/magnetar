@@ -69,7 +69,6 @@ void ui_root_add_rect(UiRoot* root, UiRect* rect) {
     root->children = darray_create(UiRect*);
   }
   rect->rooted = TRUE;
-  rect->total_offset = rect->offset;
   darray_push(root->children, rect);
 }
 
@@ -81,6 +80,7 @@ b8 ui_add_rect(UiRect* src_rect, UiRect* sub_rect) {
   if (src_rect->children == NULL_PTR) {
     src_rect->children = darray_create(UiRect*);
   }
+  /*
   switch (sub_rect->anchor_mask) {
     case UI_ANCHOR_NONE:
       sub_rect->total_offset =
@@ -92,6 +92,7 @@ b8 ui_add_rect(UiRect* src_rect, UiRect* sub_rect) {
 	vec2u_add(src_rect->total_offset, sub_rect->offset);
       break;
   }
+  */
   sub_rect->parent = src_rect;
   darray_push(src_rect->children, sub_rect);
   return TRUE;
@@ -113,28 +114,79 @@ b8 ui_submit_tree(UiRoot* root) {
 
 void ui_calc_rects(UiRect* rect) {
 
+  if (rect->parent == NULL_PTR) {
+    rect->total_offset = rect->offset;
+    rect->total_extent = rect->extent;
+  }
+
   if ((rect->anchor_mask & UI_ANCHOR_TOP_BIT) &&
       !(rect->anchor_mask & UI_ANCHOR_BOTTOM_BIT)) {
 
+    rect->total_offset.y = rect->parent->total_offset.y;
+    rect->total_extent.y = rect->extent.y;
 
   } else if (!(rect->anchor_mask & UI_ANCHOR_TOP_BIT) &&
 	     (rect->anchor_mask & UI_ANCHOR_BOTTOM_BIT)) {
+
+    rect->total_offset.y =
+      (rect->parent->total_offset.y + rect->parent->total_extent.y) -
+      rect->total_extent.y;
+    rect->total_extent.y = rect->extent.y;
+
   } else if (rect->anchor_mask &
 	     (UI_ANCHOR_TOP_BIT | UI_ANCHOR_BOTTOM_BIT)) {
+
+    rect->total_offset.y = rect->parent->total_offset.y;
+    rect->total_extent.y = rect->parent->total_extent.y;
+
   } else {
 
+    rect->total_offset.y = rect->offset.y;
+    rect->total_extent.y = rect->extent.y;
   }
 
   if ((rect->anchor_mask & UI_ANCHOR_LEFT_BIT) &&
       !(rect->anchor_mask & UI_ANCHOR_RIGHT_BIT)) {
 
+    rect->total_offset.x = rect->parent->total_offset.x;
+    rect->total_extent.x = rect->extent.x;
+
   } else if (!(rect->anchor_mask & UI_ANCHOR_LEFT_BIT) &&
 	     (rect->anchor_mask & UI_ANCHOR_RIGHT_BIT)) {
+
+    rect->total_offset.x =
+      (rect->parent->total_offset.x + rect->parent->total_extent.x) -
+      rect->total_extent.x;
+    rect->total_extent.x = rect->extent.x;
 
   } else if (rect->anchor_mask &
 	     (UI_ANCHOR_LEFT_BIT | UI_ANCHOR_RIGHT_BIT)) {
 
+    rect->total_offset.x = rect->parent->total_offset.x;
+    rect->total_extent.x = rect->parent->total_extent.x;
+
   } else {
+
+    rect->total_offset.x = rect->offset.x;
+    rect->total_extent.x = rect->extent.x;
+  }
+
+  MTRACE("RECT -- offset: (%u, %u), extent: (%u, %u)",
+	 rect->offset.x,
+	 rect->offset.y,
+	 rect->extent.x,
+	 rect->extent.y);
+
+  MTRACE("RECT TOTAL -- offset: (%u, %u), extent: (%u, %u)",
+	 rect->total_offset.x,
+	 rect->total_offset.y,
+	 rect->total_extent.x,
+	 rect->total_extent.y);
+
+  if (rect->children != NULL_PTR) {
+    for (u32 i = 0; i < darray_get_length(rect->children); i++) {
+      ui_calc_rects(rect->children[i]);
+    }
   }
   
 }
@@ -161,7 +213,7 @@ void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
   UiVertex v2 = {
       .pos =
           {
-              .x = (f32)(rect->total_offset.x + rect->extent.x),
+              .x = (f32)(rect->total_offset.x + rect->total_extent.x),
               .y = (f32)rect->total_offset.y,
           },
       .color = rect->color.primary_color,
@@ -169,8 +221,8 @@ void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
   UiVertex v3 = {
       .pos =
           {
-              .x = (f32)(rect->total_offset.x + rect->extent.x),
-              .y = (f32)(rect->total_offset.y + rect->extent.y),
+              .x = (f32)(rect->total_offset.x + rect->total_extent.x),
+              .y = (f32)(rect->total_offset.y + rect->total_extent.y),
           },
       .color = rect->color.primary_color,
   };
@@ -178,7 +230,7 @@ void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
       .pos =
           {
               .x = (f32)rect->total_offset.x,
-              .y = (f32)(rect->total_offset.y + rect->extent.y),
+              .y = (f32)(rect->total_offset.y + rect->total_extent.y),
           },
       .color = rect->color.primary_color,
   };

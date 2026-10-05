@@ -98,20 +98,20 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 
   UiRoot* ui_root = ui_root_create("HUD", (Vec2u) {1920, 1080});
 
-  UiRect* ui_base = ui_rect_create((Vec2u){1080, 1920},
+  UiRectHandle ui_base = ui_rect_create((Vec2u){1080, 1920},
 				   (Vec2u){0, 0},
 				   UI_ANCHOR_NONE,
 				   UI_ATTRIBUTE_NONE);
-  MTRACE("EXTENT Y: %u", ui_base->extent.y);
+  
+  UiRectHandle ui_square = ui_rect_create((Vec2u){1700, 800},
+					  (Vec2u){100, 100},
+					  UI_ANCHOR_TOP_BIT |
+					  UI_ANCHOR_LEFT_BIT,
+					  UI_ATTRIBUTE_COLOR_BIT);
 
-  UiRect* ui_square = ui_rect_create((Vec2u){1700, 800},
-				     (Vec2u){100, 100},
-				     UI_ANCHOR_TOP_BIT,
-				     UI_ATTRIBUTE_COLOR_BIT);
-
-  UiRect* ui_box = ui_rect_create((Vec2u){20, 20},
+  UiRectHandle ui_box = ui_rect_create((Vec2u){20, 20},
 				  (Vec2u){100, 100},
-				  UI_ANCHOR_NONE,
+				  UI_ANCHOR_TOP_BIT,
 				  UI_ATTRIBUTE_COLOR_BIT);
 
   ui_rect_set_color(ui_square, (UiColor){
@@ -139,7 +139,6 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   ui_calc_rects(ui_base);
   ui_gen_vertices(ui_root);
 
-  MTRACE("EXTENT Y: %u", ui_base->extent.y);
 
 
   /*

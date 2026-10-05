@@ -37,7 +37,7 @@ UiRoot* ui_root_create(const char* name, Vec2u ref_res) {
   UiRoot root = {
       .name = name,
       .reference_res = ref_res,
-      .children = NULL_PTR,
+      .h_children = NULL_PTR,
   };
   darray_push(data.roots, root);
   return &data.roots[darray_get_length(data.roots) - 1];
@@ -45,7 +45,7 @@ UiRoot* ui_root_create(const char* name, Vec2u ref_res) {
 
 
 // @TODO instead of returning a pointer return a handle since the pointer will become invalid.
-UiRect* ui_rect_create(Vec2u extent, Vec2u offset,
+UiRectHandle ui_rect_create(Vec2u extent, Vec2u offset,
 		       UiAnchorMask anchor_mask,
 		       UiAttributeMask attribute_mask) {
   UiRect rect = {
@@ -54,32 +54,33 @@ UiRect* ui_rect_create(Vec2u extent, Vec2u offset,
       .anchor_mask = anchor_mask,
       .attribute_mask = attribute_mask,
       .rooted = FALSE,
-      .parent = NULL_PTR,
-      .children = NULL_PTR,
+      .h_parent = U32_MAX,
+      .h_children = NULL_PTR,
   };
   darray_push(data.rects, rect);
   if (rect.attribute_mask & UI_ATTRIBUTE_CLICKABLE_BIT) {
     darray_push(data.clickables,
 		(Handle32)(darray_get_length(data.rects) - 1));
   }
-  return &data.rects[darray_get_length(data.rects) - 1];
+  return darray_get_length(data.rects) - 1;
 }
 
-void ui_root_add_rect(UiRoot* root, UiRect* rect) {
-  if (root->children == NULL_PTR) {
-    root->children = darray_create(UiRect*);
+void ui_root_add_rect(UiRoot* root, UiRectHandle h_rect) {
+  if (root->h_children == NULL_PTR) {
+    root->h_children = darray_create(UiRectHandle);
   }
-  rect->rooted = TRUE;
-  darray_push(root->children, rect);
+  data.rects[h_rect].rooted = TRUE;
+  darray_push(root->h_children, h_rect);
 }
 
-b8 ui_add_rect(UiRect* src_rect, UiRect* sub_rect) {
-  if (src_rect->parent == NULL_PTR && src_rect->rooted != TRUE) {
+b8 ui_add_rect(UiRectHandle h_src_rect, UiRectHandle h_sub_rect) {
+  if (data.rects[h_src_rect].h_parent == U32_MAX &&
+      data.rects[h_src_rect].rooted != TRUE) {
     MERROR_CORE("UiRect must already be part of a UI tree to have children attached");
     return FALSE;
   }
-  if (src_rect->children == NULL_PTR) {
-    src_rect->children = darray_create(UiRect*);
+  if (data.rects[h_src_rect].h_children == NULL_PTR) {
+    data.rects[h_src_rect].h_children = darray_create(UiRectHandle);
   }
   /*
   switch (sub_rect->anchor_mask) {
@@ -94,17 +95,17 @@ b8 ui_add_rect(UiRect* src_rect, UiRect* sub_rect) {
       break;
   }
   */
-  sub_rect->parent = src_rect;
-  darray_push(src_rect->children, sub_rect);
+  data.rects[h_sub_rect].h_parent = h_src_rect;
+  darray_push(data.rects[h_src_rect].h_children, h_sub_rect);
   return TRUE;
 }
 
-void ui_rect_set_color(UiRect* rect, UiColor color) {
-  if (!(rect->attribute_mask & UI_ATTRIBUTE_COLOR_BIT)) {
-    rect->attribute_mask =
-      rect->attribute_mask | UI_ATTRIBUTE_COLOR_BIT;
+void ui_rect_set_color(UiRectHandle h_rect, UiColor color) {
+  if (!(data.rects[h_rect].attribute_mask & UI_ATTRIBUTE_COLOR_BIT)) {
+    data.rects[h_rect].attribute_mask =
+      data.rects[h_rect].attribute_mask | UI_ATTRIBUTE_COLOR_BIT;
   }
-  rect->color = color;
+  data.rects[h_rect].color = color;
 }
 
 b8 ui_submit_tree(UiRoot* root) {
@@ -113,9 +114,12 @@ b8 ui_submit_tree(UiRoot* root) {
 
 // INTERNAL FUNCTIONS
 
-void ui_calc_rects(UiRect* rect) {
+void ui_calc_rects(UiRectHandle h_rect) {
 
-  if (rect->parent == NULL_PTR) {
+  UiRect* rect = &data.rects[h_rect];
+  UiRect* parent = &data.rects[rect->h_parent];
+
+  if (rect->h_parent == U32_MAX) {
     rect->total_offset = rect->offset;
     rect->total_extent = rect->extent;
   }
@@ -123,22 +127,22 @@ void ui_calc_rects(UiRect* rect) {
   if ((rect->anchor_mask & UI_ANCHOR_TOP_BIT) &&
       !(rect->anchor_mask & UI_ANCHOR_BOTTOM_BIT)) {
 
-    rect->total_offset.y = rect->parent->total_offset.y;
+    rect->total_offset.y = parent->total_offset.y;
     rect->total_extent.y = rect->extent.y;
 
   } else if (!(rect->anchor_mask & UI_ANCHOR_TOP_BIT) &&
 	     (rect->anchor_mask & UI_ANCHOR_BOTTOM_BIT)) {
 
     rect->total_offset.y =
-      (rect->parent->total_offset.y + rect->parent->total_extent.y) -
+      (parent->total_offset.y + parent->total_extent.y) -
       rect->total_extent.y;
     rect->total_extent.y = rect->extent.y;
 
   } else if (rect->anchor_mask &
 	     (UI_ANCHOR_TOP_BIT | UI_ANCHOR_BOTTOM_BIT)) {
 
-    rect->total_offset.y = rect->parent->total_offset.y;
-    rect->total_extent.y = rect->parent->total_extent.y;
+    rect->total_offset.y = parent->total_offset.y;
+    rect->total_extent.y = parent->total_extent.y;
 
   } else {
 
@@ -149,22 +153,22 @@ void ui_calc_rects(UiRect* rect) {
   if ((rect->anchor_mask & UI_ANCHOR_LEFT_BIT) &&
       !(rect->anchor_mask & UI_ANCHOR_RIGHT_BIT)) {
 
-    rect->total_offset.x = rect->parent->total_offset.x;
+    rect->total_offset.x = parent->total_offset.x;
     rect->total_extent.x = rect->extent.x;
 
   } else if (!(rect->anchor_mask & UI_ANCHOR_LEFT_BIT) &&
 	     (rect->anchor_mask & UI_ANCHOR_RIGHT_BIT)) {
 
     rect->total_offset.x =
-      (rect->parent->total_offset.x + rect->parent->total_extent.x) -
+      (parent->total_offset.x + parent->total_extent.x) -
       rect->total_extent.x;
     rect->total_extent.x = rect->extent.x;
 
   } else if (rect->anchor_mask &
 	     (UI_ANCHOR_LEFT_BIT | UI_ANCHOR_RIGHT_BIT)) {
 
-    rect->total_offset.x = rect->parent->total_offset.x;
-    rect->total_extent.x = rect->parent->total_extent.x;
+    rect->total_offset.x = parent->total_offset.x;
+    rect->total_extent.x = parent->total_extent.x;
 
   } else {
 
@@ -184,9 +188,9 @@ void ui_calc_rects(UiRect* rect) {
 	 rect->total_extent.x,
 	 rect->total_extent.y);
 
-  if (rect->children != NULL_PTR) {
-    for (u32 i = 0; i < darray_get_length(rect->children); i++) {
-      ui_calc_rects(rect->children[i]);
+  if (rect->h_children != NULL_PTR) {
+    for (u32 i = 0; i < darray_get_length(rect->h_children); i++) {
+      ui_calc_rects(rect->h_children[i]);
     }
   }
   
@@ -195,13 +199,15 @@ void ui_calc_rects(UiRect* rect) {
 void ui_gen_vertices(UiRoot* root) {
   data.rect_vertices = darray_create(UiVertex);
   data.rect_indices = darray_create(u32);
-  for (u32 i = 0; i < darray_get_length(root->children); i++) {
-    ui_gen_rect_vertices(root->children[i], root);
+  for (u32 i = 0; i < darray_get_length(root->h_children); i++) {
+    ui_gen_rect_vertices(root->h_children[i], root);
   }
 }
 
 
-void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
+void ui_gen_rect_vertices(UiRectHandle h_rect, UiRoot* root) {
+
+  UiRect* rect = &data.rects[h_rect];
 
   UiVertex v1 = {
       .pos =
@@ -281,9 +287,9 @@ void ui_gen_rect_vertices(UiRect* rect, UiRoot* root) {
   darray_push(data.rect_indices, vertex_count - 1);
   darray_push(data.rect_indices, vertex_count);
 
-  if (rect->children != NULL_PTR) {
-    for (u32 i = 0; i < darray_get_length(rect->children); i++) {
-      ui_gen_rect_vertices(rect->children[i], root);
+  if (rect->h_children != NULL_PTR) {
+    for (u32 i = 0; i < darray_get_length(rect->h_children); i++) {
+      ui_gen_rect_vertices(rect->h_children[i], root);
     }
   }
 }

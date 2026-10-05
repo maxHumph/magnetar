@@ -11,6 +11,8 @@
 #include "maths/vector.h"
 #include "renderer/renderer_types.h"
 
+typedef Handle32 UiRectHandle;
+
 typedef Mask32 UiAttributeMask;
 typedef Bit32 UiAttributeBit;
 
@@ -55,7 +57,7 @@ typedef struct UiRect UiRect;
 typedef struct UiRoot {
   const char* name;
   Vec2u reference_res;
-  UiRect** children;
+  UiRectHandle* h_children;
 } UiRoot;
 
 typedef struct UiColor {
@@ -78,8 +80,8 @@ typedef struct UiRect {
   UiColor color;
 
   b8 rooted;
-  UiRect* parent;
-  UiRect** children;
+  UiRectHandle h_parent;
+  UiRectHandle* h_children;
 
 } UiRect;
 

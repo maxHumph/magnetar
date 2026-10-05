@@ -72,6 +72,7 @@ void ui_root_add_rect(UiRoot* root, UiRect* rect) {
   darray_push(root->children, rect);
 }
 
+// @TODO Parent rect when 0 offset/exentd bug is probably in here.
 b8 ui_add_rect(UiRect* src_rect, UiRect* sub_rect) {
   if (src_rect->parent == NULL_PTR && src_rect->rooted != TRUE) {
     MERROR_CORE("UiRect must already be part of a UI tree to have children attached");

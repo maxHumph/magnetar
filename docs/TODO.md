@@ -6,17 +6,18 @@
 
 - [ ] Move UI resizing from shader to CPU.
 
-- [ ] Implement UI layout alignment and scaling modes(fixed, flex).
+- [ ] Implement UI anchoring.
 
 - [ ] Rebuild UI tree on window resize.
-
-- [ ] Implement UI textures.
-
-- [ ] Implement UI updates.
 
 - [ ] Allow scenes to be loaded and unloaded dynamically.
 
 - [ ] Allow ui trees to be loaded and unloaded dynamically.
+
+
+- [ ] Implement UI textures.
+
+- [ ] Implement UI updates.
 
 - [ ] Add clickable ui elements.
 
@@ -39,6 +40,8 @@
 ## Bugs
 
 ### Major
+
+- [ ] Fix UiRect pointers becoming invalid. *Use handles instead*.
 
 ### Minor
 

@@ -44,6 +44,7 @@ UiRoot* ui_root_create(const char* name, Vec2u ref_res) {
 }
 
 
+// @TODO instead of returning a pointer return a handle since the pointer will become invalid.
 UiRect* ui_rect_create(Vec2u extent, Vec2u offset,
 		       UiAnchorMask anchor_mask,
 		       UiAttributeMask attribute_mask) {
@@ -72,7 +73,6 @@ void ui_root_add_rect(UiRoot* root, UiRect* rect) {
   darray_push(root->children, rect);
 }
 
-// @TODO Parent rect when 0 offset/exentd bug is probably in here.
 b8 ui_add_rect(UiRect* src_rect, UiRect* sub_rect) {
   if (src_rect->parent == NULL_PTR && src_rect->rooted != TRUE) {
     MERROR_CORE("UiRect must already be part of a UI tree to have children attached");

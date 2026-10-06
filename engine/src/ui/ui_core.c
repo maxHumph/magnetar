@@ -127,14 +127,12 @@ void ui_calc_rects(UiRectHandle h_rect) {
   if ((rect->anchor_mask & UI_ANCHOR_TOP_BIT) &&
       !(rect->anchor_mask & UI_ANCHOR_BOTTOM_BIT)) {
 
-    MFATAL("1");
     rect->total_offset.y = parent->total_offset.y;
     rect->total_extent.y = rect->extent.y;
 
   } else if (!(rect->anchor_mask & UI_ANCHOR_TOP_BIT) &&
 	     (rect->anchor_mask & UI_ANCHOR_BOTTOM_BIT)) {
 
-    MFATAL("2");
     rect->total_extent.y = rect->extent.y;
     rect->total_offset.y =
       (parent->total_offset.y + parent->total_extent.y) -
@@ -143,13 +141,11 @@ void ui_calc_rects(UiRectHandle h_rect) {
   } else if (rect->anchor_mask &
 	     (UI_ANCHOR_TOP_BIT | UI_ANCHOR_BOTTOM_BIT)) {
 
-    MFATAL("3");
     rect->total_offset.y = parent->total_offset.y;
     rect->total_extent.y = parent->total_extent.y;
 
   } else {
 
-    MFATAL("4");
     rect->total_offset.y = rect->offset.y;
     rect->total_extent.y = rect->extent.y;
   }
@@ -157,33 +153,29 @@ void ui_calc_rects(UiRectHandle h_rect) {
   if ((rect->anchor_mask & UI_ANCHOR_LEFT_BIT) &&
       !(rect->anchor_mask & UI_ANCHOR_RIGHT_BIT)) {
 
-    MFATAL("5");
     rect->total_offset.x = parent->total_offset.x;
     rect->total_extent.x = rect->extent.x;
 
   } else if (!(rect->anchor_mask & UI_ANCHOR_LEFT_BIT) &&
 	     (rect->anchor_mask & UI_ANCHOR_RIGHT_BIT)) {
 
-    MFATAL("6");
     rect->total_extent.x = rect->extent.x;
     rect->total_offset.x =
       (parent->total_offset.x + parent->total_extent.x) -
       rect->total_extent.x;
-    MFATAL("%u", rect->total_offset.x);
 
   } else if (rect->anchor_mask &
 	     (UI_ANCHOR_LEFT_BIT | UI_ANCHOR_RIGHT_BIT)) {
 
-    MFATAL("7");
     rect->total_offset.x = parent->total_offset.x;
     rect->total_extent.x = parent->total_extent.x;
 
   } else {
 
-    MFATAL("8");
     rect->total_offset.x = rect->offset.x;
     rect->total_extent.x = rect->extent.x;
   }
+  /*
 
   MTRACE("RECT -- offset: (%u, %u), extent: (%u, %u)",
 	 rect->offset.x,
@@ -196,6 +188,7 @@ void ui_calc_rects(UiRectHandle h_rect) {
 	 rect->total_offset.y,
 	 rect->total_extent.x,
 	 rect->total_extent.y);
+  */
 
   if (rect->h_children != NULL_PTR) {
     for (u32 i = 0; i < darray_get_length(rect->h_children); i++) {

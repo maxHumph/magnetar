@@ -50,53 +50,6 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 
   vulkan_context.ui_data = get_ui_data_ptr();
 
-  /*
-  scene_load_text("../engine/src/ecs/default.txt");
-
-  vulkan_request_scene_data();
-
-  MTRACE("%s", get_memory_usage_string());
-  MTRACE("%s", vulkan_context.scene_data->meshes[0].name);
-  for (u32 i = 0;
-       i < vulkan_context.scene_data->mesh_assets[0].vertex_count;
-       i++) {
-    vulkan_context.scene_data->mesh_assets[0].vertices[i].colour =
-      (Vec3){0.3f, 0.5f, 0.8f};
-  }
-
-  vulkan_context.uniform_object_count =
-    darray_get_length(vulkan_context.scene_data->drawable_handles);
-
-
-  // @TODO: Free the stuff below
-  vulkan_context.uniform_bufs =
-    mallocate(vulkan_context.uniform_object_count *
-	      sizeof(VkBuffer) * MAX_FRAMES_IN_FLIGHT,
-	      MEMORY_TAG_RENDERER);
-
-  vulkan_context.uniform_buf_mem =
-    mallocate(vulkan_context.uniform_object_count *
-	      sizeof(VkDeviceMemory) * MAX_FRAMES_IN_FLIGHT,
-	      MEMORY_TAG_RENDERER);
-
-  vulkan_context.uniform_buf_mem_map =
-    mallocate(vulkan_context.uniform_object_count *
-	      sizeof(void*) * MAX_FRAMES_IN_FLIGHT,
-	      MEMORY_TAG_RENDERER);
-
-  vulkan_context.ui_ubufs =
-    mallocate(sizeof(VkBuffer) * MAX_FRAMES_IN_FLIGHT,
-              MEMORY_TAG_RENDERER);
-
-  vulkan_context.ui_ubuf_mem =
-    mallocate(sizeof(VkDeviceMemory) * MAX_FRAMES_IN_FLIGHT,
-              MEMORY_TAG_RENDERER);
-
-  vulkan_context.ui_ubuf_mem_map =
-    mallocate(sizeof(void*) * MAX_FRAMES_IN_FLIGHT,
-              MEMORY_TAG_RENDERER);
-  */
-
   // UI TEST
 
 
@@ -304,22 +257,9 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   }
 
   // CREATE DESCRIPTOR SET LAYOUT ----------
-  if (!vulkan_create_descriptor_set_layout()) {
-    MERROR_CORE("Vulkan Init: Failed to create descriptor set layout.");
-    return FALSE;
-  }
-
   // CREATE DESCRIPTOR POOL ----------
-  if (!vulkan_create_descriptor_pool()) {
-    MERROR_CORE("Vulkan Init: Failed to create descriptor pool");
-    return FALSE;
-  }
 
   // CREATE UNIFORM BUFFERS ----------
-  if (!vulkan_create_uniform_buffers()) {
-    MERROR_CORE("Vulkan Init: Failed to create uniform buffers.");
-    return FALSE;
-  }
 
   // CREATE DEPTH RESOURCECS
   if (!vulkan_create_depth_resources()) {
@@ -328,16 +268,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   }
 
   // CREATE OBJECT PIPELINE ----------
-  if (!vulkan_create_pbr_pipeline(&vulkan_context)) {
-    MERROR_CORE("Vulkan Init: Failed to create pbr pipeline.");
-    return FALSE;
-  }
 
   // CREATE UI PIPELINE
-  if (!vulkan_create_ui_pipeline(&vulkan_context)) {
-    MERROR_CORE("Vulkan Init: Failed to create UI pipeline");
-    return FALSE;    
-  }    
 
   // CREATE COMMAND POOLS ----------
   if (!vulkan_create_command_pools()) {
@@ -346,22 +278,10 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   }
 
   // CREATE DRAWABLE OBJECTS
-  if (!vulkan_create_drawable_objects()) {
-    MERROR_CORE("Vulkan Init: Failed to create drawable objects.");
-    return FALSE;
-  }
 
   // CREATE TEXTURE IMAGE
-  if (!vulkan_create_texture_image()) {
-    MERROR_CORE("Vulkan Init: Failed to create texture image.");
-    return FALSE;
-  }
 
   // CREATE TEXTURE IMAGE VIEW
-  if (!vulkan_create_texture_image_view()) {
-    MERROR_CORE("Vulkan Init: Failed to create texture image view.");
-    return FALSE;
-  }
 
   // CREATE TEXTURE IMAGE SAMPLER
   if (!vulkan_create_texture_image_sampler()) {
@@ -370,21 +290,10 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   }
 
   // CREATE DESCRIPTOR SETS ----------
-  if (!vulkan_create_descriptor_sets()) {
-    MERROR_CORE("Vukan Init: Failed to create descriptor sets");
-    return FALSE;
-  }
-  // CREATE VERTEX BUFFERS ----------
-  if (!vulkan_create_vertex_buffers()) {
-    MERROR_CORE("Vulkan Init: Failed to create vertex buffers.");
-    return FALSE;
-  }
 
+  // CREATE VERTEX BUFFERS ----------
+  
   // CREATE INDEX BUFFER ----------
-  if (!vulkan_create_index_buffer()) {
-    MERROR_CORE("Vulkan Init: Failed to create index buffer.");
-    return FALSE;
-  }
 
   // ALLOC COMMAND BUFFERS ----------
   if (!vulkan_allocate_command_buffers()) {
@@ -410,7 +319,9 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 
   vulkan_context.current_image_index = 0;
   vulkan_context.current_frame_index = 0;
-  
+
+  vulkan_backend_load_scene();
+
   return TRUE;
 }
 
@@ -465,6 +376,123 @@ void vulkan_backend_shutdown(RendererBackend* renderer_backend) {
 }
 
 b8 vulkan_backend_load_scene() {
+
+  scene_load_text("../engine/src/ecs/default.txt");
+
+  vulkan_request_scene_data();
+
+
+  /*
+  MTRACE("%s", get_memory_usage_string());
+  MTRACE("%s", vulkan_context.scene_data->meshes[0].name);
+  for (u32 i = 0;
+       i < vulkan_context.scene_data->mesh_assets[0].vertex_count;
+       i++) {
+    vulkan_context.scene_data->mesh_assets[0].vertices[i].colour =
+      (Vec3){0.3f, 0.5f, 0.8f};
+  }
+  */
+
+  vulkan_context.uniform_object_count =
+    darray_get_length(vulkan_context.scene_data->drawable_handles);
+
+
+  // @TODO: Free the stuff below
+  vulkan_context.uniform_bufs =
+    mallocate(vulkan_context.uniform_object_count *
+	      sizeof(VkBuffer) * MAX_FRAMES_IN_FLIGHT,
+	      MEMORY_TAG_RENDERER);
+
+  vulkan_context.uniform_buf_mem =
+    mallocate(vulkan_context.uniform_object_count *
+	      sizeof(VkDeviceMemory) * MAX_FRAMES_IN_FLIGHT,
+	      MEMORY_TAG_RENDERER);
+
+  vulkan_context.uniform_buf_mem_map =
+    mallocate(vulkan_context.uniform_object_count *
+	      sizeof(void*) * MAX_FRAMES_IN_FLIGHT,
+	      MEMORY_TAG_RENDERER);
+
+  vulkan_context.ui_ubufs =
+    mallocate(sizeof(VkBuffer) * MAX_FRAMES_IN_FLIGHT,
+              MEMORY_TAG_RENDERER);
+
+  vulkan_context.ui_ubuf_mem =
+    mallocate(sizeof(VkDeviceMemory) * MAX_FRAMES_IN_FLIGHT,
+              MEMORY_TAG_RENDERER);
+
+  vulkan_context.ui_ubuf_mem_map =
+    mallocate(sizeof(void*) * MAX_FRAMES_IN_FLIGHT,
+              MEMORY_TAG_RENDERER);
+
+
+
+  // CREATE UNIFORM BUFFERS ----------
+  if (!vulkan_create_uniform_buffers()) {
+    MERROR_CORE("Vulkan Init: Failed to create uniform buffers.");
+    return FALSE;
+  }
+
+  // CREATE DESCRIPTOR SET LAYOUT ----------
+  if (!vulkan_create_descriptor_set_layout()) {
+    MERROR_CORE("Vulkan Init: Failed to create descriptor set layout.");
+    return FALSE;
+  }
+
+  // CREATE DESCRIPTOR POOL ----------
+  if (!vulkan_create_descriptor_pool()) {
+    MERROR_CORE("Vulkan Init: Failed to create descriptor pool");
+    return FALSE;
+  }
+
+  // CREATE OBJECT PIPELINE ----------
+  if (!vulkan_create_pbr_pipeline(&vulkan_context)) {
+    MERROR_CORE("Vulkan Init: Failed to create pbr pipeline.");
+    return FALSE;
+  }
+
+  // CREATE UI PIPELINE
+  if (!vulkan_create_ui_pipeline(&vulkan_context)) {
+    MERROR_CORE("Vulkan Init: Failed to create UI pipeline");
+    return FALSE;    
+  }    
+
+  // CREATE DRAWABLE OBJECTS
+  if (!vulkan_create_drawable_objects()) {
+    MERROR_CORE("Vulkan Init: Failed to create drawable objects.");
+    return FALSE;
+  }
+
+  // CREATE TEXTURE IMAGE
+  if (!vulkan_create_texture_image()) {
+    MERROR_CORE("Vulkan Init: Failed to create texture image.");
+    return FALSE;
+  }
+
+  // CREATE TEXTURE IMAGE VIEW
+  if (!vulkan_create_texture_image_view()) {
+    MERROR_CORE("Vulkan Init: Failed to create texture image view.");
+    return FALSE;
+  }
+
+  // CREATE DESCRIPTOR SETS ----------
+  if (!vulkan_create_descriptor_sets()) {
+    MERROR_CORE("Vukan Init: Failed to create descriptor sets");
+    return FALSE;
+  }
+
+  // CREATE VERTEX BUFFERS ----------
+  if (!vulkan_create_vertex_buffers()) {
+    MERROR_CORE("Vulkan Init: Failed to create vertex buffers.");
+    return FALSE;
+  }
+
+  // CREATE INDEX BUFFER ----------
+  if (!vulkan_create_index_buffer()) {
+    MERROR_CORE("Vulkan Init: Failed to create index buffer.");
+    return FALSE;
+  }
+
   return TRUE;
 }
 

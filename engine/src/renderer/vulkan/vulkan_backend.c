@@ -133,6 +133,13 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 					   UI_ANCHOR_RIGHT_BIT,
 					   UI_ATTRIBUTE_COLOR_BIT);
 
+  UiRectHandle ui_left_bar = ui_rect_create((Vec2u){80, 400},
+					    (Vec2u){0, 0},
+					    UI_ANCHOR_TOP_BIT |
+					    UI_ANCHOR_BOTTOM_BIT |
+					    UI_ANCHOR_LEFT_BIT,
+					    UI_ATTRIBUTE_COLOR_BIT);
+
   ui_rect_set_color(ui_red, (UiColor){
       .primary_color = {
         .r = 0.8f,
@@ -178,12 +185,24 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
       .gradient = UI_COLOR_GRAD_SOLID,
     });
 
+  ui_rect_set_color(ui_left_bar, (UiColor) {
+      .primary_color = {
+	.r = 0.5f,
+	.g = 0.5f,
+	.b = 0.5f,
+      },
+      .gradient = UI_COLOR_GRAD_SOLID,
+    });
+
   ui_root_add_rect(ui_root, ui_base);  
+
   ui_add_rect(ui_base, ui_red);
   ui_add_rect(ui_red, ui_green);
   ui_add_rect(ui_green, ui_blue);
   ui_add_rect(ui_blue, ui_yellow_1);
   ui_add_rect(ui_blue, ui_yellow_2);
+
+  ui_add_rect(ui_base, ui_left_bar);
 
   ui_calc_rects(ui_base);
   ui_gen_vertices(ui_root);

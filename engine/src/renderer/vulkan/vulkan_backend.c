@@ -103,19 +103,37 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 				   UI_ANCHOR_NONE,
 				   UI_ATTRIBUTE_NONE);
   
-  UiRectHandle ui_square = ui_rect_create((Vec2u){1700, 800},
-					  (Vec2u){100, 100},
-					  UI_ANCHOR_TOP_BIT |
-					  UI_ANCHOR_RIGHT_BIT,
-					  UI_ATTRIBUTE_COLOR_BIT);
-
-  UiRectHandle ui_box = ui_rect_create((Vec2u){20, 20},
+  UiRectHandle ui_red = ui_rect_create((Vec2u){1400, 800},
 				       (Vec2u){100, 100},
-				       UI_ANCHOR_BOTTOM_BIT |
-				       UI_ANCHOR_LEFT_BIT,
+				       UI_ANCHOR_TOP_BIT |
+				       UI_ANCHOR_RIGHT_BIT,
 				       UI_ATTRIBUTE_COLOR_BIT);
 
-  ui_rect_set_color(ui_square, (UiColor){
+  UiRectHandle ui_green = ui_rect_create((Vec2u){700, 400},
+					 (Vec2u){100, 100},
+					 UI_ANCHOR_BOTTOM_BIT |
+					 UI_ANCHOR_LEFT_BIT,
+					 UI_ATTRIBUTE_COLOR_BIT);
+
+  UiRectHandle ui_blue = ui_rect_create((Vec2u){350, 200},
+					(Vec2u){100, 100},
+					UI_ANCHOR_TOP_BIT |
+					UI_ANCHOR_RIGHT_BIT,
+					UI_ATTRIBUTE_COLOR_BIT);
+
+  UiRectHandle ui_yellow_1 = ui_rect_create((Vec2u){175, 100},
+					    (Vec2u){100, 100},
+					    UI_ANCHOR_TOP_BIT |
+					    UI_ANCHOR_LEFT_BIT,
+					    UI_ATTRIBUTE_COLOR_BIT);
+  
+  UiRectHandle ui_yellow_2 = ui_rect_create((Vec2u){175, 100},
+					   (Vec2u){100, 100},
+					   UI_ANCHOR_BOTTOM_BIT |
+					   UI_ANCHOR_RIGHT_BIT,
+					   UI_ATTRIBUTE_COLOR_BIT);
+
+  ui_rect_set_color(ui_red, (UiColor){
       .primary_color = {
         .r = 0.8f,
         .g = 0.2f,
@@ -124,7 +142,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
       .gradient = UI_COLOR_GRAD_SOLID,
     });
 
-  ui_rect_set_color(ui_box, (UiColor) {
+  ui_rect_set_color(ui_green, (UiColor) {
       .primary_color = {
         .r = 0.2f,
         .g = 0.8f,
@@ -133,9 +151,39 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
       .gradient = UI_COLOR_GRAD_SOLID,
     });
 
+  ui_rect_set_color(ui_blue, (UiColor) {
+      .primary_color = {
+	.r = 0.2f,
+	.g = 0.2f,
+	.b = 0.8f,
+      },
+      .gradient = UI_COLOR_GRAD_SOLID,
+    });
+
+  ui_rect_set_color(ui_yellow_1, (UiColor) {
+      .primary_color = {
+	.r = 1.0f,
+	.g = 0.8f,
+	.b = 0.0f,
+      },
+      .gradient = UI_COLOR_GRAD_SOLID,
+    });
+
+  ui_rect_set_color(ui_yellow_2, (UiColor) {
+      .primary_color = {
+	.r = 1.0f,
+	.g = 0.8f,
+	.b = 0.0f,
+      },
+      .gradient = UI_COLOR_GRAD_SOLID,
+    });
+
   ui_root_add_rect(ui_root, ui_base);  
-  ui_add_rect(ui_base, ui_square);
-  ui_add_rect(ui_square, ui_box);
+  ui_add_rect(ui_base, ui_red);
+  ui_add_rect(ui_red, ui_green);
+  ui_add_rect(ui_green, ui_blue);
+  ui_add_rect(ui_blue, ui_yellow_1);
+  ui_add_rect(ui_blue, ui_yellow_2);
 
   ui_calc_rects(ui_base);
   ui_gen_vertices(ui_root);

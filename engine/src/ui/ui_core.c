@@ -35,9 +35,9 @@ UiData* get_ui_data_ptr() { return &data; }
 
 UiRoot* ui_root_create(const char* name, Vec2u ref_res) {
   UiRoot root = {
-      .name = name,
-      .reference_res = ref_res,
-      .h_children = NULL_PTR,
+    .name = name,
+    .reference_res = ref_res,
+    .h_children = NULL_PTR,
   };
   darray_push(data.roots, root);
   return &data.roots[darray_get_length(data.roots) - 1];
@@ -46,16 +46,16 @@ UiRoot* ui_root_create(const char* name, Vec2u ref_res) {
 
 // @TODO instead of returning a pointer return a handle since the pointer will become invalid.
 UiRectHandle ui_rect_create(Vec2u extent, Vec2u offset,
-		       UiAnchorMask anchor_mask,
-		       UiAttributeMask attribute_mask) {
+			    UiAnchorMask anchor_mask,
+			    UiAttributeMask attribute_mask) {
   UiRect rect = {
-      .extent = extent,
-      .offset = offset,
-      .anchor_mask = anchor_mask,
-      .attribute_mask = attribute_mask,
-      .rooted = FALSE,
-      .h_parent = U32_MAX,
-      .h_children = NULL_PTR,
+    .extent = extent,
+    .offset = offset,
+    .anchor_mask = anchor_mask,
+    .attribute_mask = attribute_mask,
+    .rooted = FALSE,
+    .h_parent = U32_MAX,
+    .h_children = NULL_PTR,
   };
   darray_push(data.rects, rect);
   if (rect.attribute_mask & UI_ATTRIBUTE_CLICKABLE_BIT) {
@@ -83,17 +83,17 @@ b8 ui_add_rect(UiRectHandle h_src_rect, UiRectHandle h_sub_rect) {
     data.rects[h_src_rect].h_children = darray_create(UiRectHandle);
   }
   /*
-  switch (sub_rect->anchor_mask) {
+    switch (sub_rect->anchor_mask) {
     case UI_ANCHOR_NONE:
-      sub_rect->total_offset =
-	vec2u_add(src_rect->total_offset, sub_rect->offset);
-      break;
+    sub_rect->total_offset =
+    vec2u_add(src_rect->total_offset, sub_rect->offset);
+    break;
 
     default:
-      sub_rect->total_offset =
-	vec2u_add(src_rect->total_offset, sub_rect->offset);
-      break;
-  }
+    sub_rect->total_offset =
+    vec2u_add(src_rect->total_offset, sub_rect->offset);
+    break;
+    }
   */
   data.rects[h_sub_rect].h_parent = h_src_rect;
   darray_push(data.rects[h_src_rect].h_children, h_sub_rect);
@@ -218,83 +218,86 @@ void ui_gen_rect_vertices(UiRectHandle h_rect, UiRoot* root) {
 
   UiRect* rect = &data.rects[h_rect];
 
-  UiVertex v1 = {
+  if (rect->attribute_mask & (UI_ATTRIBUTE_COLOR_BIT)) {
+
+    UiVertex v1 = {
       .pos =
-          {
-              .x = (f32)rect->total_offset.x,
-              .y = (f32)rect->total_offset.y,
-          },
+      {
+	.x = (f32)rect->total_offset.x,
+	.y = (f32)rect->total_offset.y,
+      },
       .color = rect->color.primary_color,
-  };
-  UiVertex v2 = {
+    };
+    UiVertex v2 = {
       .pos =
-          {
-              .x = (f32)(rect->total_offset.x + rect->total_extent.x),
-              .y = (f32)rect->total_offset.y,
-          },
+      {
+	.x = (f32)(rect->total_offset.x + rect->total_extent.x),
+	.y = (f32)rect->total_offset.y,
+      },
       .color = rect->color.primary_color,
-  };
-  UiVertex v3 = {
+    };
+    UiVertex v3 = {
       .pos =
-          {
-              .x = (f32)(rect->total_offset.x + rect->total_extent.x),
-              .y = (f32)(rect->total_offset.y + rect->total_extent.y),
-          },
+      {
+	.x = (f32)(rect->total_offset.x + rect->total_extent.x),
+	.y = (f32)(rect->total_offset.y + rect->total_extent.y),
+      },
       .color = rect->color.primary_color,
-  };
-  UiVertex v4 = {
+    };
+    UiVertex v4 = {
       .pos =
-          {
-              .x = (f32)rect->total_offset.x,
-              .y = (f32)(rect->total_offset.y + rect->total_extent.y),
-          },
+      {
+	.x = (f32)rect->total_offset.x,
+	.y = (f32)(rect->total_offset.y + rect->total_extent.y),
+      },
       .color = rect->color.primary_color,
-  };
+    };
 
 
 
 
-  /*
-  if ((rect->anchor_mask & UI_ANCHOR_TOP_BIT) &&
+    /*
+      if ((rect->anchor_mask & UI_ANCHOR_TOP_BIT) &&
       !(rect->anchor_mask & UI_ANCHOR_BOTTOM_BIT)) {
 
-    v1.pos.y = (f32)rect->parent->offset.y;
-    v2.pos.y = (f32)rect->parent->offset.y;
-    v3.pos.y += ((f32)rect->parent->offset.y - (f32)rect->offset.y);
-    v4.pos.y += ((f32)rect->parent->offset.y - (f32)rect->offset.y);
+      v1.pos.y = (f32)rect->parent->offset.y;
+      v2.pos.y = (f32)rect->parent->offset.y;
+      v3.pos.y += ((f32)rect->parent->offset.y - (f32)rect->offset.y);
+      v4.pos.y += ((f32)rect->parent->offset.y - (f32)rect->offset.y);
 
-  } else if (!(rect->anchor_mask & UI_ANCHOR_TOP_BIT) &&
-	     (rect->anchor_mask & UI_ANCHOR_BOTTOM_BIT)) {
-    v1.pos.y -= (((f32)rect->parent->offset.y + (f32)rect->parent->extent.y) -
-		 ((f32)rect->offset.y + (f32)rect->extent.y));
-    v2.pos.y -= (((f32)rect->parent->offset.y + (f32)rect->parent->extent.y) -
-		 ((f32)rect->offset.y + (f32)rect->extent.y));
-    v3.pos.y = (f32)rect->parent->offset.y + (f32)rect->parent->extent.y;
-    v4.pos.y = (f32)rect->parent->offset.y + (f32)rect->parent->extent.y;
-  } else if (rect->anchor_mask & (UI_ANCHOR_TOP_BIT | UI_ANCHOR_BOTTOM_BIT)) {
-  } else {
+      } else if (!(rect->anchor_mask & UI_ANCHOR_TOP_BIT) &&
+      (rect->anchor_mask & UI_ANCHOR_BOTTOM_BIT)) {
+      v1.pos.y -= (((f32)rect->parent->offset.y + (f32)rect->parent->extent.y) -
+      ((f32)rect->offset.y + (f32)rect->extent.y));
+      v2.pos.y -= (((f32)rect->parent->offset.y + (f32)rect->parent->extent.y) -
+      ((f32)rect->offset.y + (f32)rect->extent.y));
+      v3.pos.y = (f32)rect->parent->offset.y + (f32)rect->parent->extent.y;
+      v4.pos.y = (f32)rect->parent->offset.y + (f32)rect->parent->extent.y;
+      } else if (rect->anchor_mask & (UI_ANCHOR_TOP_BIT | UI_ANCHOR_BOTTOM_BIT)) {
+      } else {
+      }
+
+      if ((rect->anchor_mask & UI_ANCHOR_LEFT_BIT) && !(rect->anchor_mask & UI_ANCHOR_RIGHT_BIT)) {
+      } else if (!(rect->anchor_mask & UI_ANCHOR_LEFT_BIT) && (rect->anchor_mask & UI_ANCHOR_RIGHT_BIT)) {
+      } else if (rect->anchor_mask & (UI_ANCHOR_LEFT_BIT | UI_ANCHOR_RIGHT_BIT)) {
+      } else {
+      }
+    */
+
+
+    darray_push(data.rect_vertices, v1);
+    darray_push(data.rect_vertices, v2);
+    darray_push(data.rect_vertices, v3);
+    darray_push(data.rect_vertices, v4);
+    u32 vertex_count = darray_get_length(data.rect_vertices) - 1;
+
+    darray_push(data.rect_indices, vertex_count - 3);
+    darray_push(data.rect_indices, vertex_count - 2);
+    darray_push(data.rect_indices, vertex_count - 1);
+    darray_push(data.rect_indices, vertex_count - 3);
+    darray_push(data.rect_indices, vertex_count - 1);
+    darray_push(data.rect_indices, vertex_count);
   }
-
-  if ((rect->anchor_mask & UI_ANCHOR_LEFT_BIT) && !(rect->anchor_mask & UI_ANCHOR_RIGHT_BIT)) {
-  } else if (!(rect->anchor_mask & UI_ANCHOR_LEFT_BIT) && (rect->anchor_mask & UI_ANCHOR_RIGHT_BIT)) {
-  } else if (rect->anchor_mask & (UI_ANCHOR_LEFT_BIT | UI_ANCHOR_RIGHT_BIT)) {
-  } else {
-  }
-  */
-
-
-  darray_push(data.rect_vertices, v1);
-  darray_push(data.rect_vertices, v2);
-  darray_push(data.rect_vertices, v3);
-  darray_push(data.rect_vertices, v4);
-  u32 vertex_count = darray_get_length(data.rect_vertices) - 1;
-
-  darray_push(data.rect_indices, vertex_count - 3);
-  darray_push(data.rect_indices, vertex_count - 2);
-  darray_push(data.rect_indices, vertex_count - 1);
-  darray_push(data.rect_indices, vertex_count - 3);
-  darray_push(data.rect_indices, vertex_count - 1);
-  darray_push(data.rect_indices, vertex_count);
 
   if (rect->h_children != NULL_PTR) {
     for (u32 i = 0; i < darray_get_length(rect->h_children); i++) {

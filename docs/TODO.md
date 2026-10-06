@@ -29,6 +29,8 @@
 
 ### Secordary
 
+- [ ] Implement `vulkan_load_scene()` and `vulkan_unload_scene()`.
+
 - [ ] Fix `ui_calc_rects()` so that an invisible base UiRect does not need to be managed in the application code.
 
 - [ ] Add platform layer for windows.
@@ -47,7 +49,6 @@
 
 ### Major
 
-- [ ] UiRect not rendering when using `UI_ANCHOR_BOTTOM_BIT` or `UI_ANCHOR_RIGHT_BIT`.
 
 ### Minor
 
@@ -66,3 +67,5 @@
 - [X] Fix UiRect pointers becoming invalid. *Use handles instead*. **05/10/2026**
 
 - [X] Implement UI anchoring. **06/10/2026**
+
+- [X] UiRect not rendering when using `UI_ANCHOR_BOTTOM_BIT` or `UI_ANCHOR_RIGHT_BIT`. **06/10/2026**

@@ -13,6 +13,10 @@ b8 renderer_init(Game* game_instance, PlatformState* platform_state);
 
 void renderer_shutdown();
 
+b8 renderer_load_scene();
+
+b8 renderer_unload_scene();
+
 b8 renderer_start_frame(f64 delta_time);
 
 b8 renderer_end_frame(f64 delta_time);

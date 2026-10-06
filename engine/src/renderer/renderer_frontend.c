@@ -9,17 +9,28 @@
 static RendererBackend* renderer_backend = NULL_PTR;
 
 b8 renderer_init(Game* game_instance, PlatformState* platform_state) {
-  renderer_backend = mallocate(sizeof(RendererBackend), MEMORY_TAG_RENDERER);
+  renderer_backend =
+    mallocate(sizeof(RendererBackend), MEMORY_TAG_RENDERER);
 
-  if (!renderer_backend_create(game_instance->application_info.renderer_api,
-                               game_instance->application_info.start_title, renderer_backend)) {
+  if (!renderer_backend_create(game_instance->application_info.
+			       renderer_api,
+                               game_instance->application_info.
+			       start_title,
+			       renderer_backend)) {
+
     MFATAL_CORE("Failed to create renderer backend");
     return FALSE;
   }
 
-  if (!renderer_backend->init(renderer_backend, game_instance->application_info.start_title,
-                              game_instance->application_info.start_width,
-                              game_instance->application_info.start_height, platform_state)) {
+  if (!renderer_backend->init(renderer_backend,
+			      game_instance->
+			      application_info.start_title,
+                              game_instance->
+			      application_info.start_width,
+                              game_instance->
+			      application_info.start_height,
+			      platform_state)) {
+
     MERROR_CORE("Failed to init renderer backend");
     return FALSE;
   }
@@ -30,6 +41,21 @@ b8 renderer_init(Game* game_instance, PlatformState* platform_state) {
 void renderer_shutdown() {
   renderer_backend_destroy(renderer_backend);
   mfree(renderer_backend, sizeof(RendererBackend), MEMORY_TAG_RENDERER);
+}
+
+b8 renderer_load_scene() {
+  if (!renderer_backend->load_scene()) {
+    MERROR_CORE("Renderer backend failed to load scene");
+    return FALSE;
+  }
+  return TRUE;
+}
+
+b8 renderer_unload_scene() {
+  if (!renderer_backend->unload_scene()) {
+    MERROR_CORE("Renderre backend failed to unload scene");
+  }
+  return TRUE;
 }
 
 b8 renderer_start_frame(f64 delta_time) {

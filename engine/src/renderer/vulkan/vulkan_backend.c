@@ -50,7 +50,9 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 
   vulkan_context.ui_data = get_ui_data_ptr();
 
+  /*
   scene_load_text("../engine/src/ecs/default.txt");
+
   vulkan_request_scene_data();
 
   MTRACE("%s", get_memory_usage_string());
@@ -93,8 +95,10 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   vulkan_context.ui_ubuf_mem_map =
     mallocate(sizeof(void*) * MAX_FRAMES_IN_FLIGHT,
               MEMORY_TAG_RENDERER);
+  */
 
   // UI TEST
+
 
   UiRoot* ui_root = ui_root_create("HUD", (Vec2u) {1920, 1080});
 
@@ -103,6 +107,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 				   UI_ANCHOR_NONE,
 				   UI_ATTRIBUTE_NONE);
   
+  /*
   UiRectHandle ui_red = ui_rect_create((Vec2u){1400, 800},
 				       (Vec2u){100, 100},
 				       UI_ANCHOR_TOP_BIT |
@@ -132,6 +137,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 					   UI_ANCHOR_BOTTOM_BIT |
 					   UI_ANCHOR_RIGHT_BIT,
 					   UI_ATTRIBUTE_COLOR_BIT);
+  */
 
   UiRectHandle ui_left_bar = ui_rect_create((Vec2u){80, 400},
 					    (Vec2u){0, 0},
@@ -139,6 +145,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 					    UI_ANCHOR_BOTTOM_BIT |
 					    UI_ANCHOR_LEFT_BIT,
 					    UI_ATTRIBUTE_COLOR_BIT);
+  /*
 
   ui_rect_set_color(ui_red, (UiColor){
       .primary_color = {
@@ -185,6 +192,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
       .gradient = UI_COLOR_GRAD_SOLID,
     });
 
+  */
+
   ui_rect_set_color(ui_left_bar, (UiColor) {
       .primary_color = {
 	.r = 0.5f,
@@ -196,13 +205,18 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 
   ui_root_add_rect(ui_root, ui_base);  
 
+  ui_add_rect(ui_base, ui_left_bar);
+
+  /*
+
   ui_add_rect(ui_base, ui_red);
   ui_add_rect(ui_red, ui_green);
   ui_add_rect(ui_green, ui_blue);
   ui_add_rect(ui_blue, ui_yellow_1);
   ui_add_rect(ui_blue, ui_yellow_2);
 
-  ui_add_rect(ui_base, ui_left_bar);
+  */
+
 
   ui_calc_rects(ui_base);
   ui_gen_vertices(ui_root);
@@ -448,6 +462,14 @@ void vulkan_backend_shutdown(RendererBackend* renderer_backend) {
 
   vkDestroyInstance(vulkan_context.instance, vulkan_context.allocator);
 
+}
+
+b8 vulkan_backend_load_scene() {
+  return TRUE;
+}
+
+b8 vulkan_backend_unload_scene() {
+  return TRUE;
 }
 
 b8 vulkan_backend_start_frame(RendererBackend* renderer_backend,

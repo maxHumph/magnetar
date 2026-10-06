@@ -10,6 +10,8 @@ b8 renderer_backend_create(RendererAPI api, const char* application_name,
     case RENDERER_API_VULKAN:
       backend->init = vulkan_backend_init;
       backend->shutdown = vulkan_backend_shutdown;
+      backend->load_scene = vulkan_backend_load_scene;
+      backend->unload_scene = vulkan_backend_unload_scene;
       backend->start_frame = vulkan_backend_start_frame;
       backend->end_frame = vulkan_backend_end_frame;
       backend->draw_frame = vulkan_backend_draw_frame;
@@ -21,6 +23,8 @@ b8 renderer_backend_create(RendererAPI api, const char* application_name,
 void renderer_backend_destroy(RendererBackend* backend) {
   backend->init = NULL_PTR;
   backend->shutdown = NULL_PTR;
+  backend->load_scene = NULL_PTR;
+  backend->unload_scene = NULL_PTR;
   backend->start_frame = NULL_PTR;
   backend->end_frame = NULL_PTR;
   backend->draw_frame = NULL_PTR;

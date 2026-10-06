@@ -28,8 +28,10 @@
  * @param platform_state, A pointer to the PlatformState object.
  * @return TRUE if vulkan initialized successfully, otherwise FALSE.
  */
-b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* application_name,
-                       i16 start_width, i16 start_height, PlatformState* platform_state);
+b8 vulkan_backend_init(RendererBackend* renderer_backend,
+		       const char* application_name,
+                       i16 start_width, i16 start_height,
+		       PlatformState* platform_state);
 
 /**
  * @brief Destroys the VkInstance and other things that need to be banished to the shadow realm.
@@ -38,6 +40,10 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend, const char* applicatio
  * @param renderer_backend, A pointer to the RendererBackend object.
  */
 void vulkan_backend_shutdown(RendererBackend* renderer_backend);
+
+b8 vulkan_backend_load_scene();
+
+b8 vulkan_backend_unload_scene();
 
 /**
  * @brief Starts the vulkan command buffer recording and rendering.

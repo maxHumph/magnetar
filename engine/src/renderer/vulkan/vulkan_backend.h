@@ -212,6 +212,7 @@ static b8 create_buffer(VkBuffer* buffer,
                         VkBufferUsageFlags usage_flags,
 			VkMemoryPropertyFlags prop_flags);
 
+
 static b8 copy_buffer(VkBuffer* src_buffer, VkBuffer* dst_buffer, VkDeviceSize size);
 
 

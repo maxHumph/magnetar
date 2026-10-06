@@ -60,7 +60,6 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 				   UI_ANCHOR_NONE,
 				   UI_ATTRIBUTE_NONE);
   
-  /*
   UiRectHandle ui_red = ui_rect_create((Vec2u){1400, 800},
 				       (Vec2u){100, 100},
 				       UI_ANCHOR_TOP_BIT |
@@ -90,7 +89,6 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 					   UI_ANCHOR_BOTTOM_BIT |
 					   UI_ANCHOR_RIGHT_BIT,
 					   UI_ATTRIBUTE_COLOR_BIT);
-  */
 
   UiRectHandle ui_left_bar = ui_rect_create((Vec2u){80, 400},
 					    (Vec2u){0, 0},
@@ -98,7 +96,6 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 					    UI_ANCHOR_BOTTOM_BIT |
 					    UI_ANCHOR_LEFT_BIT,
 					    UI_ATTRIBUTE_COLOR_BIT);
-  /*
 
   ui_rect_set_color(ui_red, (UiColor){
       .primary_color = {
@@ -145,7 +142,6 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
       .gradient = UI_COLOR_GRAD_SOLID,
     });
 
-  */
 
   ui_rect_set_color(ui_left_bar, (UiColor) {
       .primary_color = {
@@ -160,7 +156,6 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 
   ui_add_rect(ui_base, ui_left_bar);
 
-  /*
 
   ui_add_rect(ui_base, ui_red);
   ui_add_rect(ui_red, ui_green);
@@ -168,7 +163,6 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   ui_add_rect(ui_blue, ui_yellow_1);
   ui_add_rect(ui_blue, ui_yellow_2);
 
-  */
 
 
   ui_calc_rects(ui_base);
@@ -257,6 +251,10 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   }
 
   // CREATE DESCRIPTOR SET LAYOUT ----------
+  if (!vulkan_create_descriptor_set_layout()) {
+    MERROR_CORE("Vulkan Init: Failed to create descriptor set layout.");
+    return FALSE;
+  }
   // CREATE DESCRIPTOR POOL ----------
 
   // CREATE UNIFORM BUFFERS ----------
@@ -422,11 +420,6 @@ b8 vulkan_backend_load_scene() {
     return FALSE;
   }
 
-  // CREATE DESCRIPTOR SET LAYOUT ----------
-  if (!vulkan_create_descriptor_set_layout()) {
-    MERROR_CORE("Vulkan Init: Failed to create descriptor set layout.");
-    return FALSE;
-  }
 
   // CREATE DESCRIPTOR POOL ----------
   if (!vulkan_create_descriptor_pool()) {
@@ -434,7 +427,7 @@ b8 vulkan_backend_load_scene() {
     return FALSE;
   }
 
-  // CREATE OBJECT PIPELINE ----------
+  // CREATE PBR PIPELINE ----------
   if (!vulkan_create_pbr_pipeline(&vulkan_context)) {
     MERROR_CORE("Vulkan Init: Failed to create pbr pipeline.");
     return FALSE;
@@ -486,6 +479,54 @@ b8 vulkan_backend_load_scene() {
 }
 
 b8 vulkan_backend_unload_scene() {
+  // @TODO: Add fence to wait for idle.
+
+  // Free texture images
+
+  u32 texture_count =
+    darray_get_length(vulkan_context.scene_data->texture_assets);
+
+  mfree(vulkan_context.texture_image_mem,
+	texture_count * sizeof(VkDeviceMemory),
+	MEMORY_TAG_RENDERER);
+
+  mfree(vulkan_context.texture_images,
+	texture_count * sizeof(VkImage),
+	MEMORY_TAG_RENDERER);
+  
+  // Destroy drawables
+  
+  darray_destroy(vulkan_context.objects);
+  
+  // Destroy Pipelines
+
+
+  vkDestroyPipeline(vulkan_context.logical_device,
+		    vulkan_context.pbr_pipeline,
+		    vulkan_context.allocator);
+
+  vkDestroyPipeline(vulkan_context.logical_device,
+		    vulkan_context.ui_pipeline,
+		    vulkan_context.allocator);
+
+
+  // Destroy Descriptor Pool
+
+  vkDestroyDescriptorPool(vulkan_context.logical_device,
+			  vulkan_context.descriptor_pool,
+			  vulkan_context.allocator);
+
+  // Destroy Uniform Bufs
+
+  for (u32 i = 0; i < vulkan_context.uniform_object_count; i++) {
+    for (u32 j = 0; j < MAX_FRAMES_IN_FLIGHT; j++) {
+      vkDestroyBuffer(vulkan_context.logical_device,
+		      vulkan_context.uniform_bufs
+		      [(i * MAX_FRAMES_IN_FLIGHT) + j],
+		      vulkan_context.allocator);
+		      
+    }
+  }
 
   mfree(vulkan_context.uniform_bufs,
 	vulkan_context.uniform_object_count *
@@ -1199,9 +1240,15 @@ static b8 vulkan_recreate_depth_resources() {
 
 static b8 vulkan_create_texture_image() {
 
-  u32 texture_count = darray_get_length(vulkan_context.scene_data->texture_assets);
-  vulkan_context.texture_images = mallocate(texture_count * sizeof(VkImage), MEMORY_TAG_RENDERER); // @TODO: Free
-  vulkan_context.texture_image_mem = mallocate(texture_count * sizeof(VkDeviceMemory), MEMORY_TAG_RENDERER); // @TODO: Free
+  u32 texture_count =
+    darray_get_length(vulkan_context.scene_data->texture_assets);
+
+  vulkan_context.texture_images =
+    mallocate(texture_count * sizeof(VkImage), MEMORY_TAG_RENDERER); 
+
+  vulkan_context.texture_image_mem =
+    mallocate(texture_count * sizeof(VkDeviceMemory),
+	      MEMORY_TAG_RENDERER); // @TODO: Free
   
   for(u32 i = 0; i < texture_count; i++) {
     ATexture* p_texture =

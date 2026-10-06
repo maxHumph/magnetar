@@ -40,9 +40,14 @@ typedef struct ApplicationState {
 static b8 s_initialized = FALSE;
 static ApplicationState s_application_state;
 
-b8 application_on_event(u16 code, void* sender, void* listener, EventData event_data);
-b8 application_on_key(u16 code, void* sender, void* listener, EventData event_data);
-b8 application_on_button(u16 code, void* sender, void* listener, EventData event_data);
+b8 application_on_event(u16 code, void* sender, void* listener,
+			EventData event_data);
+
+b8 application_on_key(u16 code, void* sender, void* listener,
+		      EventData event_data);
+
+b8 application_on_button(u16 code, void* sender, void* listener,
+			 EventData event_data);
 
 MGAPI b8 application_create(Game* game_instance) {
   if (s_initialized) {
@@ -119,9 +124,12 @@ MGAPI b8 application_create(Game* game_instance) {
 }
 
 MGAPI b8 application_run() {
+
   clock_start(&s_application_state.clock);
   f64 delta_time = 0;
-  s_application_state.last_time = s_application_state.clock.elapsed_time;
+
+  s_application_state.last_time =
+    s_application_state.clock.elapsed_time;
 
   f64 frame_target_time = 1.0f / 60.0f;
   srand(time(NULL));
@@ -130,16 +138,19 @@ MGAPI b8 application_run() {
     f64 frame_start_time = platform_get_time_abs();
 
     clock_update(&s_application_state.clock);
-    delta_time = s_application_state.clock.elapsed_time - s_application_state.last_time;
-    s_application_state.last_time = s_application_state.clock.elapsed_time;
+    delta_time = s_application_state.clock.elapsed_time -
+      s_application_state.last_time;
+    s_application_state.last_time =
+      s_application_state.clock.elapsed_time;
 
     if (!platform_pump_messages(&s_application_state.platform_state)) {
       s_application_state.is_running = FALSE;
     }
 
     if (!s_application_state.is_suspended) {
-      if (!s_application_state.game_instance->on_update(s_application_state.game_instance,
-                                                        (f32)delta_time)) {
+      if (!s_application_state.game_instance->on_update
+	  (s_application_state.game_instance, (f32)delta_time)) {
+
         MFATAL_CORE("on_update failed, EXITING PROCESS.");
         s_application_state.is_running = FALSE;
         break;
@@ -150,8 +161,9 @@ MGAPI b8 application_run() {
       renderer_end_frame(delta_time);
       renderer_draw_frame();
 
-      if (!s_application_state.game_instance->on_render(s_application_state.game_instance,
-                                                        (f32)delta_time)) {
+      if (!s_application_state.game_instance->on_render
+	  (s_application_state.game_instance, (f32)delta_time)) {
+
         MFATAL_CORE("on_render failed, EXITING PROCESS.");
         s_application_state.is_running = FALSE;
         break;

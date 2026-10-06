@@ -481,10 +481,77 @@ b8 vulkan_backend_load_scene() {
 b8 vulkan_backend_unload_scene() {
   // @TODO: Add fence to wait for idle.
 
-  // Free texture images
+  // Destroy vertex buffers
+
+  u32 mesh_count =
+    darray_get_length(vulkan_context.scene_data->mesh_assets);
+
+  for (u32 i = 0; i < mesh_count; i++) {
+    // @TODO: Fill this in.
+  }
+
+  mfree(vulkan_context.vertex_bufs,
+	mesh_count * sizeof(VkBuffer),
+	MEMORY_TAG_RENDERER);
+
+  mfree(vulkan_context.vertex_buf_mem,
+	mesh_count * sizeof(VkDeviceMemory),
+	MEMORY_TAG_RENDERER);
+
+  // Destroy descriptor sets
 
   u32 texture_count =
     darray_get_length(vulkan_context.scene_data->texture_assets);
+
+  VkResult free_ui_descriptor_sets_res =
+    vkFreeDescriptorSets(vulkan_context.logical_device,
+			 vulkan_context.descriptor_pool,
+			 MAX_FRAMES_IN_FLIGHT,
+			 vulkan_context.ui_descriptor_sets);
+
+  if (free_ui_descriptor_sets_res != VK_SUCCESS) {
+    MERROR_CORE("Failed to free UI descriptor sets: %s",
+		string_VkResult(free_ui_descriptor_sets_res));
+    return FALSE;
+  }
+
+  for (u32 i = 0; i < darray_get_length(vulkan_context.objects); i++) {
+
+    VkResult free_pbr_descriptor_sets_res = 
+      vkFreeDescriptorSets(vulkan_context.logical_device,
+			   vulkan_context.descriptor_pool,
+			   MAX_FRAMES_IN_FLIGHT,
+			   &vulkan_context.pbr_descriptor_sets
+			   [i * MAX_FRAMES_IN_FLIGHT]);
+
+    if (free_pbr_descriptor_sets_res != VK_SUCCESS) {
+      MERROR_CORE("Failed to free PBR descriptor sets: %s",
+		  string_VkResult(free_pbr_descriptor_sets_res));
+      return FALSE;
+    }
+  }
+
+  mfree(vulkan_context.ui_descriptor_sets,
+	sizeof(VkDescriptorSet) * MAX_FRAMES_IN_FLIGHT,
+	MEMORY_TAG_RENDERER);
+
+  mfree(vulkan_context.pbr_descriptor_sets,
+	sizeof(VkDescriptorSet) * MAX_FRAMES_IN_FLIGHT,
+	MEMORY_TAG_RENDERER);
+
+  // Destroy texture image views
+
+  for (u32 i = 0; i < texture_count; i++) {
+    vkDestroyImageView(vulkan_context.logical_device,
+		       vulkan_context.texture_image_views[i],
+		       vulkan_context.allocator);
+  }
+
+  mfree(vulkan_context.texture_image_views,
+	texture_count * sizeof(VkImageView),
+	MEMORY_TAG_RENDERER);
+
+  // Free texture images
 
   mfree(vulkan_context.texture_image_mem,
 	texture_count * sizeof(VkDeviceMemory),
@@ -1341,9 +1408,12 @@ static b8 vulkan_create_texture_image() {
 
 static b8 vulkan_create_texture_image_view() {
 
-  u32 texture_count = darray_get_length(vulkan_context.scene_data->texture_assets);
+  u32 texture_count =
+    darray_get_length(vulkan_context.scene_data->texture_assets);
 
-  vulkan_context.texture_image_views = mallocate(texture_count * sizeof(VkImageView), MEMORY_TAG_RENDERER); // @TODO: Free
+  vulkan_context.texture_image_views =
+    mallocate(texture_count * sizeof(VkImageView),
+	      MEMORY_TAG_RENDERER); 
     
   VkComponentMapping component_mapping;
   component_mapping.r = VK_COMPONENT_SWIZZLE_B;
@@ -1369,10 +1439,15 @@ static b8 vulkan_create_texture_image_view() {
       .components = component_mapping,
     };
   
-    VkResult create_img_view_res = vkCreateImageView(vulkan_context.logical_device, &view_create_info, vulkan_context.allocator,
-                                                     &vulkan_context.texture_image_views[i]);
+    VkResult create_img_view_res =
+      vkCreateImageView(vulkan_context.logical_device,
+			&view_create_info, vulkan_context.allocator,
+			&vulkan_context.texture_image_views[i]);
+
     if (create_img_view_res != VK_SUCCESS) {
-      MERROR_CORE("Failed to create texture image view: %s", string_VkResult(create_img_view_res));
+      MERROR_CORE("Failed to create texture image view: %s",
+		  string_VkResult(create_img_view_res));
+
       return FALSE;
     }
   }
@@ -1734,7 +1809,7 @@ static b8 vulkan_create_descriptor_sets() {
     mallocate(object_count *
 	      sizeof(VkDescriptorSet) *
 	      MAX_FRAMES_IN_FLIGHT,
-	      MEMORY_TAG_RENDERER);// @TODO: Free mem
+	      MEMORY_TAG_RENDERER);
 
   for (u32 i = 0; i < object_count; i++) {
 

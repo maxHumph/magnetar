@@ -16,6 +16,11 @@
 
 static SceneData scene_data = {};
 
+b8 ecs_init() {
+  scene_data.scene_loaded = FALSE;
+  return TRUE;
+}
+
 b8 scene_load(Scene* scene) {
   scene_data.entities = darray_create(Entity);
   scene_data.drawable_handles = darray_create(Handle32);
@@ -36,6 +41,7 @@ b8 scene_load(Scene* scene) {
     }
   }
 
+  scene_data.scene_loaded = TRUE;
 
   return TRUE;
 };
@@ -70,6 +76,8 @@ b8 scene_unload(Scene* scene) {
   scene_data.mesh_assets = NULL_PTR;
   scene_data.texture_assets = NULL_PTR;
 
+  scene_data.scene_loaded = FALSE;
+
   return TRUE;
 };
 
@@ -102,8 +110,10 @@ b8 scene_load_text(const char* path) {
     }
   }
 
-
   fclose(file);
+
+  scene_data.scene_loaded = TRUE;
+
   return TRUE;
 }
 

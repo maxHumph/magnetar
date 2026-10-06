@@ -382,17 +382,6 @@ b8 vulkan_backend_load_scene() {
   vulkan_request_scene_data();
 
 
-  /*
-  MTRACE("%s", get_memory_usage_string());
-  MTRACE("%s", vulkan_context.scene_data->meshes[0].name);
-  for (u32 i = 0;
-       i < vulkan_context.scene_data->mesh_assets[0].vertex_count;
-       i++) {
-    vulkan_context.scene_data->mesh_assets[0].vertices[i].colour =
-      (Vec3){0.3f, 0.5f, 0.8f};
-  }
-  */
-
   vulkan_context.uniform_object_count =
     darray_get_length(vulkan_context.scene_data->drawable_handles);
 
@@ -497,6 +486,34 @@ b8 vulkan_backend_load_scene() {
 }
 
 b8 vulkan_backend_unload_scene() {
+
+  mfree(vulkan_context.uniform_bufs,
+	vulkan_context.uniform_object_count *
+	sizeof(VkBuffer) * MAX_FRAMES_IN_FLIGHT,
+	MEMORY_TAG_RENDERER);
+
+  mfree(vulkan_context.uniform_buf_mem,
+	vulkan_context.uniform_object_count *
+	sizeof(VkDeviceMemory) * MAX_FRAMES_IN_FLIGHT,
+	MEMORY_TAG_RENDERER);
+
+  mfree(vulkan_context.uniform_buf_mem_map,
+	vulkan_context.uniform_object_count *
+	sizeof(void*) * MAX_FRAMES_IN_FLIGHT,
+	MEMORY_TAG_RENDERER);
+
+  mfree(vulkan_context.ui_ubufs,
+	sizeof(VkBuffer) * MAX_FRAMES_IN_FLIGHT,
+	MEMORY_TAG_RENDERER);
+
+  mfree(vulkan_context.ui_ubuf_mem,
+	sizeof(VkDeviceMemory) * MAX_FRAMES_IN_FLIGHT,
+	MEMORY_TAG_RENDERER);
+
+  mfree(vulkan_context.ui_ubuf_mem_map,
+	sizeof(void*) * MAX_FRAMES_IN_FLIGHT,
+	MEMORY_TAG_RENDERER);
+
   return TRUE;
 }
 

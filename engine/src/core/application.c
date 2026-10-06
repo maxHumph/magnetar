@@ -14,6 +14,7 @@
 #include "platform/platform.h"
 #include "renderer/renderer_frontend.h"
 #include "ui/ui_core.h"
+#include "ecs/ecs_manager.h"
 
 #include <math.h>
 #include <time.h>
@@ -90,8 +91,16 @@ MGAPI b8 application_create(Game* game_instance) {
 
 
   // INIT RENDERER
-  if (!renderer_init(game_instance, &s_application_state.platform_state)) {
+  if (!renderer_init(game_instance,
+		     &s_application_state.platform_state)) {
+
     MFATAL_CORE("Renderer subsystem failed to init.");
+    return FALSE;
+  }
+
+  // INIT ECS
+  if (!ecs_init()) {
+    MERROR_CORE("ECS subsystem failed to init.");
     return FALSE;
   }
 

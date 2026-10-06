@@ -144,6 +144,9 @@ typedef struct ATexture {
  * to be loaded into.
  */
 typedef struct SceneData {
+
+  b8 scene_loaded;
+
   Entity* entities;
 
   // IMPORTANT HANDLES

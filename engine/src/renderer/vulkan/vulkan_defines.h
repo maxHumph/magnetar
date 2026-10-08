@@ -79,6 +79,8 @@ typedef struct VulkanContext {
   SceneData* scene_data;
   UiData* ui_data;
 
+  b8 can_render;
+
   VulkanDrawable* objects;
 
   VkInstance instance;

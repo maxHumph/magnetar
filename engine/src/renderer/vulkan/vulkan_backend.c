@@ -41,6 +41,8 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
                        const char* application_name, i16 start_width,
                        i16 start_height, PlatformState* platform_state) {
 
+  vulkan_context.can_render = FALSE;
+
   vulkan_context.scene_data = NULL_PTR;
   vulkan_context.allocator = NULL_PTR;
   vulkan_context.debug_messenger = NULL_PTR;
@@ -471,11 +473,15 @@ b8 vulkan_backend_load_scene() {
     return FALSE;
   }
 
+  vulkan_context.can_render = TRUE;
+
   return TRUE;
 }
 
 b8 vulkan_backend_unload_scene() {
   // @TODO: Add fence to wait for idle.
+
+  vulkan_context.can_render = FALSE;
 
   u32 mesh_count =
     darray_get_length(vulkan_context.scene_data->mesh_assets);
@@ -649,6 +655,12 @@ b8 vulkan_backend_unload_scene() {
 
 b8 vulkan_backend_start_frame(RendererBackend* renderer_backend,
                               f64 delta_time) {
+
+  // Skip frame if nothing is loaded.
+  if (!vulkan_context.can_render) {
+    return TRUE;
+  }
+
   VkResult wait_for_fence_result =
     vkWaitForFences(vulkan_context.logical_device, 1,
                     &vulkan_context.draw_fences
@@ -899,6 +911,12 @@ b8 vulkan_backend_start_frame(RendererBackend* renderer_backend,
 }
 
 b8 vulkan_backend_end_frame(RendererBackend* renderer_backend, f64 delta_time) {
+
+  // Skip frame if nothing is loaded.
+  if (!vulkan_context.can_render) {
+    return TRUE;
+  }
+  
   // End rendering
   vkCmdEndRendering(vulkan_context.command_buffers[vulkan_context.current_frame_index]);
 
@@ -946,6 +964,12 @@ b8 vulkan_backend_end_frame(RendererBackend* renderer_backend, f64 delta_time) {
 }
 
 b8 vulkan_backend_draw_frame(RendererBackend* renderer_backend) {
+
+  // Skip frame if nothing is loaded.
+  if (!vulkan_context.can_render) {
+    return TRUE;
+  }
+
   VkPresentInfoKHR present_info = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
   present_info.waitSemaphoreCount = 1;
   present_info.pWaitSemaphores =

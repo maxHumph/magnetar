@@ -13,7 +13,7 @@ b8 ecs_init();
 
 MGAPI b8 scene_load(Scene* scene);
 
-MGAPI b8 scene_unload(Scene* scene);
+MGAPI b8 scene_unload(/* Scene* scene */);
 
 MGAPI b8 scene_load_text(const char* path);
 

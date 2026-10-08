@@ -25,12 +25,7 @@ b8 game_initalize(Game* game_instance) {
   MTRACE("|| Scene: %s || -------- (%u) entities --------", test_scene.name, test_scene.entity_count);
   */
 
-  scene_load_text("../engine/src/ecs/default.txt");
-
-  camera_set_active(2);
-  
   scene_data = get_scene_data_ptr();
-  player = &scene_data->entities[2];
 
 
   MINFO(get_memory_usage_string());
@@ -41,7 +36,20 @@ b8 game_initalize(Game* game_instance) {
 
 b8 on_update(Game* game_instance, f64 delta_time) {
 
-  do_player_movement(player);
+  if (key_down(KEY_L) && !scene_data->scene_loaded) {
+    scene_load_text("../engine/src/ecs/default.txt");
+    camera_set_active(2);
+    player = &scene_data->entities[2];
+  }
+
+  if (key_down(KEY_U) && scene_data->scene_loaded) {
+    scene_unload();
+  }
+
+  if (scene_data->scene_loaded) {
+    do_player_movement(player);
+  }
+
 
   return TRUE;
 }

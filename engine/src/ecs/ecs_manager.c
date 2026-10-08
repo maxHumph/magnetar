@@ -43,16 +43,20 @@ b8 scene_load(Scene* scene) {
 
   scene_data.scene_loaded = TRUE;
 
+  renderer_load_scene();
+
   return TRUE;
 };
 
-b8 scene_unload(Scene* scene) {
-  for (u32 i = 0; i < scene->entity_count; i++) {
+b8 scene_unload(/* Scene* scene */) {
+  /*
+  for (u32 i = 0; i < darray_get_length(scene_data.entities); i++) {
     if (!entity_unload(scene->entity_handles[i])) {
       MERROR_CORE("Failed to unload entity");
       return FALSE;
     }
   }
+  */
 
   darray_destroy(scene_data.entities);
 
@@ -77,6 +81,8 @@ b8 scene_unload(Scene* scene) {
   scene_data.texture_assets = NULL_PTR;
 
   scene_data.scene_loaded = FALSE;
+
+  renderer_unload_scene();
 
   return TRUE;
 };

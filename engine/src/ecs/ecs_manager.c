@@ -114,6 +114,8 @@ b8 scene_load_text(const char* path) {
 
   scene_data.scene_loaded = TRUE;
 
+  renderer_load_scene();
+
   return TRUE;
 }
 

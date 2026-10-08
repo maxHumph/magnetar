@@ -25,6 +25,8 @@ b8 game_initalize(Game* game_instance) {
   MTRACE("|| Scene: %s || -------- (%u) entities --------", test_scene.name, test_scene.entity_count);
   */
 
+  scene_load_text("../engine/src/ecs/default.txt");
+
   camera_set_active(2);
   
   scene_data = get_scene_data_ptr();

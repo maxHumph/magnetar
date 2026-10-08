@@ -318,8 +318,6 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   vulkan_context.current_image_index = 0;
   vulkan_context.current_frame_index = 0;
 
-  vulkan_backend_load_scene();
-
   return TRUE;
 }
 
@@ -375,7 +373,7 @@ void vulkan_backend_shutdown(RendererBackend* renderer_backend) {
 
 b8 vulkan_backend_load_scene() {
 
-  scene_load_text("../engine/src/ecs/default.txt");
+  //scene_load_text("../engine/src/ecs/default.txt");
 
   vulkan_request_scene_data();
 
@@ -383,8 +381,6 @@ b8 vulkan_backend_load_scene() {
   vulkan_context.uniform_object_count =
     darray_get_length(vulkan_context.scene_data->drawable_handles);
 
-
-  // @TODO: Free the stuff below
   vulkan_context.uniform_bufs =
     mallocate(vulkan_context.uniform_object_count *
 	      sizeof(VkBuffer) * MAX_FRAMES_IN_FLIGHT,
@@ -481,13 +477,39 @@ b8 vulkan_backend_load_scene() {
 b8 vulkan_backend_unload_scene() {
   // @TODO: Add fence to wait for idle.
 
-  // Destroy vertex buffers
-
   u32 mesh_count =
     darray_get_length(vulkan_context.scene_data->mesh_assets);
 
+  // Destroy index buffers
+
+  vkDestroyBuffer(vulkan_context.logical_device,
+		  vulkan_context.ui_ibuf,
+		  vulkan_context.allocator);
+
   for (u32 i = 0; i < mesh_count; i++) {
-    // @TODO: Fill this in.
+    vkDestroyBuffer(vulkan_context.logical_device,
+		    vulkan_context.index_bufs[i],
+		    vulkan_context.allocator);
+  }
+
+  mfree(vulkan_context.index_buf_mem,
+	mesh_count * sizeof(VkDeviceMemory),
+	MEMORY_TAG_RENDERER);
+
+  mfree(vulkan_context.index_bufs,
+	mesh_count * sizeof(VkBuffer),
+	MEMORY_TAG_RENDERER);
+
+  // Destroy vertex buffers @TODO: This might be wrong
+
+  vkDestroyBuffer(vulkan_context.logical_device,
+		  vulkan_context.ui_vbuf,
+		  vulkan_context.allocator);
+
+  for (u32 i = 0; i < mesh_count; i++) {
+    vkDestroyBuffer(vulkan_context.logical_device,
+		    vulkan_context.vertex_bufs[i],
+		    vulkan_context.allocator);
   }
 
   mfree(vulkan_context.vertex_bufs,
@@ -1487,10 +1509,6 @@ static b8 vulkan_create_texture_image_sampler() {
 }
 
 static b8 vulkan_create_vertex_buffers() {
-  /* vulkan_context.vertex_buffer = NULL_PTR; */
-  /* vulkan_context.vertex_buffer_memory = NULL_PTR; */
-  /* vulkan_context.staging_vertex_buffer = NULL_PTR; */
-  /* vulkan_context.staging_vertex_buffer_mem = NULL_PTR; */
 
   // PBR
 
@@ -1499,11 +1517,11 @@ static b8 vulkan_create_vertex_buffers() {
 
   vulkan_context.vertex_bufs =
     mallocate(mesh_count * sizeof(VkBuffer),
-	      MEMORY_TAG_RENDERER); // @TODO: Free
+	      MEMORY_TAG_RENDERER); 
 
   vulkan_context.vertex_buf_mem =
     mallocate(mesh_count * sizeof(VkDeviceMemory),
-	      MEMORY_TAG_RENDERER); // @TODO: Free
+	      MEMORY_TAG_RENDERER);
 
   for (u32 i = 0; i < mesh_count;i++) {
     
@@ -2477,36 +2495,59 @@ static b8 create_image_view(VkImageView* view, VkImage image, VkFormat format, V
   return TRUE;
 }
 
-static VkCommandBuffer begin_single_time_commands(VkCommandPool command_pool) {
-  VkCommandBufferAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
-  alloc_info.commandPool = command_pool;
-  alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-  alloc_info.commandBufferCount = 1;
+static VkCommandBuffer
+begin_single_time_commands(VkCommandPool command_pool) {
+
+  VkCommandBufferAllocateInfo alloc_info = {
+    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+    .commandPool = command_pool,
+    .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+    .commandBufferCount = 1
+  };
 
   VkCommandBuffer command_buf;
 
-  VkResult alloc_cmd_buf_res = vkAllocateCommandBuffers(vulkan_context.logical_device, &alloc_info, &command_buf);
+  VkResult alloc_cmd_buf_res =
+    vkAllocateCommandBuffers(vulkan_context.logical_device,
+			     &alloc_info, &command_buf);
+
   if (alloc_cmd_buf_res != VK_SUCCESS) {
-    MERROR_CORE("Failed to create vulkan command buffer: %s", string_VkResult(alloc_cmd_buf_res));
+
+    MERROR_CORE("Failed to create vulkan command buffer: %s",
+		string_VkResult(alloc_cmd_buf_res));
+
     return VK_NULL_HANDLE;
   }
 
-  VkCommandBufferBeginInfo begin_cmd_buf_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-  begin_cmd_buf_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+  VkCommandBufferBeginInfo begin_cmd_buf_info = {
+    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+    .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+  };
   
-  VkResult begin_cmd_buf_res = vkBeginCommandBuffer(command_buf, &begin_cmd_buf_info);
+  VkResult begin_cmd_buf_res =
+    vkBeginCommandBuffer(command_buf, &begin_cmd_buf_info);
+
   if (begin_cmd_buf_res != VK_SUCCESS) {
-    MERROR_CORE("Failed to begin command buffer: %s", string_VkResult(begin_cmd_buf_res));
+
+    MERROR_CORE("Failed to begin command buffer: %s",
+		string_VkResult(begin_cmd_buf_res));
+
     return VK_NULL_HANDLE;
   }
 
   return command_buf;
 }
 
-static b8 end_single_time_commands(VkCommandBuffer* cmd_buf, VkQueue queue) {
+static b8 end_single_time_commands(VkCommandBuffer* cmd_buf,
+				   VkQueue queue) {
+
   VkResult end_cmd_buf_res = vkEndCommandBuffer(*cmd_buf);
+
   if (end_cmd_buf_res != VK_SUCCESS) {
-    MERROR_CORE("Failed to end command buffer: %s", string_VkResult(end_cmd_buf_res));
+
+    MERROR_CORE("Failed to end command buffer: %s",
+		string_VkResult(end_cmd_buf_res));
+
     return FALSE;
   }
 
@@ -2514,28 +2555,39 @@ static b8 end_single_time_commands(VkCommandBuffer* cmd_buf, VkQueue queue) {
   submit_info.commandBufferCount = 1;
   submit_info.pCommandBuffers = cmd_buf;
 
-  VkResult queue_submit_res = vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+  VkResult queue_submit_res = vkQueueSubmit(queue, 1, &submit_info,
+					    VK_NULL_HANDLE);
   if (queue_submit_res != VK_SUCCESS) {
-    MERROR_CORE("Failed to submit to queue: %s", string_VkResult(queue_submit_res));
+
+    MERROR_CORE("Failed to submit to queue: %s",
+		string_VkResult(queue_submit_res));
+
     return FALSE;
   }
 
   VkResult wait_idle_res = vkQueueWaitIdle(queue);
+
   if (wait_idle_res != VK_SUCCESS) {
-    MWARN_CORE("Failed to wait for queue idle: %s", string_VkResult(wait_idle_res));
+    MWARN_CORE("Failed to wait for queue idle: %s",
+	       string_VkResult(wait_idle_res));
   }
 
   return TRUE;
 }
 
-static b8 transition_tex_image_layout(VkCommandBuffer* cmd_buf, const VkImage* image, VkImageLayout old_layout, VkImageLayout new_layout) {
+static b8 transition_tex_image_layout(VkCommandBuffer* cmd_buf,
+				      const VkImage* image,
+				      VkImageLayout old_layout,
+				      VkImageLayout new_layout) {
 
   VkImageSubresourceRange subresource_range = {};
   subresource_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
   subresource_range.levelCount = 1;
   subresource_range.layerCount = 1;
 
-  VkImageMemoryBarrier barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+  VkImageMemoryBarrier barrier =
+    {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+
   barrier.oldLayout = old_layout;
   barrier.newLayout = new_layout;
   barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -2546,29 +2598,38 @@ static b8 transition_tex_image_layout(VkCommandBuffer* cmd_buf, const VkImage* i
   VkPipelineStageFlags src_stage;
   VkPipelineStageFlags dst_stage;
 
-  if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+  if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED &&
+      new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+
     barrier.srcAccessMask = ZERO;
     barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 
-  } else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+  } else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
+	     new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+
     barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
     src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
     dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
   } else {
-    MERROR_CORE("Unsupported layout transition %s -> %s", string_VkImageLayout(old_layout), string_VkImageLayout(new_layout));
+    MERROR_CORE("Unsupported layout transition %s -> %s",
+		string_VkImageLayout(old_layout),
+		string_VkImageLayout(new_layout));
+
     return FALSE;
   }
 
-  vkCmdPipelineBarrier(*cmd_buf, src_stage, dst_stage, ZERO, 0, NULL_PTR, 0, NULL_PTR, 1, &barrier);
+  vkCmdPipelineBarrier(*cmd_buf, src_stage, dst_stage, ZERO, 0,
+		       NULL_PTR, 0, NULL_PTR, 1, &barrier);
 
   return TRUE;
 }
 
-static b8 copy_buffer_to_image(VkCommandBuffer* cmd_buf, VkBuffer* buf, VkImage* image, u32 width, u32 height) {
+static b8 copy_buffer_to_image(VkCommandBuffer* cmd_buf, VkBuffer* buf,
+			       VkImage* image, u32 width, u32 height) {
 
   VkImageSubresourceLayers layers;
   layers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -2587,19 +2648,29 @@ static b8 copy_buffer_to_image(VkCommandBuffer* cmd_buf, VkBuffer* buf, VkImage*
   buf_image_copy.imageOffset = offset;
   buf_image_copy.imageExtent = extent;
   
-  vkCmdCopyBufferToImage(*cmd_buf, *buf, *image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buf_image_copy);
+  vkCmdCopyBufferToImage(*cmd_buf, *buf, *image,
+			 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+			 &buf_image_copy);
 
   return TRUE;
 }
 
-static VkFormat find_supported_format(const VkFormat* formats, u32 format_count, VkImageTiling tiling, VkFormatFeatureFlags flags) {
+static VkFormat find_supported_format(const VkFormat* formats,
+				      u32 format_count,
+				      VkImageTiling tiling,
+				      VkFormatFeatureFlags flags) {
+
   for (u32 i = 0; i < format_count; i++) {
 
     VkFormatProperties props;
-    vkGetPhysicalDeviceFormatProperties(vulkan_context.physical_device, formats[i], &props);
+    vkGetPhysicalDeviceFormatProperties(vulkan_context.physical_device,
+					formats[i], &props);
 
-    if (((tiling == VK_IMAGE_TILING_LINEAR) && ((props.linearTilingFeatures & flags) == flags)) ||
-        ((tiling == VK_IMAGE_TILING_OPTIMAL) && ((props.optimalTilingFeatures & flags) == flags))) {
+    if (((tiling == VK_IMAGE_TILING_LINEAR) &&
+	 ((props.linearTilingFeatures & flags) == flags)) ||
+        ((tiling == VK_IMAGE_TILING_OPTIMAL) &&
+	 ((props.optimalTilingFeatures & flags) == flags))) {
+
       return formats[i];
     }
   }
@@ -2615,5 +2686,6 @@ static VkFormat find_supported_depth_format() {
     VK_FORMAT_D32_SFLOAT_S8_UINT,
   };
 
-  return find_supported_format(formats, 3, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+  return find_supported_format(formats, 3, VK_IMAGE_TILING_OPTIMAL,
+			       VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }

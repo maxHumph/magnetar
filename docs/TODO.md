@@ -8,8 +8,6 @@
 
 - [ ] Rebuild UI tree on window resize.
 
-- [ ] Allow scenes to be loaded and unloaded dynamically.
-
 - [ ] Allow ui trees to be loaded and unloaded dynamically.
 
 - [ ] Implement UI textures.
@@ -28,8 +26,6 @@
 
 
 ### Secordary
-
-- [ ] Implement `vulkan_load_scene()` and `vulkan_unload_scene()`.
 
 - [ ] Fix `ui_calc_rects()` so that an invisible base UiRect does not need to be managed in the application code.
 
@@ -69,3 +65,7 @@
 - [X] Implement UI anchoring. **06/10/2026**
 
 - [X] UiRect not rendering when using `UI_ANCHOR_BOTTOM_BIT` or `UI_ANCHOR_RIGHT_BIT`. **06/10/2026**
+
+- [X] Implement `vulkan_load_scene()` and `vulkan_unload_scene()`. **08/10/2026**
+
+- [X] Allow scenes to be loaded and unloaded dynamically. **08/10/2026**

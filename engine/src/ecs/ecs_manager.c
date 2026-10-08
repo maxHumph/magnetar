@@ -58,6 +58,8 @@ b8 scene_unload(/* Scene* scene */) {
   }
   */
 
+  renderer_unload_scene();
+
   darray_destroy(scene_data.entities);
 
   darray_destroy(scene_data.drawable_handles);
@@ -81,8 +83,6 @@ b8 scene_unload(/* Scene* scene */) {
   scene_data.texture_assets = NULL_PTR;
 
   scene_data.scene_loaded = FALSE;
-
-  renderer_unload_scene();
 
   return TRUE;
 };

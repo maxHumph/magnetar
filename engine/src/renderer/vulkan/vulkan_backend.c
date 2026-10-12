@@ -1275,14 +1275,17 @@ static b8 vulkan_create_command_pools() {
     VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
   VkCommandPoolCreateInfo graphics_command_pool_create_info = {
-    VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
-  graphics_command_pool_create_info.pNext = NULL_PTR;
-  graphics_command_pool_create_info.flags = graphics_command_pool_create_flags;
-  graphics_command_pool_create_info.queueFamilyIndex = vulkan_context.graphics_queue_family_index;
+    .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+    .pNext = NULL_PTR,
+    .flags = graphics_command_pool_create_flags,
+    .queueFamilyIndex = vulkan_context.graphics_queue_family_index
+  };
 
   VkResult create_graphics_command_pool_result =
-    vkCreateCommandPool(vulkan_context.logical_device, &graphics_command_pool_create_info,
-                        vulkan_context.allocator, &vulkan_context.graphics_command_pool);
+    vkCreateCommandPool(vulkan_context.logical_device,
+			&graphics_command_pool_create_info,
+                        vulkan_context.allocator,
+			&vulkan_context.graphics_command_pool);
 
   if (create_graphics_command_pool_result != VK_SUCCESS) {
     MERROR_CORE("Failed to create vulkan command pool: %s",
@@ -1315,14 +1318,21 @@ static b8 vulkan_create_depth_resources() {
   VkFormat depth_format = find_supported_depth_format();
   vulkan_context.depth_format = depth_format;
 
-  if (!create_image(&vulkan_context.depth_image, &vulkan_context.depth_image_mem, vulkan_context.swapchain_extent.width,
-                    vulkan_context.swapchain_extent.height, depth_format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+  if (!create_image(&vulkan_context.depth_image,
+		    &vulkan_context.depth_image_mem,
+		    vulkan_context.swapchain_extent.width,
+                    vulkan_context.swapchain_extent.height,
+		    depth_format, VK_IMAGE_TILING_OPTIMAL,
+		    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+
     MERROR_CORE("Failed to create depth image");
     return FALSE;
   }
 
-  if (!create_image_view(&vulkan_context.depth_image_view, vulkan_context.depth_image, depth_format, VK_IMAGE_ASPECT_DEPTH_BIT, FALSE)) {
+  if (!create_image_view(&vulkan_context.depth_image_view,
+			 vulkan_context.depth_image, depth_format,
+			 VK_IMAGE_ASPECT_DEPTH_BIT, FALSE)) {
     MERROR_CORE("Failed to create depth image view");
     return FALSE;
   }
@@ -1384,8 +1394,8 @@ static b8 vulkan_create_texture_image() {
 
     VkResult map_mem_res =
       vkMapMemory(vulkan_context.logical_device,
-                  vulkan_context.staging_texture_buf_mem, 0, image_size,
-                  ZERO, &data);
+                  vulkan_context.staging_texture_buf_mem,
+		  0, image_size, ZERO, &data);
     
     if (map_mem_res != VK_SUCCESS) {
       MERROR_CORE("Failed to map staging texture buffer memory: %s",
@@ -1400,7 +1410,8 @@ static b8 vulkan_create_texture_image() {
     stbi_image_free(p_texture->texture_data);
 
     if (!create_image(&vulkan_context.texture_images[i],
-                      &vulkan_context.texture_image_mem[i], p_texture->width,
+                      &vulkan_context.texture_image_mem[i],
+		      p_texture->width,
                       p_texture->height,
                       vulkan_context.surface_format.format,
                       VK_IMAGE_TILING_OPTIMAL,

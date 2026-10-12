@@ -45,6 +45,7 @@
 
 ### Major
 
+- [ ] When unloading scenes `vkDestroy()` is called on VkBuffers currently in use. *Add a fence to wait for idle at the start of `vulkan_backend_unload_scene`.*
 
 ### Minor
 

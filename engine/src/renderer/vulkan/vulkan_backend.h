@@ -86,6 +86,8 @@ b8 vulkan_backend_on_resize(RendererBackend* renderer_backend, u16 width, u16 he
 
 Vec2u vulkan_backend_get_resolution();
 
+void vulkan_backend_copy_ui_vertices();
+
 // STATIC FUNCTIONS
 
 // Init functions

@@ -45,6 +45,8 @@ void ui_on_resize(u16 w, u16 h) {
     MTRACE(ui_rect_string(1));
     MTRACE(ui_rect_string(2));
   }
+
+  renderer_copy_ui_vertices();
 }
 
 UiData* get_ui_data_ptr() { return &data; }
@@ -79,6 +81,7 @@ UiRectHandle ui_rect_create(Vec2u extent, Vec2u offset,
   UiRect rect = {
     .extent = extent,
     .offset = offset,
+    .hidden = FALSE,
     .anchor_mask = anchor_mask,
     .attribute_mask = attribute_mask,
     .rooted = FALSE,
@@ -125,14 +128,6 @@ b8 ui_add_rect(UiRectHandle h_src_rect, UiRectHandle h_sub_rect) {
   data.rects[h_sub_rect].h_parent = h_src_rect;
   darray_push(data.rects[h_src_rect].h_children, h_sub_rect);
   return TRUE;
-}
-
-void ui_rect_set_color(UiRectHandle h_rect, UiColor color) {
-  if (!(data.rects[h_rect].attribute_mask & UI_ATTRIBUTE_COLOR_BIT)) {
-    data.rects[h_rect].attribute_mask =
-      data.rects[h_rect].attribute_mask | UI_ATTRIBUTE_COLOR_BIT;
-  }
-  data.rects[h_rect].color = color;
 }
 
 b8 ui_submit_tree(UiRoot* root) {
@@ -383,4 +378,57 @@ char* ui_rect_string(UiRectHandle h_rect) {
 
   char* out_str = strdup(buffer);
   return out_str;
+}
+
+
+//----------------
+//    ACTIONS
+//----------------
+
+// @TODO: Gen vertices in all functions below.
+
+MGAPI void ui_rect_show(UiRectHandle h_rect) {
+  UiRect* rect = &data.rects[h_rect];
+  rect->hidden = FALSE;
+  ui_calc_rects(h_rect);
+}
+
+MGAPI void ui_rect_hide(UiRectHandle h_rect) {
+  UiRect* rect = &data.rects[h_rect];
+  rect->hidden = TRUE;
+  ui_calc_rects(h_rect);
+}
+
+MGAPI void ui_rect_set_offset(UiRectHandle h_rect, Vec2u offset) {
+  UiRect* rect = &data.rects[h_rect];
+  rect->offset = offset;
+  ui_calc_rects(h_rect);
+}
+
+MGAPI void ui_rect_set_extent(UiRectHandle h_rect, Vec2u extent) {
+  UiRect* rect = &data.rects[h_rect];
+  rect->extent = extent;
+  ui_calc_rects(h_rect);
+}
+
+MGAPI void ui_rect_set_anchor_mask(UiRectHandle h_rect,
+				   UiAnchorMask mask) {
+  UiRect* rect = &data.rects[h_rect];
+  rect->anchor_mask = mask;
+  ui_calc_rects(h_rect);
+}
+
+MGAPI void ui_rect_set_attribute_mask(UiRectHandle h_rect,
+				      UiAttributeMask mask) {
+  UiRect* rect = &data.rects[h_rect];
+  rect->attribute_mask = mask;
+  ui_calc_rects(h_rect);
+}
+
+void ui_rect_set_color(UiRectHandle h_rect, UiColor color) {
+  if (!(data.rects[h_rect].attribute_mask & UI_ATTRIBUTE_COLOR_BIT)) {
+    data.rects[h_rect].attribute_mask =
+      data.rects[h_rect].attribute_mask | UI_ATTRIBUTE_COLOR_BIT;
+  }
+  data.rects[h_rect].color = color;
 }

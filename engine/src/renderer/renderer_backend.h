@@ -39,6 +39,8 @@ typedef struct RendererBackend {
 
   Vec2u (*get_resolution)();
 
+  void (*copy_ui_vertices)();
+
 } RendererBackend;
 
 b8 renderer_backend_create(RendererAPI api, const char* application_name,

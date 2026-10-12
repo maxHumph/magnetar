@@ -78,6 +78,7 @@ typedef struct UiRect {
   Vec2u total_offset;
   Vec2u total_extent;
 
+  b8 hidden;
 
   UiAnchorMask anchor_mask;
   UiAttributeMask attribute_mask;

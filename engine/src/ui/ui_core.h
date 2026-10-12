@@ -38,8 +38,6 @@ MGAPI void ui_root_add_rect(UiRootHandle root, UiRectHandle h_rect);
 
 MGAPI b8 ui_add_rect(UiRectHandle h_src_rect, UiRectHandle h_sub_rect);
 
-MGAPI void ui_rect_set_color(UiRectHandle h_rect, UiColor color);
-
 MGAPI b8 ui_submit_tree(UiRoot* root);
 
 void ui_calc_rects(UiRectHandle h_rect);
@@ -59,3 +57,20 @@ void ui_gen_rect_vertices(UiRectHandle h_rect, UiRoot* root);
 Handle32 ui_check_interaction_boxes();
 
 MGAPI char* ui_rect_string(UiRectHandle h_rect);
+
+//----------------
+//    ACTIONS
+//----------------
+
+MGAPI void ui_rect_show(UiRectHandle h_rect);
+MGAPI void ui_rect_hide(UiRectHandle h_rect);
+
+MGAPI void ui_rect_set_offset(UiRectHandle h_rect, Vec2u offset);
+MGAPI void ui_rect_set_extent(UiRectHandle h_rect, Vec2u extent);
+
+MGAPI void ui_rect_set_anchor_mask(UiRectHandle h_rect,
+				   UiAnchorMask mask);
+MGAPI void ui_rect_set_attribute_mask(UiRectHandle h_rect,
+				      UiAttributeMask mask);
+
+MGAPI void ui_rect_set_color(UiRectHandle h_rect, UiColor color);

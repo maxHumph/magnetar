@@ -199,8 +199,8 @@ MGAPI b8 application_run() {
 
 void application_on_resize(u16 w, u16 h) {
 
-  renderer_on_resize(w, h);
   ui_on_resize(w, h);
+  renderer_on_resize(w, h);
 }
 
 b8 application_on_event(u16 code, void* sender, void* listener, EventData event_data) {

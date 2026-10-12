@@ -17,6 +17,7 @@ b8 renderer_backend_create(RendererAPI api, const char* application_name,
       backend->draw_frame = vulkan_backend_draw_frame;
       backend->on_resize = vulkan_backend_on_resize;
       backend->get_resolution = vulkan_backend_get_resolution;
+      backend->copy_ui_vertices = vulkan_backend_copy_ui_vertices;
       return TRUE;
   }
 }
@@ -31,4 +32,5 @@ void renderer_backend_destroy(RendererBackend* backend) {
   backend->draw_frame = NULL_PTR;
   backend->on_resize = NULL_PTR;
   backend->get_resolution = NULL_PTR;
+  backend->copy_ui_vertices = NULL_PTR;
 }

@@ -4,6 +4,10 @@
 
 ### Primary
 
+- [ ] Ui Pipeline can't render if pbr scene isnt loaded.
+
+- [ ] Create generic pipeline type so they can be easily activated or disabled.
+
 - [ ] Allow ui trees to be loaded and unloaded dynamically.
 
 - [ ] Implement UI textures.
@@ -45,11 +49,19 @@
 
 ### Minor
 
+- [ ] The resolution given during MacOS window creation is half that of the resolution used by the renderer. (UiRects render using these dimensions until the window is manually resized).
+
 - [ ] KHR vulkan error messages when initialising vulkan on MacOS.
 
 - [ ] Screen tearing on MacOS.
 
 ---
+
+
+---
+
+
+
 
 ## Completed
 

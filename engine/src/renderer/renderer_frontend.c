@@ -93,3 +93,7 @@ b8 renderer_on_resize(u16 width, u16 height) {
 Vec2u renderer_get_resolution() {
   return renderer_backend->get_resolution();
 }
+
+void renderer_copy_ui_vertices() {
+  renderer_backend->copy_ui_vertices();
+}

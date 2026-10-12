@@ -26,3 +26,5 @@ b8 renderer_draw_frame();
 b8 renderer_on_resize(u16 width, u16 height);
 
 Vec2u renderer_get_resolution();
+
+void renderer_copy_ui_vertices();

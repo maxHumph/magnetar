@@ -1026,6 +1026,17 @@ Vec2u vulkan_backend_get_resolution() {
   };
 }
 
+void vulkan_backend_copy_ui_vertices() {
+
+  VkDeviceSize ui_buf_size =
+    darray_get_length(vulkan_context.ui_data->rect_vertices) *
+    sizeof(UiVertex);
+
+  mcopy_memory(vulkan_context.ui_vdata,
+	       vulkan_context.ui_data->rect_vertices,
+	       ui_buf_size);
+}
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL
 vulkan_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                       VkDebugUtilsMessageTypeFlagsEXT message_types,

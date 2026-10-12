@@ -130,7 +130,9 @@ SceneData* get_scene_data_ptr() {
 }
 
 MGAPI b8 camera_set_active(Handle32 entity_handle) {
-  if (scene_data.entities[entity_handle].components[COMPONENT_INDEX_CAMERA] != NULL_HANDLE_32) {
+  if (scene_data.entities[entity_handle].components
+      [COMPONENT_INDEX_CAMERA] != NULL_HANDLE_32) {
+
     scene_data.active_camera_entity = entity_handle;
     return TRUE;
   }

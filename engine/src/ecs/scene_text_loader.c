@@ -83,7 +83,10 @@ static b8 parse_entity(Handle32 handle, char* name) {
             .z = atof(tokens[3]),
           };
         } else if (strcmp(tokens[0], "rotation") == 0) {
-          p_entity->transform.rotation = quat_from_euler((Vec3){M_TO_RAD(atof(tokens[1])), M_TO_RAD(atof(tokens[2])), M_TO_RAD(atof(tokens[3]))});
+          p_entity->transform.rotation =
+	    quat_from_euler((Vec3){M_TO_RAD(atof(tokens[1])),
+				   M_TO_RAD(atof(tokens[2])),
+				   M_TO_RAD(atof(tokens[3]))});
         } else if (strcmp(tokens[0], "scale") == 0) {
           p_entity->transform.scale = (Vec3){
             .x = atof(tokens[1]),
@@ -95,9 +98,11 @@ static b8 parse_entity(Handle32 handle, char* name) {
     } else if (strcmp(tokens[0], "component") == 0){
       // SET COMPONENTS
       if (strcmp(tokens[1], "mesh") == 0) {
-        p_entity->components[COMPONENT_INDEX_MESH] = (u32)atol(tokens[2]);
+        p_entity->components[COMPONENT_INDEX_MESH] =
+	  (u32)atol(tokens[2]);
       } else if (strcmp(tokens[1], "material") == 0) {
-        p_entity->components[COMPONENT_INDEX_MATERIAL] = (u32)atol(tokens[2]);
+        p_entity->components[COMPONENT_INDEX_MATERIAL] =
+	  (u32)atol(tokens[2]);
       }
       
     } else if (strcmp(tokens[0], "END_ENTITY") == 0) {
@@ -276,7 +281,9 @@ static b8  parse_texture_asset(Handle32 handle, char* name) {
 static b8 get_drawable_handles() {
 
   for (u32 i = 0; i < darray_get_length(scene_data->entities); i++) {
-    if (scene_data->entities[i].components[COMPONENT_INDEX_MESH] != NULL_HANDLE_32) {
+    if (scene_data->entities[i].components[COMPONENT_INDEX_MESH] !=
+	NULL_HANDLE_32) {
+
       darray_push(scene_data->drawable_handles, i);
     }
   }

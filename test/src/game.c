@@ -10,6 +10,7 @@
 
 static SceneData* scene_data;
 static Entity* player;
+static Entity* dognut;
 
 b8 game_initalize(Game* game_instance) {
 
@@ -40,6 +41,7 @@ b8 on_update(Game* game_instance, f64 delta_time) {
     scene_load_text("../engine/src/ecs/default.txt");
     camera_set_active(2);
     player = &scene_data->entities[2];
+    dognut = &scene_data->entities[1];
   }
 
   if (key_down(KEY_U) && scene_data->scene_loaded) {
@@ -48,7 +50,13 @@ b8 on_update(Game* game_instance, f64 delta_time) {
 
   if (scene_data->scene_loaded) {
     do_player_movement(player);
+    dognut->transform.rotation =
+      quat_mul(dognut->transform.rotation,
+	       quat_from_euler((Vec3){M_TO_RAD(3.0f),
+				      0.0f, 0.0f}));
   }
+
+
 
 
   return TRUE;

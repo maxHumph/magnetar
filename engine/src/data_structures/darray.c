@@ -14,9 +14,12 @@ void* _darray_create(u64 length, u64 stride) {
 }
 
 void _darray_destroy(void* darray) {
+
   u64* head = (u64*)darray - DARRAY_FIELD_LENGTH;
   u64 head_size = DARRAY_FIELD_LENGTH * sizeof(u64);
-  u64 total_size = head_size + (head[DARRAY_CAPACITY] * head[DARRAY_STRIDE]);
+  u64 total_size = head_size + (head[DARRAY_CAPACITY] *
+				head[DARRAY_STRIDE]);
+
   mfree(head, total_size, MEMORY_TAG_DARRAY);
 }
 
@@ -75,14 +78,17 @@ void* _darray_insert(void* darray, u64 index, void* val_ptr) {
   }
 
   if (index > length) {
-    MERROR("Index out of bounds in _darray_insert, Length: %u, Index: %u.", length, index);
+    MERROR_CORE("Index out of bounds in _darray_insert,"
+		"Length: %u, Index: %u.", length, index);
   }
 
   u64 address = (u64)darray;
 
   if (index != length) {
-    mcopy_memory((void*)(address + ((index + 1) * stride)), (void*)(address + (index * stride)),
+    mcopy_memory((void*)(address + ((index + 1) * stride)),
+		 (void*)(address + (index * stride)),
                  stride * (length - index));
+
     mcopy_memory((void*)(address + (index * stride)), val_ptr, stride);
   }
   _darray_set_field(darray, DARRAY_LENGTH, length + 1);
@@ -94,14 +100,16 @@ void* _darray_pop_at(void* darray, u64 index, void* dest) {
   u64 stride = _darray_get_field(darray, DARRAY_STRIDE);
 
   if (index >= length) {
-    MERROR("Index out of bounds an darray. Length: %u, Index: %u.", length, index);
+    MERROR_CORE("Index out of bounds an darray. Length: %u, Index: %u.",
+		length, index);
   }
 
   u64 address = (u64)darray;
   mcopy_memory(dest, (void*)(address + (index * stride)), stride);
 
   if (index != length - 1) {
-    mcopy_memory((void*)(address + (index * stride)), (void*)(address + ((index + 1) * stride)),
+    mcopy_memory((void*)(address + (index * stride)),
+		 (void*)(address + ((index + 1) * stride)),
                  stride * (length - index));
   }
 

@@ -197,6 +197,12 @@ MGAPI b8 application_run() {
   return FALSE;
 }
 
+void application_on_resize(u16 w, u16 h) {
+
+  renderer_on_resize(w, h);
+  ui_on_resize(w, h);
+}
+
 b8 application_on_event(u16 code, void* sender, void* listener, EventData event_data) {
   switch (code) {
     case EVENT_CODE_APPLICATION_QUIT: {
@@ -205,7 +211,9 @@ b8 application_on_event(u16 code, void* sender, void* listener, EventData event_
       return TRUE;
     }
     case EVENT_CODE_WINDOW_RESIZED: {
-      renderer_on_resize(event_data.data.u16[0], event_data.data.u16[1]);
+
+      application_on_resize(event_data.data.u16[0],
+			    event_data.data.u16[1]);
     }
   }
 

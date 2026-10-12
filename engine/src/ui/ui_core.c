@@ -25,11 +25,20 @@ b8 ui_on_button(u16 code, void* sender,
 b8 ui_init() {
   data.roots = darray_create(UiRoot);
   data.rects = darray_create(UiRect);
+  data.rect_vertices = NULL_PTR;
+  data.rect_indices = NULL_PTR;
   data.clickables = darray_create(Handle32);
 
   event_register(EVENT_CODE_BUTTON_DOWN, 0, ui_on_button);
 
   return TRUE;
+}
+
+void ui_on_resize(u16 w, u16 h) {
+  for (u32 i = 0; i < darray_get_length(data.roots); i++) {
+    ui_calc_rects(data.roots[i].frame_rect);
+    ui_gen_vertices(i);
+  }
 }
 
 UiData* get_ui_data_ptr() { return &data; }
@@ -211,6 +220,13 @@ void ui_calc_rects(UiRectHandle h_rect) {
 }
 
 void ui_gen_vertices(UiRootHandle h_root) {
+
+  if ((data.rect_vertices != NULL_PTR) ||
+      (data.rect_indices != NULL_PTR)) {
+	darray_destroy(data.rect_vertices);
+	darray_destroy(data.rect_indices);
+  }
+
   data.rect_vertices = darray_create(UiVertex);
   data.rect_indices = darray_create(u32);
 

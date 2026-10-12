@@ -12,6 +12,19 @@
 
 b8 ui_init();
 
+/**
+ * Unimplemented.
+ */
+void ui_on_update();
+
+/**
+ * @brief Called whenever the window is resized.
+ *
+ * @param w, The new width
+ * @param h, The new height
+ */
+void ui_on_resize(u16 w, u16 h);
+
 MGAPI UiData* get_ui_data_ptr();
 
 MGAPI UiRootHandle ui_root_create(const char* name, Vec2u ref_res); 

@@ -40,3 +40,5 @@ MGAPI b8 application_create(struct Game* game_instance);
  * @return ?
  */
 MGAPI b8 application_run();
+
+void application_on_resize(u16 w, u16 h);

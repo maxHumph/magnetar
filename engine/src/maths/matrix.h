@@ -294,8 +294,8 @@ MGINLINE Mat4 mat4_from_transform(Transform transform) {
 
 MGINLINE Mat4 mat4_ui(Vec2 vres) {
   return (Mat4) {
-    (4.0f / vres.x), 0.0f, 0.0f, -1.0f,
-    0.0f, (4.0f / vres.y), 0.0f, -1.0f,
+    (2.0f / vres.x), 0.0f, 0.0f, -1.0f,
+    0.0f, (2.0f / vres.y), 0.0f, -1.0f,
     0.0f, 0.0f, 1.0f, 0.0f,
     0.0f, 0.0f, 0.0f, 1.0f,
   };

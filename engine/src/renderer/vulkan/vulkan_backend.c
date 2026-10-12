@@ -58,10 +58,12 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   UiRootHandle ui_root = ui_root_create("HUD", (Vec2u) {1920, 1080});
 
 
+  /*
   UiRectHandle ui_base = ui_rect_create((Vec2u){1920, 1080},
 					(Vec2u){0, 0},
 					UI_ANCHOR_ALL,
 					UI_ATTRIBUTE_NONE);
+  */
 
   
   UiRectHandle ui_red = ui_rect_create((Vec2u){1000, 600},
@@ -156,12 +158,12 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
       .gradient = UI_COLOR_GRAD_SOLID,
     });
 
-  ui_root_add_rect(ui_root, ui_base);  
+  //ui_root_add_rect(ui_root, ui_base);  
 
   //ui_add_rect(ui_base, ui_left_bar);
 
 
-  ui_add_rect(ui_base, ui_red);
+  ui_root_add_rect(ui_root, ui_red);
   ui_add_rect(ui_red, ui_green);
   ui_add_rect(ui_green, ui_blue);
   ui_add_rect(ui_blue, ui_yellow_1);
@@ -169,13 +171,12 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 
 
 
-  ui_calc_rects(vulkan_context.ui_data->rects[ui_base].h_parent);
+  ui_calc_rects(vulkan_context.ui_data->roots[ui_root].frame_rect);
   ui_gen_vertices(ui_root);
 
-  MFATAL("%u", vulkan_context.ui_data->rects[vulkan_context.ui_data->rects[ui_base].h_parent].total_extent.x);
+  MFATAL("%u", ui_root);
 
-  MFATAL("%u", vulkan_context.ui_data->rects[ui_base].total_extent.x);
-  MFATAL("%u", vulkan_context.ui_data->rects[ui_red].total_extent.x);
+
 
 
 

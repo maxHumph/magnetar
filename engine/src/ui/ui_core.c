@@ -13,6 +13,9 @@
 #include "core/events.h"
 #include "core/input.h"
 
+#include <stdio.h>
+#include <string.h>
+
 static UiData data = {};
 
 // Event handler defs
@@ -38,6 +41,9 @@ void ui_on_resize(u16 w, u16 h) {
   for (u32 i = 0; i < darray_get_length(data.roots); i++) {
     ui_calc_rects(data.roots[i].frame_rect);
     ui_gen_vertices(i);
+    MTRACE(ui_rect_string(0));
+    MTRACE(ui_rect_string(1));
+    MTRACE(ui_rect_string(2));
   }
 }
 
@@ -140,9 +146,11 @@ void ui_calc_rects(UiRectHandle h_rect) {
   UiRect* rect = &data.rects[h_rect];
   UiRect* parent = &data.rects[rect->h_parent];
 
-  if (rect->h_parent == U32_MAX) {
-    rect->total_offset = rect->offset;
-    rect->total_extent = rect->extent;
+  if (rect->rooted == TRUE) {
+    rect->total_offset = (Vec2u){0, 0};
+    rect->total_extent = renderer_get_resolution();
+    MFATAL("%u", renderer_get_resolution().x);
+    return;
   }
 
   if ((rect->anchor_mask & UI_ANCHOR_TOP_BIT) &&
@@ -349,4 +357,31 @@ Handle32 ui_check_interaction_boxes() {
   for (u32 i = 0; i < darray_get_length(data.clickables); i++) {
     MTRACE("%d", i);
   }
+}
+
+char* ui_rect_string(UiRectHandle h_rect) {
+
+  UiRect* rect = &data.rects[h_rect];
+
+  u64 offset = 0;
+  char buffer[8000] ="";
+  snprintf(buffer + offset, 8000,
+	   "----------------\n"
+	   "UI_RECT\n"
+	   "Offset: (%u, %u)\n"
+	   "Extent: (%u, %u)\n\n"
+	   "Offset (total): (%u, %u)\n"
+	   "Exetent (total): (%u, %u)\n\n"
+	   "Primary Color (RGB): (%f, %f, %f)\n"
+	   "----------------",
+	   rect->offset.x, rect->offset.y,
+	   rect->extent.x, rect->extent.y,
+	   rect->total_offset.x, rect->total_offset.y,
+	   rect->total_extent.x, rect->total_extent.y,
+	   rect->color.primary_color.r,
+	   rect->color.primary_color.g,
+	   rect->color.primary_color.b);
+
+  char* out_str = strdup(buffer);
+  return out_str;
 }

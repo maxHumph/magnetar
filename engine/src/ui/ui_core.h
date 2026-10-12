@@ -57,3 +57,5 @@ void ui_gen_vertices(UiRootHandle h_root);
 void ui_gen_rect_vertices(UiRectHandle h_rect, UiRoot* root);
 
 Handle32 ui_check_interaction_boxes();
+
+MGAPI char* ui_rect_string(UiRectHandle h_rect);

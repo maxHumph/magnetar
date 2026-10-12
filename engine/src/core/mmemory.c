@@ -93,7 +93,8 @@ MGAPI char* get_memory_usage_string() {
       amount = (f32)s_stats.tagged_allocations[i];
     }
     i32 length =
-        snprintf(buffer + offset, 8000, "  %s: %.2f%s\n", memory_tag_strings[i], amount, unit);
+        snprintf(buffer + offset, 8000, "  %s: %.2f%s\n",
+		 memory_tag_strings[i], amount, unit);
 
     offset += length;
   }

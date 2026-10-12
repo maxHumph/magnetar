@@ -84,6 +84,8 @@ b8 vulkan_backend_draw_frame(RendererBackend* renderer_backend);
  */
 b8 vulkan_backend_on_resize(RendererBackend* renderer_backend, u16 width, u16 height);
 
+Vec2u vulkan_backend_get_resolution();
+
 // STATIC FUNCTIONS
 
 // Init functions

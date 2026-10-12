@@ -8,6 +8,7 @@
 #include "data_structures/darray.h"
 #include "define.h"
 #include "renderer/renderer_types.h"
+#include "renderer/renderer_frontend.h"
 #include "ui_types.h"
 #include "core/events.h"
 #include "core/input.h"
@@ -33,14 +34,26 @@ b8 ui_init() {
 
 UiData* get_ui_data_ptr() { return &data; }
 
-UiRoot* ui_root_create(const char* name, Vec2u ref_res) {
+UiRootHandle ui_root_create(const char* name, Vec2u ref_res) {
   UiRoot root = {
     .name = name,
     .reference_res = ref_res,
-    .h_children = NULL_PTR,
+    .frame_rect = U32_MAX,
   };
   darray_push(data.roots, root);
-  return &data.roots[darray_get_length(data.roots) - 1];
+
+  UiRoot* p_root = &data.roots[darray_get_length(data.roots) - 1];
+
+  UiRectHandle frame_rect = ui_rect_create(renderer_get_resolution(),
+					   (Vec2u){0, 0},
+					   UI_ANCHOR_NONE,
+					   UI_ATTRIBUTE_NONE);
+
+  data.rects[frame_rect].rooted = TRUE;
+  p_root->frame_rect = frame_rect;
+		 
+
+  return darray_get_length(data.roots) - 1;
 }
 
 
@@ -65,12 +78,11 @@ UiRectHandle ui_rect_create(Vec2u extent, Vec2u offset,
   return darray_get_length(data.rects) - 1;
 }
 
-void ui_root_add_rect(UiRoot* root, UiRectHandle h_rect) {
-  if (root->h_children == NULL_PTR) {
-    root->h_children = darray_create(UiRectHandle);
-  }
-  data.rects[h_rect].rooted = TRUE;
-  darray_push(root->h_children, h_rect);
+void ui_root_add_rect(UiRootHandle h_root, UiRectHandle h_rect) {
+
+  UiRoot* root = &data.roots[h_root];
+  ui_add_rect(root->frame_rect, h_rect);
+
 }
 
 b8 ui_add_rect(UiRectHandle h_src_rect, UiRectHandle h_sub_rect) {
@@ -198,11 +210,15 @@ void ui_calc_rects(UiRectHandle h_rect) {
   
 }
 
-void ui_gen_vertices(UiRoot* root) {
+void ui_gen_vertices(UiRootHandle h_root) {
   data.rect_vertices = darray_create(UiVertex);
   data.rect_indices = darray_create(u32);
-  for (u32 i = 0; i < darray_get_length(root->h_children); i++) {
-    ui_gen_rect_vertices(root->h_children[i], root);
+
+  UiRoot* root = &data.roots[h_root];
+  UiRect* frame_rect = &data.rects[root->frame_rect];
+
+  for (u32 i = 0; i < darray_get_length(frame_rect->h_children); i++) {
+    ui_gen_rect_vertices(frame_rect->h_children[i], root);
   }
 }
 

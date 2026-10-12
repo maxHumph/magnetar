@@ -45,6 +45,7 @@
 
 ### Major
 
+- [ ] UiRects won't render if their extent is larger that their parent. (They should shrink down to their parents dimensions).
 
 ### Minor
 

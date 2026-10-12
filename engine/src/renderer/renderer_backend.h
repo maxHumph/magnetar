@@ -37,6 +37,8 @@ typedef struct RendererBackend {
   b8 (*on_resize)(struct RendererBackend* renderer_backend, u16 width,
 		  u16 height);
 
+  Vec2u (*get_resolution)();
+
 } RendererBackend;
 
 b8 renderer_backend_create(RendererAPI api, const char* application_name,

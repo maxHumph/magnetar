@@ -12,6 +12,7 @@
 #include "renderer/renderer_types.h"
 
 typedef Handle32 UiRectHandle;
+typedef Handle32 UiRootHandle;
 
 typedef Mask32 UiAttributeMask;
 typedef Bit32 UiAttributeBit;
@@ -29,6 +30,10 @@ static const UiAnchorBit UI_ANCHOR_TOP_BIT = 0x00000001U;
 static const UiAnchorBit UI_ANCHOR_BOTTOM_BIT = 0x00000002U;
 static const UiAnchorBit UI_ANCHOR_LEFT_BIT = 0x00000004U;
 static const UiAnchorBit UI_ANCHOR_RIGHT_BIT = 0x00000008U;
+
+static const UiAnchorMask UI_ANCHOR_ALL =
+  UI_ANCHOR_TOP_BIT | UI_ANCHOR_BOTTOM_BIT |
+  UI_ANCHOR_LEFT_BIT | UI_ANCHOR_RIGHT_BIT;
 
 typedef enum UiSizeType {
   UI_SIZE_ABS,
@@ -57,7 +62,7 @@ typedef struct UiRect UiRect;
 typedef struct UiRoot {
   const char* name;
   Vec2u reference_res;
-  UiRectHandle* h_children;
+  UiRectHandle frame_rect;
 } UiRoot;
 
 typedef struct UiColor {

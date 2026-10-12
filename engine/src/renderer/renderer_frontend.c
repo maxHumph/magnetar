@@ -89,3 +89,7 @@ b8 renderer_on_resize(u16 width, u16 height) {
   }
   return TRUE;
 }
+
+Vec2u renderer_get_resolution() {
+  return renderer_backend->get_resolution();
+}

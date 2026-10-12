@@ -55,14 +55,16 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   // UI TEST
 
 
-  UiRoot* ui_root = ui_root_create("HUD", (Vec2u) {1920, 1080});
+  UiRootHandle ui_root = ui_root_create("HUD", (Vec2u) {1920, 1080});
+
 
   UiRectHandle ui_base = ui_rect_create((Vec2u){1920, 1080},
 					(Vec2u){0, 0},
-					UI_ANCHOR_NONE,
+					UI_ANCHOR_ALL,
 					UI_ATTRIBUTE_NONE);
+
   
-  UiRectHandle ui_red = ui_rect_create((Vec2u){1400, 800},
+  UiRectHandle ui_red = ui_rect_create((Vec2u){1000, 600},
 				       (Vec2u){100, 100},
 				       UI_ANCHOR_TOP_BIT |
 				       UI_ANCHOR_RIGHT_BIT,
@@ -156,7 +158,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 
   ui_root_add_rect(ui_root, ui_base);  
 
-  ui_add_rect(ui_base, ui_left_bar);
+  //ui_add_rect(ui_base, ui_left_bar);
 
 
   ui_add_rect(ui_base, ui_red);
@@ -167,8 +169,13 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 
 
 
-  ui_calc_rects(ui_base);
+  ui_calc_rects(vulkan_context.ui_data->rects[ui_base].h_parent);
   ui_gen_vertices(ui_root);
+
+  MFATAL("%u", vulkan_context.ui_data->rects[vulkan_context.ui_data->rects[ui_base].h_parent].total_extent.x);
+
+  MFATAL("%u", vulkan_context.ui_data->rects[ui_base].total_extent.x);
+  MFATAL("%u", vulkan_context.ui_data->rects[ui_red].total_extent.x);
 
 
 
@@ -479,6 +486,7 @@ b8 vulkan_backend_load_scene() {
 }
 
 b8 vulkan_backend_unload_scene() {
+  // @TODO: Add fence to wait for idle.
 
   VkResult wait_idle_res =
     vkQueueWaitIdle(vulkan_context.graphics_queue);
@@ -1008,6 +1016,13 @@ b8 vulkan_backend_on_resize(RendererBackend* renderer_backend, u16 width, u16 he
     return FALSE;
   }
   return TRUE;
+}
+
+Vec2u vulkan_backend_get_resolution() {
+  return (Vec2u){
+    (u32)vulkan_context.swapchain_extent.width,
+    (u32)vulkan_context.swapchain_extent.height,
+  };
 }
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL
@@ -2457,15 +2472,24 @@ static b8 update_uniform_buffer() {
   }
 
   // UI
+  /*
 
   Mat4 ui_mat = mat4_transpose(mat4_ui((Vec2){
         (f32)vulkan_context.ui_data->roots[0].reference_res.x,
         (f32)vulkan_context.ui_data->roots[0].reference_res.y
       }));
+  */
+
+  Mat4 ui_mat = mat4_transpose(mat4_ui((Vec2){
+	(f32)vulkan_context.swapchain_extent.width,
+	(f32)vulkan_context.swapchain_extent.height
+      }));
 
   mcopy_memory(vulkan_context.ui_ubuf_mem_map
                [vulkan_context.current_frame_index],
                &ui_mat, sizeof(Mat4));
+
+
   /*
     MTRACE("%s", mat4_get_str(ui_mat));
     MTRACE("%f, %f", vulkan_context.ui_data->rect_vertices[0].pos.x,

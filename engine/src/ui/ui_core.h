@@ -14,14 +14,14 @@ b8 ui_init();
 
 MGAPI UiData* get_ui_data_ptr();
 
-MGAPI UiRoot* ui_root_create(const char* name, Vec2u ref_res); 
+MGAPI UiRootHandle ui_root_create(const char* name, Vec2u ref_res); 
 
 
 MGAPI UiRectHandle ui_rect_create(Vec2u extent, Vec2u offset,
 			     UiAnchorMask anchor_mask,
 			     UiAttributeMask attribute_mask);
 
-MGAPI void ui_root_add_rect(UiRoot* root, UiRectHandle h_rect);
+MGAPI void ui_root_add_rect(UiRootHandle root, UiRectHandle h_rect);
 
 MGAPI b8 ui_add_rect(UiRectHandle h_src_rect, UiRectHandle h_sub_rect);
 
@@ -34,7 +34,7 @@ void ui_calc_rects(UiRectHandle h_rect);
 /**
  * @brief Generates vertex data for a UI tree.
  */
-void ui_gen_vertices(UiRoot* root);
+void ui_gen_vertices(UiRootHandle h_root);
 
 /**
  * @brief Recursively generates the vertext data for a UiRect and pushes

@@ -45,7 +45,6 @@
 
 ### Major
 
-- [ ] When unloading scenes `vkDestroy()` is called on VkBuffers currently in use. *Add a fence to wait for idle at the start of `vulkan_backend_unload_scene`.*
 
 ### Minor
 
@@ -70,3 +69,5 @@
 - [X] Implement `vulkan_load_scene()` and `vulkan_unload_scene()`. **08/10/2026**
 
 - [X] Allow scenes to be loaded and unloaded dynamically. **08/10/2026**
+
+- [X] When unloading scenes `vkDestroy()` is called on VkBuffers currently in use. *Add a fence to wait for idle at the start of `vulkan_backend_unload_scene`.* **12/10/2026**

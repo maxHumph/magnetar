@@ -58,9 +58,9 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   UiRoot* ui_root = ui_root_create("HUD", (Vec2u) {1920, 1080});
 
   UiRectHandle ui_base = ui_rect_create((Vec2u){1920, 1080},
-				   (Vec2u){0, 0},
-				   UI_ANCHOR_NONE,
-				   UI_ATTRIBUTE_NONE);
+					(Vec2u){0, 0},
+					UI_ANCHOR_NONE,
+					UI_ATTRIBUTE_NONE);
   
   UiRectHandle ui_red = ui_rect_create((Vec2u){1400, 800},
 				       (Vec2u){100, 100},
@@ -87,10 +87,10 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 					    UI_ATTRIBUTE_COLOR_BIT);
   
   UiRectHandle ui_yellow_2 = ui_rect_create((Vec2u){175, 100},
-					   (Vec2u){100, 100},
-					   UI_ANCHOR_BOTTOM_BIT |
-					   UI_ANCHOR_RIGHT_BIT,
-					   UI_ATTRIBUTE_COLOR_BIT);
+					    (Vec2u){100, 100},
+					    UI_ANCHOR_BOTTOM_BIT |
+					    UI_ANCHOR_RIGHT_BIT,
+					    UI_ATTRIBUTE_COLOR_BIT);
 
   UiRectHandle ui_left_bar = ui_rect_create((Vec2u){80, 400},
 					    (Vec2u){0, 0},
@@ -479,7 +479,14 @@ b8 vulkan_backend_load_scene() {
 }
 
 b8 vulkan_backend_unload_scene() {
-  // @TODO: Add fence to wait for idle.
+
+  VkResult wait_idle_res =
+    vkQueueWaitIdle(vulkan_context.graphics_queue);
+
+  if (wait_idle_res != VK_SUCCESS) {
+    MWARN_CORE("Failed to wait for vulkan graphics queue idle: %s",
+	       string_VkResult(wait_idle_res));
+  }
 
   vulkan_context.can_render = FALSE;
 
@@ -1233,8 +1240,10 @@ static b8 vulkan_create_descriptor_set_layout() {
   descriptor_set_layout_create_info.pBindings = layout_bindings;
 
   VkResult create_descriptor_set_layout_res =
-    vkCreateDescriptorSetLayout(vulkan_context.logical_device, &descriptor_set_layout_create_info,
-                                vulkan_context.allocator, &vulkan_context.pbr_descriptor_set_layout);
+    vkCreateDescriptorSetLayout(vulkan_context.logical_device,
+				&descriptor_set_layout_create_info,
+                                vulkan_context.allocator,
+				&vulkan_context.pbr_descriptor_set_layout);
   if (create_descriptor_set_layout_res != VK_SUCCESS) {
     MERROR_CORE("Failed to create descriptor set layout: %s",
                 string_VkResult(create_descriptor_set_layout_res));
@@ -1259,7 +1268,8 @@ static b8 vulkan_create_descriptor_set_layout() {
     .pBindings = ui_layout_bindings,
   };
 
-  if (vkCreateDescriptorSetLayout(vulkan_context.logical_device, &ui_layout_create_info,
+  if (vkCreateDescriptorSetLayout(vulkan_context.logical_device,
+				  &ui_layout_create_info,
                                   vulkan_context.allocator,
                                   &vulkan_context.ui_descriptor_set_layout) != VK_SUCCESS) {
     MERROR_CORE("Failed to create UI descriptor set layout: %s");
@@ -1296,14 +1306,17 @@ static b8 vulkan_create_command_pools() {
     VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
   VkCommandPoolCreateInfo transfer_command_pool_create_info = {
-    VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
-  transfer_command_pool_create_info.pNext = NULL_PTR;
-  transfer_command_pool_create_info.flags = transfer_command_pool_create_flags;
-  transfer_command_pool_create_info.queueFamilyIndex = vulkan_context.transfer_queue_family_index;
+    .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+    .pNext = NULL_PTR,
+    .flags = transfer_command_pool_create_flags,
+    .queueFamilyIndex = vulkan_context.transfer_queue_family_index
+  };
 
   VkResult create_transfer_command_pool_result =
-    vkCreateCommandPool(vulkan_context.logical_device, &transfer_command_pool_create_info,
-                        vulkan_context.allocator, &vulkan_context.transfer_command_pool);
+    vkCreateCommandPool(vulkan_context.logical_device,
+			&transfer_command_pool_create_info,
+                        vulkan_context.allocator,
+			&vulkan_context.transfer_command_pool);
 
   if (create_transfer_command_pool_result != VK_SUCCESS) {
     MERROR_CORE("Failed to create vulkan command pool: %s",
@@ -1533,10 +1546,14 @@ static b8 vulkan_create_texture_image_sampler() {
     .unnormalizedCoordinates = VK_FALSE
   };
 
-  VkResult create_sampler_res = vkCreateSampler(vulkan_context.logical_device, &sampler_create_info, vulkan_context.allocator,
-                                                &vulkan_context.texture_image_sampler);
+  VkResult create_sampler_res =
+    vkCreateSampler(vulkan_context.logical_device,
+		    &sampler_create_info, vulkan_context.allocator,
+		    &vulkan_context.texture_image_sampler);
+
   if (create_sampler_res != VK_SUCCESS) {
-    MERROR_CORE("Failed to create sampler: %s", string_VkResult(create_sampler_res));
+    MERROR_CORE("Failed to create sampler: %s",
+		string_VkResult(create_sampler_res));
     return FALSE;
   }
 
@@ -1640,8 +1657,8 @@ static b8 vulkan_create_vertex_buffers() {
   }
 
   mcopy_memory(vulkan_context.ui_vdata,
-	vulkan_context.ui_data->rect_vertices,
-	ui_buf_size);
+	       vulkan_context.ui_data->rect_vertices,
+	       ui_buf_size);
 
 
   return TRUE;
@@ -2192,14 +2209,15 @@ static b8 vulkan_recreate_swapchain(u16 width, u16 height) {
 
 /* static b8 vulkan_cleanup_swapchain() { return TRUE; } */
 
-static void transition_image_layout(VkImage image,
-				    VkImageLayout old_layout,
-                                    VkImageLayout new_layout,
-				    VkAccessFlags2 src_access_mask,
-                                    VkAccessFlags2 dst_access_mask,
-                                    VkPipelineStageFlags2 src_stage_mask,
-                                    VkPipelineStageFlags2 dst_stage_mask,
-                                    VkImageAspectFlags aspect) {
+static void
+transition_image_layout(VkImage image,
+			VkImageLayout old_layout,
+			VkImageLayout new_layout,
+			VkAccessFlags2 src_access_mask,
+			VkAccessFlags2 dst_access_mask,
+			VkPipelineStageFlags2 src_stage_mask,
+			VkPipelineStageFlags2 dst_stage_mask,
+			VkImageAspectFlags aspect) {
 
   VkImageSubresourceRange subresource_range = {
     .aspectMask = aspect,
@@ -2333,33 +2351,49 @@ static b8 copy_buffer(VkBuffer* src_buffer, VkBuffer* dst_buffer,
     vkBeginCommandBuffer(copy_cmd_buf, &cmd_buf_begin_info);
 
   if (begin_cmd_buf_res != VK_SUCCESS) {
-    MERROR_CORE("Failed to begin command buffer: %s", string_VkResult(begin_cmd_buf_res));
+    MERROR_CORE("Failed to begin command buffer: %s",
+		string_VkResult(begin_cmd_buf_res));
     return FALSE;
   }
 
-  VkBufferCopy buf_copy = {.srcOffset = 0, .dstOffset = 0, .size = size};
-  vkCmdCopyBuffer(copy_cmd_buf, *src_buffer, *dst_buffer, 1, &buf_copy);
+  VkBufferCopy buf_copy = {
+    .srcOffset = 0,
+    .dstOffset = 0,
+    .size = size
+  };
+
+  vkCmdCopyBuffer(copy_cmd_buf, *src_buffer,
+		  *dst_buffer, 1, &buf_copy);
 
   VkResult end_cmd_buf_res = vkEndCommandBuffer(copy_cmd_buf);
   if (end_cmd_buf_res != VK_SUCCESS) {
-    MERROR_CORE("Failed to end command buffer: %s", string_VkResult(end_cmd_buf_res));
+    MERROR_CORE("Failed to end command buffer: %s",
+		string_VkResult(end_cmd_buf_res));
     return FALSE;
   }
-  VkSubmitInfo submit_info = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
-  submit_info.commandBufferCount = 1;
-  submit_info.pCommandBuffers = &copy_cmd_buf;
+
+  VkSubmitInfo submit_info = {
+    .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+    .commandBufferCount = 1,
+    .pCommandBuffers = &copy_cmd_buf
+  };
 
   VkResult queue_submit_res =
-    vkQueueSubmit(vulkan_context.transfer_queue, 1, &submit_info, NULL_PTR);
+    vkQueueSubmit(vulkan_context.transfer_queue, 1,
+		  &submit_info, NULL_PTR);
 
   if (queue_submit_res != VK_SUCCESS) {
-    MERROR_CORE("Failed to submit to queue: %s", string_VkResult(queue_submit_res));
+    MERROR_CORE("Failed to submit to queue: %s",
+		string_VkResult(queue_submit_res));
     return FALSE;
   }
 
-  VkResult wait_idle_res = vkQueueWaitIdle(vulkan_context.transfer_queue);
+  VkResult wait_idle_res =
+    vkQueueWaitIdle(vulkan_context.transfer_queue);
+  
   if (wait_idle_res != VK_SUCCESS) {
-    MERROR_CORE("Failed to wait for queue idle: %s", string_VkResult(wait_idle_res));
+    MERROR_CORE("Failed to wait for queue idle: %s",
+		string_VkResult(wait_idle_res));
     return FALSE;
   }
   return TRUE;
@@ -2367,13 +2401,18 @@ static b8 copy_buffer(VkBuffer* src_buffer, VkBuffer* dst_buffer,
 
 
 
-static u32 get_memory_type(u32 type_filter, VkMemoryPropertyFlags props) {
+static u32 get_memory_type(u32 type_filter,
+			   VkMemoryPropertyFlags props) {
+
   VkPhysicalDeviceMemoryProperties memory_properties;
-  vkGetPhysicalDeviceMemoryProperties(vulkan_context.physical_device, &memory_properties);
+  vkGetPhysicalDeviceMemoryProperties(vulkan_context.physical_device,
+				      &memory_properties);
 
   for (u32 i = 0; i < memory_properties.memoryTypeCount; i++) {
     if ((type_filter & (1 << i)) &&
-        (memory_properties.memoryTypes[i].propertyFlags & props) == props) {
+        (memory_properties.memoryTypes[i].propertyFlags & props) ==
+	props) {
+
       return i;
     }
   }
@@ -2428,29 +2467,34 @@ static b8 update_uniform_buffer() {
                [vulkan_context.current_frame_index],
                &ui_mat, sizeof(Mat4));
   /*
-  MTRACE("%s", mat4_get_str(ui_mat));
-  MTRACE("%f, %f", vulkan_context.ui_data->rect_vertices[0].pos.x,
-         vulkan_context.ui_data->rect_vertices[0].pos.y);
+    MTRACE("%s", mat4_get_str(ui_mat));
+    MTRACE("%f, %f", vulkan_context.ui_data->rect_vertices[0].pos.x,
+    vulkan_context.ui_data->rect_vertices[0].pos.y);
   */
 
 
   return TRUE;
 }
 
-static b8 create_image(VkImage* image, VkDeviceMemory* mem, u32 width, u32 height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags props) {
+static b8 create_image(VkImage* image, VkDeviceMemory* mem,
+		       u32 width, u32 height, VkFormat format,
+		       VkImageTiling tiling, VkImageUsageFlags usage,
+		       VkMemoryPropertyFlags props) {
 
-  VkImageCreateInfo image_create_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
-  image_create_info.imageType = VK_IMAGE_TYPE_2D;
-  image_create_info.format = format;
-  image_create_info.extent.width = width;
-  image_create_info.extent.height = height;
-  image_create_info.extent.depth = 1;
-  image_create_info.mipLevels = 1;
-  image_create_info.arrayLayers = 1;
-  image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-  image_create_info.tiling = tiling;
-  image_create_info.usage = usage;
-  image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  VkImageCreateInfo image_create_info = {
+    .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+    .imageType = VK_IMAGE_TYPE_2D,
+    .format = format,
+    .extent.width = width,
+    .extent.height = height,
+    .extent.depth = 1,
+    .mipLevels = 1,
+    .arrayLayers = 1,
+    .samples = VK_SAMPLE_COUNT_1_BIT,
+    .tiling = tiling,
+    .usage = usage,
+    .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+  };
 
   VkResult create_image_res =
     vkCreateImage(vulkan_context.logical_device, &image_create_info,
@@ -2472,24 +2516,32 @@ static b8 create_image(VkImage* image, VkDeviceMemory* mem, u32 width, u32 heigh
     .memoryTypeIndex = get_memory_type(mem_req.memoryTypeBits, props),
   };
   
-  VkResult alloc_mem_res = vkAllocateMemory(vulkan_context.logical_device, &alloc_info, vulkan_context.allocator, mem);
+  VkResult alloc_mem_res =
+    vkAllocateMemory(vulkan_context.logical_device, &alloc_info,
+		     vulkan_context.allocator, mem);
   
   if (alloc_mem_res != VK_SUCCESS) {
-    MERROR_CORE("Failed to allocate vulkan image device memory: %s", string_VkResult(alloc_mem_res));
+    MERROR_CORE("Failed to allocate vulkan image device memory: %s",
+		string_VkResult(alloc_mem_res));
     return FALSE;
   }
 
-  VkResult bind_image_mem_res = vkBindImageMemory(vulkan_context.logical_device, *image, *mem, 0);
+  VkResult bind_image_mem_res =
+    vkBindImageMemory(vulkan_context.logical_device, *image, *mem, 0);
 
   if (bind_image_mem_res != VK_SUCCESS) {
-    MERROR_CORE("Failed to bind vulkan image memory: %s", string_VkResult(bind_image_mem_res));
+    MERROR_CORE("Failed to bind vulkan image memory: %s",
+		string_VkResult(bind_image_mem_res));
     return FALSE;
   }
 
   return TRUE;
 }
 
-static b8 create_image_view(VkImageView* view, VkImage image, VkFormat format, VkImageAspectFlags aspect_flags, b8 rgb_flipped) {
+static b8 create_image_view(VkImageView* view, VkImage image,
+			    VkFormat format,
+			    VkImageAspectFlags aspect_flags,
+			    b8 rgb_flipped) {
 
   VkComponentMapping components = {
     .r = VK_COMPONENT_SWIZZLE_R,
@@ -2521,9 +2573,14 @@ static b8 create_image_view(VkImageView* view, VkImage image, VkFormat format, V
     .subresourceRange = subresource_range,
   };
 
-  VkResult create_image_view_res = vkCreateImageView(vulkan_context.logical_device, &view_create_info, vulkan_context.allocator, view);
+  VkResult create_image_view_res =
+    vkCreateImageView(vulkan_context.logical_device,
+		      &view_create_info,
+		      vulkan_context.allocator, view);
+
   if (create_image_view_res != VK_SUCCESS) {
-    MERROR_CORE("Failed to create image view: %s", string_VkResult(create_image_view_res));
+    MERROR_CORE("Failed to create image view: %s",
+		string_VkResult(create_image_view_res));
     return FALSE;
   }
 

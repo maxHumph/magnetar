@@ -4,10 +4,6 @@
 
 ### Primary
 
-- [ ] Move UI resizing from shader to CPU.
-
-- [ ] Rebuild UI tree on window resize.
-
 - [ ] Allow ui trees to be loaded and unloaded dynamically.
 
 - [ ] Implement UI textures.
@@ -72,3 +68,7 @@
 - [X] Allow scenes to be loaded and unloaded dynamically. **08/10/2026**
 
 - [X] When unloading scenes `vkDestroy()` is called on VkBuffers currently in use. *Add a fence to wait for idle at the start of `vulkan_backend_unload_scene`.* **12/10/2026**
+
+- [X] Move UI resizing from shader to CPU. **12/10/2020**
+
+- [X] Rebuild UI tree on window resize. **12/10/2026**

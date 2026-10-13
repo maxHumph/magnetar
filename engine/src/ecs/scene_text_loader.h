@@ -56,9 +56,12 @@ static b8 parse_texture(Handle32 handle, char* name);
 
 static b8 parse_camera(Handle32 handle, char* name);
 
+static b8 parse_box_collider_3d(Handle32 handle, char* name);
+
 static b8 parse_mesh_asset(Handle32 handle, char* name);
 
-static b8  parse_texture_asset(Handle32 handle, char* name);
+static b8 parse_texture_asset(Handle32 handle, char* name);
+
 
 /**
  * @brief Fills the drawable_handles buffer in scene_data with handles

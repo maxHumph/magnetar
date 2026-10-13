@@ -4,6 +4,8 @@
 
 ### Primary
 
+- [ ] Rewrite the text-based scene declaration system to be less of an abomination.
+
 - [ ] Ui Pipeline can't render if pbr scene isnt loaded.
 
 - [ ] Create generic pipeline type so they can be easily activated or disabled.
@@ -16,7 +18,7 @@
 
 - [ ] Add clickable ui elements.
 
-- [ ] **@MAJOR** Add basic collision detection using *box colliders* and *separting axis theorem*.
+- [ ] **@MAJOR** Add basic collision detection using *box/ball colliders* and *separting axis theorem*.
 
 - [ ] **@MAJOR** Add gravity to entities with (CRigidBody).
 
@@ -45,7 +47,8 @@
 
 ### Major
 
-- [ ] UiRects won't render if their extent is larger that their parent. (They should shrink down to their parents dimensions).
+
+- [ ] Segfault when resizing window when no scene is loaded.
 
 ### Minor
 
@@ -84,3 +87,5 @@
 - [X] Move UI resizing from shader to CPU. **12/10/2020**
 
 - [X] Rebuild UI tree on window resize. **12/10/2026**
+
+- [X] UiRects won't render if their extent is larger that their parent. (They should shrink down to their parents dimensions). **13/10/2026**

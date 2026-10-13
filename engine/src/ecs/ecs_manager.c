@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stddef.h>
 
+#include "ecs/ecs_collisions.h"
 #include "asset/mg3d.h"
 #include "renderer/renderer_frontend.h"
 #include "data_structures/darray.h"
@@ -18,6 +19,15 @@ static SceneData scene_data = {};
 
 b8 ecs_init() {
   scene_data.scene_loaded = FALSE;
+  return TRUE;
+}
+
+b8 ecs_on_update() {
+  if (!ecs_colliders_on_update(scene_data)) {
+    MERROR_CORE("ECS Failed to update colliders.");
+    return FALSE;
+  }
+
   return TRUE;
 }
 

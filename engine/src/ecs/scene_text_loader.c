@@ -212,6 +212,27 @@ static b8 parse_camera(Handle32 handle, char* name) {
   return TRUE;
 }
 
+static b8 parse_box_collider_3d(Handle32 handle, char* name) {
+  MTRACE("Parsing box collider 3D: %u,, %s", handle, name);
+  u64 name_len = strlen(name) + 1;
+  char* name_copy = mallocate(name_len, MEMORY_TAG_COMPONENT);
+  mcmopy_memory(name_copy, name, name_len);
+
+  CBoxCollider3D new_box = {
+    .name = name_copy,
+  };
+
+  darray_push(scene_data->box_colliders_3d, new_box);
+  CBoxCollider3D* p_box = &scene_data->box_colliders_3d[handle];
+
+  while ((line_len = getline(&line, &line_len, scene_file)) != -1) {
+    get_tokens();
+    if (strcmp(tokens[0], "END_BOX_COLLIDER_3D") == 0) {
+      break;
+    }
+  }
+}
+
 static b8 parse_mesh_asset(Handle32 handle, char* name) {
   MTRACE("Parsing mesh: %u, %s", handle, name);
   u64 name_len = strlen(name) + 1;

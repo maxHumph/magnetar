@@ -21,6 +21,7 @@ static const ComponentTypeBit COMPONENT_TYPE_MESH      = 0x00000001ULL;
 static const ComponentTypeBit COMPONENT_TYPE_MATERIAL  = 0x00000002ULL;
 static const ComponentTypeBit COMPONENT_TYPE_CODE      = 0x00000004ULL;
 static const ComponentTypeBit COMPONENT_TYPE_CAMERA    = 0x00000008ULL;
+static const ComponentTypeBit COMPONENT_TYPE_BOX_COLLIDER_3D = 0x00000010ULL;
 
 typedef enum ComponentIndex {
   COMPONENT_INDEX_MESH,
@@ -110,6 +111,18 @@ typedef struct CCamera {
   f32 far_plane;
 } CCamera;
 
+typedef struct CBoxCollider3D {
+  const char* name;
+
+  Transform transform;
+} CBoxCollider3D;
+
+typedef struct CBallCollider3D {
+  const char* name;
+
+  Transform transform;
+} CBallCollider3D;
+
 // ================
 // ASSETS
 // ================
@@ -162,6 +175,9 @@ typedef struct SceneData {
   CCTexture* textures;
 
   CCamera* cameras;
+
+  CBoxCollider3D* box_colliders_3d;
+  CBallCollider3D* ball_colliders_3d;
 
   // ASSET ARRAYS
   AMesh* mesh_assets;

@@ -11,6 +11,8 @@
 
 b8 ecs_init();
 
+b8 ecs_on_update();
+
 MGAPI b8 scene_load(Scene* scene);
 
 MGAPI b8 scene_unload(/* Scene* scene */);

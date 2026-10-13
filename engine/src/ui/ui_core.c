@@ -197,6 +197,16 @@ void ui_calc_rects(UiRectHandle h_rect) {
       rect->total_offset.x = rect->offset.x;
       rect->total_extent.x = rect->extent.x;
     }
+
+    if (rect->total_extent.x > parent->total_extent.x) {
+      rect->total_extent.x = parent->total_extent.x;
+      rect->total_offset.x = parent->total_offset.x;
+    }
+
+    if (rect->total_extent.y > parent->total_extent.y) {
+      rect->total_extent.y = parent->total_extent.y;
+      rect->total_extent.y = parent->total_extent.y;
+    }
   }
   /*
 

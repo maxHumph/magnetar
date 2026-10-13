@@ -174,7 +174,6 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   ui_calc_rects(vulkan_context.ui_data->roots[ui_root].frame_rect);
   ui_gen_vertices(ui_root);
 
-  MFATAL("%u", ui_root);
 
 
 
@@ -1027,6 +1026,10 @@ Vec2u vulkan_backend_get_resolution() {
 }
 
 void vulkan_backend_copy_ui_vertices() {
+
+  if (!vulkan_context.can_render) {
+    return;
+  }
 
   VkDeviceSize ui_buf_size =
     darray_get_length(vulkan_context.ui_data->rect_vertices) *

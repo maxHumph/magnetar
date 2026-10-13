@@ -2,6 +2,7 @@
 
 #include "data_structures/darray.h"
 #include "core/log.h"
+#include "core/mmemory.h"
 
 #include <errno.h>
 #include <stdint.h>
@@ -126,12 +127,12 @@ b8 scene_tokenize_text_file(char* file_string, u64 length,
       i++;
     
 
-    } else if (isalpha(file_string[i])) {
+    } else if (isalpha(file_string[i]) || file_string[i] == '_') {
       buffer[j] = file_string[i];
       i++;
       j++;
 
-      while (isalnum(file_string[i])) {
+      while (isalnum(file_string[i]) || file_string[i] == '_') {
 	buffer[j] = file_string[i];
 	i++;
 	j++;
@@ -144,6 +145,25 @@ b8 scene_tokenize_text_file(char* file_string, u64 length,
 	return FALSE;
       }
 
+    } else if (isdigit(file_string[i])) {
+      b8 is_int = TRUE;
+      buffer[j] = file_string[i];
+      i++;
+      j++;
+
+      while (isdigit(file_string[i]) || file_string[i] == '.') {
+	if (file_string[i] == '.') {
+	  is_int = FALSE;
+	}
+	buffer[j] = file_string[i];
+	i++;
+	j++;
+      }
+
+      buffer[j + 1] = '\0';
+
+      // @TODO: Add string to int/float conversion and create token and push to array.
+
     }
     
   }
@@ -155,9 +175,31 @@ b8 scene_tokenize_text_file(char* file_string, u64 length,
 b8 scene_generate_token(char* string, Token* token_darray) {
   for (u32 i = 0; i < sizeof(token_map) / sizeof(TokenMap); i++) {
     if (strcmp(string, token_map[i].str) == 0) {
-      darray_push(token_darray, ((Token){token_map[i].type, NULL_PTR}));
+      Token token = {
+
+	.type = token_map[i].type,
+	.val = NULL_PTR,
+      };
+
+      darray_push(token_darray, token);
+      return TRUE;
     }
   }
 
-  return TRUE;
+  if (isalpha(string[0])) {
+
+    char* val = mallocate(sizeof(char) * (strlen(string) + 1),
+			  MEMORY_TAG_STRING);
+
+    mcopy_memory(val, string, strlen(string + 1));
+
+    Token token = {
+      .type = TOKEN_IDENTIFIER,
+      .val = (void*)val,
+    };
+
+    return TRUE;
+  }
+
+  return FALSE;
 }

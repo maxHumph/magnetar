@@ -1,0 +1,163 @@
+#include "scene_parser.h"
+
+#include "data_structures/darray.h"
+#include "core/log.h"
+
+#include <errno.h>
+#include <stdint.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+static const TokenMap token_map[] = {
+
+  /*
+
+  {TOKEN_HASH, "#", "TOKEN_HASH"},
+  {TOKEN_PERIOD, ".", "TOKEN_PERIOD"},
+  {TOKEN_COMMA, ",", "TOKEN_COMMA"},
+  {TOKEN_SEMICOL, ";", "TOKEN_SEMICOL"},
+  {TOKEN_OPEN_CURLY, "{", "TOKEN_OPEN_CURLY"},
+  {TOKEN_CLOSE_CURLY, "}", "TOKEN_CLOSE_CURLY"},
+
+  */
+
+  {TOKEN_SCENE, "scene", "TOKEN_SCENE"},
+  {TOKEN_ASSETS, "assets", "TOKEN_ASSETS"},
+  {TOKEN_ENTITIES, "entities", "TOKEN_ENTITIES"},
+
+  {TOKEN_ENTITY, "entity", "TOKEN_ENTITY"},
+
+  {TOKEN_TRANSFORM, "transform", "TOKEN_TRANSFORM"},
+
+  {TOKEN_C_MESH, "c_mesh", "TOKEN_C_MESH"},
+  {TOKEN_C_MATERIAL, "c_material", "TOKEN_C_MATERIAL"},
+  {TOKEN_C_TEXTURE, "c_texture", "TOKEN_C_TEXTURE"},
+  {TOKEN_C_BOX_COLLIDER_3D, "c_box_collider_3d",
+   "TOKEN_C_BOX_COLLIDER_3D"},
+  {TOKEN_C_BALL_COLLIDER_3D, "c_ball_collider_3d",
+   "TOKEN_C_BALL_COLLIDER_3D"},
+
+  {TOKEN_A_MESH, "a_mesh", "TOKEN_A_MESH"},
+  {TOKEN_A_TEXTURE, "a_texture", "TOKEN_A_TEXTURE"},
+
+  {TOKEN_V_POSITION, "position", "TOKEN_V_POSITION"},
+  {TOKEN_V_SCALE, "scale", "TOKEN_V_SCALE"},
+  {TOKEN_V_ROTATION, "rotation", "TOKEN_V_ROTATION"},
+  {TOKEN_V_ASSET, "asset", "TOKEN_V_ASSET"}
+  
+};
+
+b8 scene_open_from_text(const char* path) {
+
+  Token* token_list = darray_create(Token);
+  char* file_string = NULL_PTR;
+  u64 file_length = 0;
+
+  if (!scene_read_text_file(path, file_string, &file_length)) {
+    MERROR_CORE("Scene parser failed to read: %s", path);
+    return FALSE;
+  }
+
+
+
+  return TRUE;
+}
+
+b8 scene_read_text_file(const char *path, char* content, u64* length) {
+  FILE *file;
+  file = fopen(path, "r");
+  if (file == NULL) {
+    printf("%d: %s\n", errno, strerror(errno));
+    return FALSE;
+  }
+
+  fseek(file, 0, SEEK_END);
+  *length = ftell(file);
+  fseek(file, 0, SEEK_SET);
+  content = malloc(*length);
+  if (content) {
+    fread(content, sizeof(char), *length, file);
+  } else {
+    printf("%d: %s", errno, strerror(errno));
+    return FALSE;
+  }
+  fclose(file);
+
+
+  return TRUE;
+}
+
+b8 scene_tokenize_text_file(char* file_string, u64 length,
+			    Token* token_darray) {
+
+
+  for (u64 i = 0; i < length; i++) {
+    char buffer[100] = "";
+    u64 j = 0;
+
+    if (file_string[i] == '#') {
+      darray_push(token_darray, ((Token){TOKEN_HASH, NULL_PTR}));
+      i++;
+    } else if (file_string[i] == '.') {
+      darray_push(token_darray, ((Token){TOKEN_PERIOD, NULL_PTR}));
+      i++;
+    } else if (file_string[i] == ',') {
+      darray_push(token_darray, ((Token){TOKEN_COMMA, NULL_PTR}));
+      i++;
+    } else if (file_string[i] == ';') {
+      darray_push(token_darray,
+		  ((Token){TOKEN_SEMICOL, NULL_PTR}));
+      i++;
+    } else if (file_string[i] == '"') {
+      darray_push(token_darray,
+		  ((Token){TOKEN_DOUBLE_QUOTES, NULL_PTR}));
+      i++;
+    } else if (file_string[i] == '{') {
+      darray_push(token_darray,
+		  ((Token){TOKEN_OPEN_CURLY, NULL_PTR}));
+      i++;
+    } else if (file_string[i] == '}') {
+      darray_push(token_darray,
+		  ((Token){TOKEN_CLOSE_CURLY, NULL_PTR}));
+      i++;
+    
+
+    } else if (isalpha(file_string[i])) {
+      buffer[j] = file_string[i];
+      i++;
+      j++;
+
+      while (isalnum(file_string[i])) {
+	buffer[j] = file_string[i];
+	i++;
+	j++;
+      }
+
+      buffer[j + 1] = '\0';
+
+      if (!scene_generate_token(buffer, token_darray)) {
+	MERROR_CORE("\"%s\" is an invalid token", buffer);
+	return FALSE;
+      }
+
+    }
+    
+  }
+
+
+  return TRUE;
+}
+
+b8 scene_generate_token(char* string, Token* token_darray) {
+  for (u32 i = 0; i < sizeof(token_map) / sizeof(TokenMap); i++) {
+    if (strcmp(string, token_map[i].str) == 0) {
+      darray_push(token_darray, ((Token){token_map[i].type, NULL_PTR}));
+    }
+  }
+
+  return TRUE;
+}

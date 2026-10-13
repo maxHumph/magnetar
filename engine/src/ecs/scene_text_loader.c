@@ -216,7 +216,7 @@ static b8 parse_box_collider_3d(Handle32 handle, char* name) {
   MTRACE("Parsing box collider 3D: %u,, %s", handle, name);
   u64 name_len = strlen(name) + 1;
   char* name_copy = mallocate(name_len, MEMORY_TAG_COMPONENT);
-  mcmopy_memory(name_copy, name, name_len);
+  mcopy_memory(name_copy, name, name_len);
 
   CBoxCollider3D new_box = {
     .name = name_copy,

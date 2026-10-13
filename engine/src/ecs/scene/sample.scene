@@ -1,0 +1,32 @@
+#scene sample_scene;
+
+#assets;
+
+a_mesh crate_mesh {
+  .path = "../test/res/models/crate.mg3d"
+};
+
+a_texture crate_texture {
+  .path "../test/res/textures/crate.png"
+};
+
+#entities;
+
+entity crate {
+
+  .transform = {
+    .position = { 0.0, 0.0, -3.0 },
+    .scale = { 1.0, 1.0, 1.0 },
+    .rotation = { 0.0, 0.0, 0.0 }
+  },
+
+  .c_mesh = {
+    .asset = a_crate_mesh
+  },
+
+  .c_material = {
+    .c_texture = {
+      .asset = a_crate_texture
+    }
+  }
+};

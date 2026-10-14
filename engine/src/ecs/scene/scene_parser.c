@@ -17,12 +17,12 @@ static const TokenMap token_map[] = {
 
   /*
 
-  {TOKEN_HASH, "#", "TOKEN_HASH"},
-  {TOKEN_PERIOD, ".", "TOKEN_PERIOD"},
-  {TOKEN_COMMA, ",", "TOKEN_COMMA"},
-  {TOKEN_SEMICOL, ";", "TOKEN_SEMICOL"},
-  {TOKEN_OPEN_CURLY, "{", "TOKEN_OPEN_CURLY"},
-  {TOKEN_CLOSE_CURLY, "}", "TOKEN_CLOSE_CURLY"},
+    {TOKEN_HASH, "#", "TOKEN_HASH"},
+    {TOKEN_PERIOD, ".", "TOKEN_PERIOD"},
+    {TOKEN_COMMA, ",", "TOKEN_COMMA"},
+    {TOKEN_SEMICOL, ";", "TOKEN_SEMICOL"},
+    {TOKEN_OPEN_CURLY, "{", "TOKEN_OPEN_CURLY"},
+    {TOKEN_CLOSE_CURLY, "}", "TOKEN_CLOSE_CURLY"},
 
   */
 
@@ -93,12 +93,14 @@ b8 scene_read_text_file(const char *path, char* content, u64* length) {
 }
 
 b8 scene_tokenize_text_file(char* file_string, u64 length,
-			    Token* token_darray) {
+                            Token* token_darray) {
 
 
   for (u64 i = 0; i < length; i++) {
     char buffer[100] = "";
     u64 j = 0;
+
+    // Single char symbols
 
     if (file_string[i] == '#') {
       darray_push(token_darray, ((Token){TOKEN_HASH, NULL_PTR}));
@@ -111,21 +113,22 @@ b8 scene_tokenize_text_file(char* file_string, u64 length,
       i++;
     } else if (file_string[i] == ';') {
       darray_push(token_darray,
-		  ((Token){TOKEN_SEMICOL, NULL_PTR}));
+                  ((Token){TOKEN_SEMICOL, NULL_PTR}));
       i++;
     } else if (file_string[i] == '"') {
       darray_push(token_darray,
-		  ((Token){TOKEN_DOUBLE_QUOTES, NULL_PTR}));
+                  ((Token){TOKEN_DOUBLE_QUOTES, NULL_PTR}));
       i++;
     } else if (file_string[i] == '{') {
       darray_push(token_darray,
-		  ((Token){TOKEN_OPEN_CURLY, NULL_PTR}));
+                  ((Token){TOKEN_OPEN_CURLY, NULL_PTR}));
       i++;
     } else if (file_string[i] == '}') {
       darray_push(token_darray,
-		  ((Token){TOKEN_CLOSE_CURLY, NULL_PTR}));
+                  ((Token){TOKEN_CLOSE_CURLY, NULL_PTR}));
       i++;
     
+      // Keywords and identifiers
 
     } else if (isalpha(file_string[i]) || file_string[i] == '_') {
       buffer[j] = file_string[i];
@@ -133,17 +136,46 @@ b8 scene_tokenize_text_file(char* file_string, u64 length,
       j++;
 
       while (isalnum(file_string[i]) || file_string[i] == '_') {
-	buffer[j] = file_string[i];
-	i++;
-	j++;
+        buffer[j] = file_string[i];
+        i++;
+        j++;
       }
 
       buffer[j + 1] = '\0';
 
       if (!scene_generate_token(buffer, token_darray)) {
-	MERROR_CORE("\"%s\" is an invalid token", buffer);
-	return FALSE;
+        MERROR_CORE("\"%s\" is an invalid token", buffer);
+        return FALSE;
       }
+
+      // sting lits
+
+    } else if (buffer[i] == '"') {
+
+      i++;
+
+      while (buffer[i] != '"') { // @TODO: Add \" \\ and \n
+        buffer[j] = file_string[i];
+        i++;
+        j++;
+      }
+
+      i++;
+      j++;
+      buffer[j] = '\0';
+
+      // @TODO: Free mem
+      char* val = mallocate(sizeof(char) * j, MEMORY_TAG_STRING); 
+      mcopy_memory(val, buffer, sizeof(char) * j);
+
+      Token token = {
+        .type = TOKEN_STRING_LIT,
+        .val = (void*)val,
+      };
+
+      darray_push(token_darray, token);
+
+      // int/float lits
 
     } else if (isdigit(file_string[i])) {
       b8 is_int = TRUE;
@@ -152,47 +184,47 @@ b8 scene_tokenize_text_file(char* file_string, u64 length,
       j++;
 
       while (isdigit(file_string[i]) || file_string[i] == '.') {
-	if (file_string[i] == '.') {
-	  is_int = FALSE;
-	}
-	buffer[j] = file_string[i];
-	i++;
-	j++;
+        if (file_string[i] == '.') {
+          is_int = FALSE;
+        }
+        buffer[j] = file_string[i];
+        i++;
+        j++;
       }
 
       buffer[j + 1] = '\0';
 
       if (is_int) {
-	char* endptr;
-	i64 num = strtol(buffer, &endptr, 10);
-	i64* val = mallocate(sizeof(i64), MEMORY_TAG_SCENE); // @TODO: Free mem
-	mcopy_memory(val, &num, sizeof(i64));
+        char* endptr;
+        i64 num = strtol(buffer, &endptr, 10);
+        i64* val = mallocate(sizeof(i64), MEMORY_TAG_SCENE); // @TODO: Free mem
+        mcopy_memory(val, &num, sizeof(i64));
 
-	if (endptr == '\0') {
-	  Token token = {
-	    .type = TOKEN_INT_LIT,
-	    .val = (void*)val;
-	  };
-	  darray_push(token_darry, token);
-	} else {
-	  MERROR_CORE("Failed to parse int lit");
-	  return FALSE;
-	}
+        if (*endptr == '\0') {
+          Token token = {
+            .type = TOKEN_INT_LIT,
+            .val = (void*)val,
+          };
+          darray_push(token_darray, token);
+        } else {
+          MERROR_CORE("Failed to parse int lit");
+          return FALSE;
+        }
       } else {
-	char* endptr;
-	f64 num = strtod(buffer, &endptr, 10);
-	f64* val = mallocate(sizeof(f64), MEMORY_TAG_SCENE); // @TODO: Free mem
-	mcopy_memory(val, &num, sizeof(f64));
+        char* endptr;
+        f64 num = strtod(buffer, &endptr);
+        f64* val = mallocate(sizeof(f64), MEMORY_TAG_SCENE); // @TODO: Free mem
+        mcopy_memory(val, &num, sizeof(f64));
 	
-	if (endptr == '\0') {
-	  Token token = {
-	    .type = TOKEN_FLOAT_LIT,
-	    .val = (void*)val;
-	  };
-	} else {
-	  MERROR_CORE("Failed to parse float lit");
-	  return FALSE;
-	}
+        if (*endptr == '\0') {
+          Token token = {
+            .type = TOKEN_FLOAT_LIT,
+            .val = (void*)val,
+          };
+        } else {
+          MERROR_CORE("Failed to parse float lit");
+          return FALSE;
+        }
       }
       // @TODO: Add string to int/float conversion and create token and push to array.
 
@@ -209,8 +241,8 @@ b8 scene_generate_token(char* string, Token* token_darray) {
     if (strcmp(string, token_map[i].str) == 0) {
       Token token = {
 
-	.type = token_map[i].type,
-	.val = NULL_PTR,
+        .type = token_map[i].type,
+        .val = NULL_PTR,
       };
 
       darray_push(token_darray, token);
@@ -221,7 +253,7 @@ b8 scene_generate_token(char* string, Token* token_darray) {
   if (isalpha(string[0])) {
 
     char* val = mallocate(sizeof(char) * (strlen(string) + 1),
-			  MEMORY_TAG_STRING);
+                          MEMORY_TAG_STRING);
 
     mcopy_memory(val, string, strlen(string + 1));
 

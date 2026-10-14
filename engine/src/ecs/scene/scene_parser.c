@@ -162,6 +162,38 @@ b8 scene_tokenize_text_file(char* file_string, u64 length,
 
       buffer[j + 1] = '\0';
 
+      if (is_int) {
+	char* endptr;
+	i64 num = strtol(buffer, &endptr, 10);
+	i64* val = mallocate(sizeof(i64), MEMORY_TAG_SCENE); // @TODO: Free mem
+	mcopy_memory(val, &num, sizeof(i64));
+
+	if (endptr == '\0') {
+	  Token token = {
+	    .type = TOKEN_INT_LIT,
+	    .val = (void*)val;
+	  };
+	  darray_push(token_darry, token);
+	} else {
+	  MERROR_CORE("Failed to parse int lit");
+	  return FALSE;
+	}
+      } else {
+	char* endptr;
+	f64 num = strtod(buffer, &endptr, 10);
+	f64* val = mallocate(sizeof(f64), MEMORY_TAG_SCENE); // @TODO: Free mem
+	mcopy_memory(val, &num, sizeof(f64));
+	
+	if (endptr == '\0') {
+	  Token token = {
+	    .type = TOKEN_FLOAT_LIT,
+	    .val = (void*)val;
+	  };
+	} else {
+	  MERROR_CORE("Failed to parse float lit");
+	  return FALSE;
+	}
+      }
       // @TODO: Add string to int/float conversion and create token and push to array.
 
     }

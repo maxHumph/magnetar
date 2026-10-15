@@ -5,6 +5,8 @@
 #pragma once
 
 #include "define.h"
+#include "ecs/ecs_manager.h"
+#include "data/mg_string.h"
 
 typedef enum TokenType {
 
@@ -18,6 +20,7 @@ typedef enum TokenType {
   TOKEN_PERIOD,
   TOKEN_COMMA,
   TOKEN_SEMICOL,
+  TOKEN_EQUALS,
   TOKEN_DOUBLE_QUOTES,
   TOKEN_OPEN_CURLY,
   TOKEN_CLOSE_CURLY,
@@ -61,7 +64,13 @@ typedef struct TokenMap {
   const char *as_str;
 } TokenMap;
 
-b8 scene_open_from_text(const char* path);
+typedef struct HandleNamePair {
+  Handle32 handle;
+  String name;
+} HandleNamePair;
+
+
+b8 scene_open_from_text(SceneData* data, const char* path);
 
 b8 scene_read_text_file(const char* path, char* content, u64* length);
 
@@ -69,3 +78,13 @@ b8 scene_tokenize_text_file(char* file_string, u64 length,
 			    Token* token_darray);
 
 b8 scene_generate_token(char* string, Token* token_darray);
+
+b8 scene_parse_tokens(Token* tokens);
+
+b8 scene_parse_hash(Token* tokens, i32* index);
+
+b8 scene_parse_entity(Token* tokens, i32* index);
+
+b8 scene_parse_mesh_asset(Token* tokens, i32* index);
+
+b8 scene_parse_texture_asset(Token* tokens, i32* index);

@@ -23,7 +23,7 @@
 #include "vulkan_defines.h"
 #include "vulkan_wsi.h"
 #include "asset/mg3d.h"
-#include "data_structures/darray.h"
+#include "data/darray.h"
 #include "default_scene.h"
 #include "ecs/scene_text_loader.h"
 #include "ecs/ecs.h"

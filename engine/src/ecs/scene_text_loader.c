@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "data_structures/darray.h"
+#include "data/darray.h"
 #include "core/mmemory.h"
 #include "asset/mg3d.h"
 #include "asset/texture.h"

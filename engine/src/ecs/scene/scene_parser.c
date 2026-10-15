@@ -1,6 +1,6 @@
 #include "scene_parser.h"
 
-#include "data_structures/darray.h"
+#include "data/darray.h"
 #include "core/log.h"
 #include "core/mmemory.h"
 
@@ -12,6 +12,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+static SceneData* data = NULL_PTR;
+
+static HandleNamePair* entities = NULL_PTR;
+static HandleNamePair* mesh_assets = NULL_PTR;
+static HandleNamePair* texture_assets = NULL_PTR;
 
 static const TokenMap token_map[] = {
 
@@ -52,7 +58,22 @@ static const TokenMap token_map[] = {
   
 };
 
-b8 scene_open_from_text(const char* path) {
+b8 scene_open_from_text(SceneData* data, const char* path) {
+
+  data = data;
+
+  if (entities != NULL_PTR) {
+    entities = darray_create(HandleNamePair);
+  }
+
+  if (mesh_assets != NULL_PTR) {
+    mesh_assets = darray_create(HandleNamePair);
+  }
+
+  if (texture_assets != NULL_PTR) {
+    texture_assets = darray_create(HandleNamePair);
+  }
+
 
   Token* token_list = darray_create(Token);
   char* file_string = NULL_PTR;
@@ -226,14 +247,12 @@ b8 scene_tokenize_text_file(char* file_string, u64 length,
           return FALSE;
         }
       }
-      // @TODO: Add string to int/float conversion and create token and push to array.
-
     }
-    
+
+
+
+    return TRUE;
   }
-
-
-  return TRUE;
 }
 
 b8 scene_generate_token(char* string, Token* token_darray) {
@@ -241,8 +260,8 @@ b8 scene_generate_token(char* string, Token* token_darray) {
     if (strcmp(string, token_map[i].str) == 0) {
       Token token = {
 
-        .type = token_map[i].type,
-        .val = NULL_PTR,
+	.type = token_map[i].type,
+	.val = NULL_PTR,
       };
 
       darray_push(token_darray, token);
@@ -252,8 +271,7 @@ b8 scene_generate_token(char* string, Token* token_darray) {
 
   if (isalpha(string[0])) {
 
-    char* val = mallocate(sizeof(char) * (strlen(string) + 1),
-                          MEMORY_TAG_STRING);
+    String val = create_string(string);
 
     mcopy_memory(val, string, strlen(string + 1));
 
@@ -267,3 +285,114 @@ b8 scene_generate_token(char* string, Token* token_darray) {
 
   return FALSE;
 }
+ 
+b8 scene_parse_tokens(Token* tokens) {
+  for (i32 i = 0; i < darray_get_length(tokens); i++) {
+    switch (tokens[i].type) {
+
+    case INVALID_TOKEN:
+      MERROR_CORE("Invalid token was found!");
+      return FALSE;
+      break;
+
+    case TOKEN_HASH:
+      if (!scene_parse_hash(tokens, &i)) {
+	MERROR_CORE("Failed to parse hash statement");
+	return FALSE;
+      }
+      break;
+
+    case TOKEN_A_MESH:
+      if (!scene_parse_mesh_asset(tokens, &i)) {
+	MERROR_CORE("Failed to parse mesh asset");
+	return FALSE;
+      }
+      break;
+
+    case TOKEN_A_TEXTURE:
+      if (!scene_parse_texture_asset(tokens, &i)) {
+	MERROR_CORE("Failed to parse texture asset");
+	return FALSE;
+      }
+      break;
+
+    case TOKEN_ENTITY:
+      if (!scene_parse_entity(tokens, &i)) {
+	MERROR_CORE("Failed to parse entity defenition");
+	return FALSE;
+      }
+      break;
+
+    default:
+      MERROR_CORE("Syntax error");
+      return FALSE;
+      break;
+    };
+  }
+}
+
+b8 scene_parse_hash(Token* tokens, i32* index) {
+  *index++;
+  while (tokens[*index].type != TOKEN_SEMICOL) {
+    index++;
+  }
+  return TRUE;
+}
+
+b8 scene_parse_mesh_asset(Token* tokens, i32* index) {
+  *index++;
+
+  AMesh mesh = {};
+  String name;
+  
+  if (tokens[*index].type == TOKEN_IDENTIFIER) {
+    name = create_string((String)tokens[*index].val);
+    *index++;
+  } else {
+    MERROR_CORE("Mesh Asset needs an identifier");
+    return FALSE;
+  }
+  
+  if (tokens[*index].type == TOKEN_OPEN_CURLY) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \"{\"");
+    return FALSE;
+  }
+
+  while (tokens[*index].type != TOKEN_CLOSE_CURLY) {
+
+    if (tokens[*index].type == TOKEN_PERIOD) {
+      *index++;
+      if (tokens[*index].type == TOKEN_V_ASSET) {
+	*index++;
+	if (tokens[*index].type == TOKEN_EQUALS) {
+	  *index++;
+	  if (tokens[*index].type == TOKEN_STRING_LIT) {
+	    mesh.model_path = (String)(tokens[*index].val);
+	    *index++;
+	  }
+	}
+      }
+    }
+
+    *index++;
+  }
+
+  
+  return TRUE;
+}
+
+b8 scene_parse_texture_asset(Token* tokens, i32* index) {
+  *index++;
+  return TRUE;
+}
+
+b8 scene_parse_entity(Token* tokens, i32* index) {
+  *index++;
+  while (tokens[*index].type != TOKEN_SEMICOL) {
+    index++;
+  }
+  return TRUE;
+}
+

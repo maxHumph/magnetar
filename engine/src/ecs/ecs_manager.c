@@ -12,7 +12,7 @@
 #include "ecs/ecs_collisions.h"
 #include "asset/mg3d.h"
 #include "renderer/renderer_frontend.h"
-#include "data_structures/darray.h"
+#include "data/darray.h"
 #include "scene_text_loader.h"
 
 static SceneData scene_data = {};

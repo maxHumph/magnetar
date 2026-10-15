@@ -1,7 +1,7 @@
 #include "mg3d.h"
 
 #include "obj_loader.h"
-#include "data_structures/darray.h"
+#include "data/darray.h"
 #include "core/mmemory.h"
 
 #define MG3D_BIN_SIG 0x4433474Du

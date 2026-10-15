@@ -1,6 +1,6 @@
 #include "obj_loader.h"
 
-#include "data_structures/darray.h"
+#include "data/darray.h"
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -14,32 +14,36 @@
 
 typedef char* String;
 
+typedef const char* StringView;
+
 MGAPI String create_string(const char* str_in);
 
 MGAPI void destroy_string(String str);
 
-MGAPI u64 string_length(String str);
+MGAPI u64 string_length(StringView str);
+
+MGAPI i32 string_compare(StringView str_1, StringView str_2);
 
 // To implement
 
-MGAPI u8 string_parse_u8(String string);
+MGAPI u8 string_parse_u8(StringView string);
 
-MGAPI u16 string_parse_u16(String string);
+MGAPI u16 string_parse_u16(StringView string);
 
-MGAPI u32 string_parse_u32(String string);
+MGAPI u32 string_parse_u32(StringView string);
 
-MGAPI u64 string_parse_u64(String string);
+MGAPI u64 string_parse_u64(StringView string);
 
-MGAPI i8 string_parse_i8(String string);
+MGAPI i8 string_parse_i8(StringView string);
 
-MGAPI i16 string_parse_i16(String string);
+MGAPI i16 string_parse_i16(StringView  string);
 
-MGAPI i32 string_parse_i32(String string);
+MGAPI i32 string_parse_i32(StringView string);
 
-MGAPI i64 string_parse_i64(String string);
+MGAPI i64 string_parse_i64(StringView string);
 
-MGAPI f32 string_parse_f32(String string);
+MGAPI f32 string_parse_f32(StringView string);
 
-MGAPI f64 string_parse_f64(String string);
+MGAPI f64 string_parse_f64(StringView string);
 
-MGAPI b8 string_parse_b8(String string);
+MGAPI b8 string_parse_b8(StringView string);

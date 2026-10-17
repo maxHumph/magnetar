@@ -418,7 +418,7 @@ b8 scene_parse_texture_asset(Token* tokens, i32* index) {
   String name;
 
   if (tokens[*index].type == TOKEN_IDENTIFIER) {
-    name = create_string((char*)tokens[*index].val);
+    name = create_string((String)tokens[*index].val);
     *index++;
   } else {
     MERROR_CORE("Texture Asset needs an identifier");
@@ -504,33 +504,57 @@ b8 scene_parse_entity(Token* tokens, i32* index) {
     switch (tokens[*index].type) {
 
     case TOKEN_C_CODE:
-      entity.components[COMPONENT_INDEX_CODE] =
-        scene_parse_code_component(tokens, index);
+      if ((entity.components[COMPONENT_INDEX_CODE] =
+           scene_parse_code_component(tokens, index)) ==
+          NULL_HANDLE_32) {
+        MERROR_CORE("Error: NULL_HANDLE_32");
+        return FALSE;
+      }
       break;
 
     case TOKEN_C_MESH:
-      entity.components[COMPONENT_INDEX_MESH] =
-        scene_parse_mesh_component(tokens, index);
+      if ((entity.components[COMPONENT_INDEX_MESH] =
+           scene_parse_mesh_component(tokens, index)) ==
+          NULL_HANDLE_32) {
+        MERROR_CORE("Error: NULL_HANDLE_32");
+        return FALSE;
+      }
       break;
 
     case TOKEN_C_MATERIAL:
-      entity.components[COMPONENT_INDEX_MATERIAL] =
-        scene_parse_material_component(tokens, index);
+      if ((entity.components[COMPONENT_INDEX_MATERIAL] =
+           scene_parse_material_component(tokens, index)) ==
+          NULL_HANDLE_32) {
+        MERROR_CORE("Error: NULL_HANDLE_32");
+        return FALSE;
+      }
       break;
 
     case TOKEN_C_CAMERA:
-      entity.components[COMPONENT_INDEX_CAMERA] =
-        scene_parse_camera_component(tokens, index);
+      if ((entity.components[COMPONENT_INDEX_CAMERA] =
+           scene_parse_camera_component(tokens, index)) ==
+          NULL_HANDLE_32) {
+        MERROR_CORE("Error: NULL_HANDLE_32");
+        return FALSE;
+      }
       break;
 
     case TOKEN_C_BOX_COLLIDER_3D:
-      entity.components[COMPONENT_INDEX_BOX_COLLIDER_3D] =
-        scene_parse_box_collider_3d_component(tokens, index);
+      if ((entity.components[COMPONENT_INDEX_BOX_COLLIDER_3D] =
+           scene_parse_box_collider_3d_component(tokens, index)) ==
+          NULL_HANDLE_32) {
+        MERROR_CORE("Error: NULL_HANDLE_32");
+        return FALSE;
+      }
       break;
 
     case TOKEN_C_BALL_COLLIDER_3D:
-      entity.components[COMPONENT_INDEX_BALL_COLLIDER_3D] =
-        scene_parse_ball_collider_3d_component(tokens, index);
+      if ((entity.components[COMPONENT_INDEX_BALL_COLLIDER_3D] =
+           scene_parse_ball_collider_3d_component(tokens, index)) ==
+          NULL_HANDLE_32) {
+        MERROR_CORE("Error: NULL_HANDLE_32");
+        return FALSE;
+      }
       break;
 
     case INVALID_TOKEN:
@@ -560,12 +584,68 @@ b8 scene_parse_entity(Token* tokens, i32* index) {
 }
 
 
+
 Handle32 scene_parse_code_component(Token* tokens, i32* index) {
   *index++;
+
+  MERROR_CORE("CCode is unimplemented");
   return NULL_HANDLE_32;
 }
 
 Handle32 scene_parse_mesh_component(Token* tokens, i32* index) {
+  *index++;
+
+  CMesh mesh = {};
+
+  if (tokens[*index].type == TOKEN_EQUALS) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \"=\"");
+    return NULL_HANDLE_32;
+  }
+
+  if (tokens[*index].type == TOKEN_OPEN_CURLY) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \"{\"");
+    return NULL_HANDLE_32;
+  }
+
+  while (tokens[*index].type != TOKEN_CLOSE_CURLY) {
+
+    if (tokens[*index].type == TOKEN_PERIOD) {
+      *index++;
+      switch (tokens[*index].type) {
+      case TOKEN_V_ASSET:
+        *index++;
+        if (tokens[*index].type == TOKEN_EQUALS) {
+          *index++;
+          if (tokens[*index].type == TOKEN_IDENTIFIER) {
+            // @TODO: mesh.mesh_asset_handle = get_handle_func();
+
+          } else {
+            MERROR_CORE("Expected indentifier");
+            return NULL_HANDLE_32;
+          }
+        } else {
+          MERROR_CORE("Expected: \"=\"");
+          return NULL_HANDLE_32;
+        }
+        break;
+      };
+    }
+    *index++;
+  }
+
+  if (tokens[*index].type == TOKEN_SEMICOL) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \";\"");
+    return FALSE;
+  }
+
+  darray_push(data->meshes, mesh);
+
   return NULL_HANDLE_32;
 }
 

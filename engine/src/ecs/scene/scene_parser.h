@@ -1,5 +1,13 @@
 /**
  * @file scene_parser.h
+ *
+ * @brief Contains functions for loading .scene files.
+ *
+ * Creates Entity, Component and Asset objects from ecs_types.h based on
+ * definitions in a .scene file and push them into SceneData.
+ *
+ * This does not load data (e.g. vertex and image data) into the Asset
+ * objects. That is handled in scene_loader.h.
  */
 
 #pragma once
@@ -35,9 +43,11 @@ typedef enum TokenType {
 
   TOKEN_TRANSFORM,
 
+  TOKEN_C_CODE,
   TOKEN_C_MESH,
   TOKEN_C_MATERIAL,
   TOKEN_C_TEXTURE,
+  TOKEN_C_CAMERA,
   TOKEN_C_BOX_COLLIDER_3D,
   TOKEN_C_BALL_COLLIDER_3D,
 
@@ -64,12 +74,6 @@ typedef struct TokenMap {
   const char *as_str;
 } TokenMap;
 
-typedef struct HandleNamePair {
-  Handle32 handle;
-  String name;
-} HandleNamePair;
-
-
 b8 scene_open_from_text(SceneData* data, const char* path);
 
 b8 scene_read_text_file(const char* path, char* content, u64* length);
@@ -83,8 +87,24 @@ b8 scene_parse_tokens(Token* tokens);
 
 b8 scene_parse_hash(Token* tokens, i32* index);
 
-b8 scene_parse_entity(Token* tokens, i32* index);
-
 b8 scene_parse_mesh_asset(Token* tokens, i32* index);
 
 b8 scene_parse_texture_asset(Token* tokens, i32* index);
+
+b8 scene_parse_entity(Token* tokens, i32* index);
+
+Handle32 scene_parse_code_component(Token* tokens, i32* index);
+
+Handle32 scene_parse_mesh_component(Token* tokens, i32* index);
+
+Handle32 scene_parse_material_component(Token* tokens, i32* index);
+
+Handle32 scene_parse_texture_component(Token* tokens, i32* index);
+
+Handle32 scene_parse_camera_component(Token* tokens, i32* index);
+
+Handle32 scene_parse_box_collider_3d_component(Token* tokens,
+                                               i32* index);
+
+Handle32 scene_parse_ball_collider_3d_component(Token* tokens,
+                                                i32* index);

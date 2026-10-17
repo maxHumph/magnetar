@@ -26,7 +26,15 @@ Is not supported yet.
 ### Linux
 ``` shell
 cd magnetar
-./build-proj-linux.sh
+make build-linux
+cd bin
+./test
+```
+For NixOS:
+```shell
+cd magnetar
+nix develop
+make build-linux
 cd bin
 ./test
 ```
@@ -34,6 +42,8 @@ cd bin
 ``` shell
 cd magnetar
 ./build-proj-mac.sh
+./compile-shader.sh engine/src/renderer/vulkan/shaders/basic
+./compile-shader.sh engine/src/renderer/vulkan/shaders/basic_ui
 cd bin
 ./test
 ```

@@ -15,9 +15,9 @@
 
 static SceneData* data = NULL_PTR;
 
-static HandleNamePair* entities = NULL_PTR;
-static HandleNamePair* mesh_assets = NULL_PTR;
-static HandleNamePair* texture_assets = NULL_PTR;
+static String* entity_idens = NULL_PTR;
+static String* mesh_asset_idens = NULL_PTR;
+static String* texture_asset_idens = NULL_PTR;
 
 static const TokenMap token_map[] = {
 
@@ -40,9 +40,11 @@ static const TokenMap token_map[] = {
 
   {TOKEN_TRANSFORM, "transform", "TOKEN_TRANSFORM"},
 
+  {TOKEN_C_CODE, "c_code", "TOKEN_C_CODE"},
   {TOKEN_C_MESH, "c_mesh", "TOKEN_C_MESH"},
   {TOKEN_C_MATERIAL, "c_material", "TOKEN_C_MATERIAL"},
   {TOKEN_C_TEXTURE, "c_texture", "TOKEN_C_TEXTURE"},
+  {TOKEN_C_CAMERA, "c_camera", "TOKEN_C_CAMERA"},
   {TOKEN_C_BOX_COLLIDER_3D, "c_box_collider_3d",
    "TOKEN_C_BOX_COLLIDER_3D"},
   {TOKEN_C_BALL_COLLIDER_3D, "c_ball_collider_3d",
@@ -62,16 +64,16 @@ b8 scene_open_from_text(SceneData* data, const char* path) {
 
   data = data;
 
-  if (entities != NULL_PTR) {
-    entities = darray_create(HandleNamePair);
+  if (entity_idens != NULL_PTR) {
+    entity_idens = darray_create(String);
   }
 
-  if (mesh_assets != NULL_PTR) {
-    mesh_assets = darray_create(HandleNamePair);
+  if (mesh_asset_idens != NULL_PTR) {
+    mesh_asset_idens = darray_create(String);
   }
 
-  if (texture_assets != NULL_PTR) {
-    texture_assets = darray_create(HandleNamePair);
+  if (texture_asset_idens != NULL_PTR) {
+    texture_asset_idens = darray_create(String);
   }
 
 
@@ -260,8 +262,8 @@ b8 scene_generate_token(char* string, Token* token_darray) {
     if (strcmp(string, token_map[i].str) == 0) {
       Token token = {
 
-	.type = token_map[i].type,
-	.val = NULL_PTR,
+        .type = token_map[i].type,
+        .val = NULL_PTR,
       };
 
       darray_push(token_darray, token);
@@ -297,29 +299,29 @@ b8 scene_parse_tokens(Token* tokens) {
 
     case TOKEN_HASH:
       if (!scene_parse_hash(tokens, &i)) {
-	MERROR_CORE("Failed to parse hash statement");
-	return FALSE;
+        MERROR_CORE("Failed to parse hash statement");
+        return FALSE;
       }
       break;
 
     case TOKEN_A_MESH:
       if (!scene_parse_mesh_asset(tokens, &i)) {
-	MERROR_CORE("Failed to parse mesh asset");
-	return FALSE;
+        MERROR_CORE("Failed to parse mesh asset");
+        return FALSE;
       }
       break;
 
     case TOKEN_A_TEXTURE:
       if (!scene_parse_texture_asset(tokens, &i)) {
-	MERROR_CORE("Failed to parse texture asset");
-	return FALSE;
+        MERROR_CORE("Failed to parse texture asset");
+        return FALSE;
       }
       break;
 
     case TOKEN_ENTITY:
       if (!scene_parse_entity(tokens, &i)) {
-	MERROR_CORE("Failed to parse entity defenition");
-	return FALSE;
+        MERROR_CORE("Failed to parse entity defenition");
+        return FALSE;
       }
       break;
 
@@ -365,29 +367,29 @@ b8 scene_parse_mesh_asset(Token* tokens, i32* index) {
     if (tokens[*index].type == TOKEN_PERIOD) {
       *index++;
       if (tokens[*index].type == TOKEN_V_ASSET) {
-	*index++;
-	if (tokens[*index].type == TOKEN_EQUALS) {
-	  *index++;
-	  if (tokens[*index].type == TOKEN_STRING_LIT) {
-	    mesh.model_path = (String)(tokens[*index].val);
-	    *index++;
-	    if (tokens[*index].type == TOKEN_CLOSE_CURLY) {
-	      *index++;
-	      break;
-	    } else if (token[*index].type == TOKEN_COMMAN) {
-	      *index++;
-	    } else {
-	      MERROR_CORE("Expected \",\" or \"}\"");
-	      return FALSE;
-	    }
-	  } else {
-	    MERROR_CORE("Expected string lit");
-	    return FALSE;
-	  }
-	} else {
-	  MERROR_CORE("Expected assignment operator");
-	  return;
-	}
+        *index++;
+        if (tokens[*index].type == TOKEN_EQUALS) {
+          *index++;
+          if (tokens[*index].type == TOKEN_STRING_LIT) {
+            mesh.model_path = (String)(tokens[*index].val);
+            *index++;
+            if (tokens[*index].type == TOKEN_CLOSE_CURLY) {
+              *index++;
+              break;
+            } else if (tokens[*index].type == TOKEN_COMMA) {
+              *index++;
+            } else {
+              MERROR_CORE("Expected \",\" or \"}\"");
+              return FALSE;
+            }
+          } else {
+            MERROR_CORE("Expected string lit");
+            return FALSE;
+          }
+        } else {
+          MERROR_CORE("Expected assignment operator");
+          return FALSE;
+        }
       } // @TODO: Add other member values.
     }
 
@@ -395,13 +397,16 @@ b8 scene_parse_mesh_asset(Token* tokens, i32* index) {
     *index++;
   }
 
-  if (tokens[*index].type == TOKEN_SEMI_COL) {
+  if (tokens[*index].type == TOKEN_SEMICOL) {
     *index++;
   } else {
     MERROR_CORE("Expected \";\"");
     return FALSE;
   }
 
+  darray_push(data->mesh_assets, mesh);
+
+  darray_push(mesh_asset_idens, name);
   
   return TRUE;
 }
@@ -412,6 +417,64 @@ b8 scene_parse_texture_asset(Token* tokens, i32* index) {
   ATexture texture = {};
   String name;
 
+  if (tokens[*index].type == TOKEN_IDENTIFIER) {
+    name = create_string((char*)tokens[*index].val);
+    *index++;
+  } else {
+    MERROR_CORE("Texture Asset needs an identifier");
+    return FALSE;
+  }
+
+  if (tokens[*index].type == TOKEN_OPEN_CURLY) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \"{\"");
+    return FALSE;
+  }
+
+  while (tokens[*index].type != TOKEN_CLOSE_CURLY) {
+
+    if (tokens[*index].type == TOKEN_PERIOD) {
+      *index++;
+      if (tokens[*index].type == TOKEN_V_ASSET) {
+        *index++;
+        if (tokens[*index].type == TOKEN_EQUALS) {
+          *index++;
+          if (tokens[*index].type == TOKEN_STRING_LIT) {
+            texture.image_path = (String)(tokens[*index].val);
+            *index++;
+            if (tokens[*index].type == TOKEN_CLOSE_CURLY) {
+              *index++;
+              break;
+            } else if (tokens[*index].type == TOKEN_COMMA) {
+              *index++;
+            } else {
+              MERROR_CORE("Expected \",\" or \"}\"");
+              return FALSE;
+            }
+          } else {
+            MERROR_CORE("Expected string lit");
+            return FALSE;
+          }
+        } else {
+          MERROR_CORE("Expected assignment operator");
+          return FALSE;
+        }
+      } // @TODO: Add other member values.
+    }
+    *index++;
+  }
+
+  if (tokens[*index].type == TOKEN_SEMICOL) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \";\"");
+    return FALSE;
+  }
+
+  darray_push(data->texture_assets, texture);
+
+  darray_push(texture_asset_idens, name);
 
 
   return TRUE;
@@ -419,9 +482,111 @@ b8 scene_parse_texture_asset(Token* tokens, i32* index) {
 
 b8 scene_parse_entity(Token* tokens, i32* index) {
   *index++;
-  while (tokens[*index].type != TOKEN_SEMICOL) {
-    index++;
+
+  Entity entity = {};
+  String name;
+
+  if (tokens[*index].type == TOKEN_IDENTIFIER) {
+    *index++;
+  } else {
+    MERROR_CORE("Entity declaration needs an identifier");
+    return FALSE;
   }
+
+  if (tokens[*index].type == TOKEN_OPEN_CURLY) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \"{\"");
+    return FALSE;
+  }
+
+  while (tokens[*index].type != TOKEN_CLOSE_CURLY) {
+    switch (tokens[*index].type) {
+
+    case TOKEN_C_CODE:
+      entity.components[COMPONENT_INDEX_CODE] =
+        scene_parse_code_component(tokens, index);
+      break;
+
+    case TOKEN_C_MESH:
+      entity.components[COMPONENT_INDEX_MESH] =
+        scene_parse_mesh_component(tokens, index);
+      break;
+
+    case TOKEN_C_MATERIAL:
+      entity.components[COMPONENT_INDEX_MATERIAL] =
+        scene_parse_material_component(tokens, index);
+      break;
+
+    case TOKEN_C_CAMERA:
+      entity.components[COMPONENT_INDEX_CAMERA] =
+        scene_parse_camera_component(tokens, index);
+      break;
+
+    case TOKEN_C_BOX_COLLIDER_3D:
+      entity.components[COMPONENT_INDEX_BOX_COLLIDER_3D] =
+        scene_parse_box_collider_3d_component(tokens, index);
+      break;
+
+    case TOKEN_C_BALL_COLLIDER_3D:
+      entity.components[COMPONENT_INDEX_BALL_COLLIDER_3D] =
+        scene_parse_ball_collider_3d_component(tokens, index);
+      break;
+
+    case INVALID_TOKEN:
+    default:
+      MERROR_CORE("Invalid token");
+      return FALSE;
+      break;
+
+    };
+
+    if (tokens[*index].type = TOKEN_COMMA) {
+      *index++;
+    }
+  }
+
+  if (tokens[*index].type == TOKEN_SEMICOL) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \";\"");
+    return FALSE;
+  }
+
+  darray_push(data->entities, entity);
+  darray_push(entity_idens, name);
+
   return TRUE;
 }
 
+
+Handle32 scene_parse_code_component(Token* tokens, i32* index) {
+  *index++;
+  return NULL_HANDLE_32;
+}
+
+Handle32 scene_parse_mesh_component(Token* tokens, i32* index) {
+  return NULL_HANDLE_32;
+}
+
+Handle32 scene_parse_material_component(Token* tokens, i32* index) {
+  return NULL_HANDLE_32;
+}
+
+Handle32 scene_parse_texture_component(Token* tokens, i32* index) {
+  return NULL_HANDLE_32;
+}
+
+Handle32 scene_parse_camera_component(Token* tokens, i32* index) {
+  return NULL_HANDLE_32;
+}
+
+Handle32 scene_parse_box_collider_3d_component(Token* tokens,
+                                               i32* index) {
+  return NULL_HANDLE_32;
+}
+
+Handle32 scene_parse_ball_collider_3d_component(Token* tokens,
+                                                i32* index) {
+  return NULL_HANDLE_32;
+}

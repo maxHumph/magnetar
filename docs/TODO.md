@@ -6,6 +6,10 @@
 
 - [ ] Rewrite the text-based scene declaration system to be less of an abomination.
 
+- [ ] Implement scene compilation to binary data for fast loading.
+
+- [ ] Implement scene loader for compiled scene data.
+
 - [ ] Ui Pipeline can't render if pbr scene isnt loaded.
 
 - [ ] Create generic pipeline type so they can be easily activated or disabled.
@@ -28,6 +32,8 @@
 
 
 ### Secordary
+
+- [ ] Remove `name` member for `struct Entity`.
 
 - [ ] Fix `ui_calc_rects()` so that an invisible base UiRect does not need to be managed in the application code.
 

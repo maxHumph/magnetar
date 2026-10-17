@@ -4,7 +4,7 @@
 
 #include <string.h>
 
-String create_string(char* str_in) {
+String create_string(const char* str_in) {
   u64 length = sizeof(char) * strlen(str_in);
   u64 bytes = sizeof(u64) + length;
   char* head = mallocate(bytes, MEMORY_TAG_STRING);

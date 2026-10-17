@@ -64,21 +64,55 @@ typedef enum TokenType {
 
 } TokenType;
 
+/**
+ * @struct Generic token type.
+ */
 typedef struct Token {
   TokenType type;
   void* val;
 } Token;
 
+/**
+ * @struct Used for converting strings to TokenType.
+ */
 typedef struct TokenMap {
   TokenType type;
   const char *str;
   const char *as_str;
 } TokenMap;
 
+/**
+ * @brief Reads in a .scene file, creates Entity, Component and Asset
+ * objects and pushes them into scene data.
+ *
+ * DOES NOT LOAD ASSET DATA.
+ *
+ * @param data, A pointer to the scene data.
+ * @param path, A path to a .scene file.
+ * @return TRUE if the scene was opened successfully, otherwise FALSE.
+ */
 b8 scene_open_from_text(SceneData* data, const char* path);
 
+/**
+ * @brief Reads the content of a .scene file into a char buffer.
+ *
+ * @param path, A path to a .scene file.
+ * @param content, A pointer to an unallocated char buffer.
+ * @param length, A pointer to a u64 for the file length to be read into.
+ * @return TRUE, If the file was read successfully, otherwise FALSE.
+ */
 b8 scene_read_text_file(const char* path, char* content, u64* length);
 
+/**
+ * @brief Separates a char buffer into tokens and pushed them onto a
+ * dynamic array.
+ *
+ * @param file_string, A pointer to the char buffer.
+ * @param length, The length of the char buffer.
+ * @param token_darray, A pointer that was created using darray_create().
+ * @return TRUE is the char buffer was tokenized successfullly, otherwise
+ * FALSE.
+ */
 b8 scene_tokenize_text_file(char* file_string, u64 length,
 			    Token* token_darray);
 

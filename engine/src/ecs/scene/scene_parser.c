@@ -371,12 +371,35 @@ b8 scene_parse_mesh_asset(Token* tokens, i32* index) {
 	  if (tokens[*index].type == TOKEN_STRING_LIT) {
 	    mesh.model_path = (String)(tokens[*index].val);
 	    *index++;
+	    if (tokens[*index].type == TOKEN_CLOSE_CURLY) {
+	      *index++;
+	      break;
+	    } else if (token[*index].type == TOKEN_COMMAN) {
+	      *index++;
+	    } else {
+	      MERROR_CORE("Expected \",\" or \"}\"");
+	      return FALSE;
+	    }
+	  } else {
+	    MERROR_CORE("Expected string lit");
+	    return FALSE;
 	  }
+	} else {
+	  MERROR_CORE("Expected assignment operator");
+	  return;
 	}
-      }
+      } // @TODO: Add other member values.
     }
 
+
     *index++;
+  }
+
+  if (tokens[*index].type == TOKEN_SEMI_COL) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \";\"");
+    return FALSE;
   }
 
   
@@ -385,6 +408,12 @@ b8 scene_parse_mesh_asset(Token* tokens, i32* index) {
 
 b8 scene_parse_texture_asset(Token* tokens, i32* index) {
   *index++;
+
+  ATexture texture = {};
+  String name;
+
+
+
   return TRUE;
 }
 

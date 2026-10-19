@@ -507,7 +507,8 @@ b8 scene_parse_entity(Token* tokens, i32* index) {
       if ((entity.components[COMPONENT_INDEX_CODE] =
            scene_parse_code_component(tokens, index)) ==
           NULL_HANDLE_32) {
-        MERROR_CORE("Error: NULL_HANDLE_32");
+        MERROR_CORE("Failed to parse code component: "
+		    "NULL_HANDLE_32");
         return FALSE;
       }
       break;
@@ -516,7 +517,8 @@ b8 scene_parse_entity(Token* tokens, i32* index) {
       if ((entity.components[COMPONENT_INDEX_MESH] =
            scene_parse_mesh_component(tokens, index)) ==
           NULL_HANDLE_32) {
-        MERROR_CORE("Error: NULL_HANDLE_32");
+        MERROR_CORE("Failed to parse mesh component: "
+		    "NULL_HANDLE_32");
         return FALSE;
       }
       break;
@@ -525,7 +527,8 @@ b8 scene_parse_entity(Token* tokens, i32* index) {
       if ((entity.components[COMPONENT_INDEX_MATERIAL] =
            scene_parse_material_component(tokens, index)) ==
           NULL_HANDLE_32) {
-        MERROR_CORE("Error: NULL_HANDLE_32");
+        MERROR_CORE("Failed to parse material component: "
+		    "NULL_HANDLE_32");
         return FALSE;
       }
       break;
@@ -534,7 +537,8 @@ b8 scene_parse_entity(Token* tokens, i32* index) {
       if ((entity.components[COMPONENT_INDEX_CAMERA] =
            scene_parse_camera_component(tokens, index)) ==
           NULL_HANDLE_32) {
-        MERROR_CORE("Error: NULL_HANDLE_32");
+        MERROR_CORE("Failed to parse camera component: "
+		    "NULL_HANDLE_32");
         return FALSE;
       }
       break;
@@ -543,7 +547,8 @@ b8 scene_parse_entity(Token* tokens, i32* index) {
       if ((entity.components[COMPONENT_INDEX_BOX_COLLIDER_3D] =
            scene_parse_box_collider_3d_component(tokens, index)) ==
           NULL_HANDLE_32) {
-        MERROR_CORE("Error: NULL_HANDLE_32");
+        MERROR_CORE("Failed to parse box collider 3D component: "
+		    "NULL_HANDLE_32");
         return FALSE;
       }
       break;
@@ -552,7 +557,8 @@ b8 scene_parse_entity(Token* tokens, i32* index) {
       if ((entity.components[COMPONENT_INDEX_BALL_COLLIDER_3D] =
            scene_parse_ball_collider_3d_component(tokens, index)) ==
           NULL_HANDLE_32) {
-        MERROR_CORE("Error: NULL_HANDLE_32");
+        MERROR_CORE("Failed to parse ball collider 3D component: "
+		    "NULL_HANDLE_32");
         return FALSE;
       }
       break;
@@ -651,7 +657,7 @@ b8 scene_parse_transform(Token* tokens, i32* index,
 	    MERROR_CORE("Failed to parse .rotation: Expected Vec3.");
 	    return FALSE;
 	  } else {
-	    transform.rotation = /* @TODO: Convert to Quat */ ;
+	    transform.rotation = quat_from_euler(rotation);
 	  }
         } else {
           MERROR_CORE("Expected: \"=\"");
@@ -755,10 +761,122 @@ Handle32 scene_parse_mesh_component(Token* tokens, i32* index) {
 }
 
 Handle32 scene_parse_material_component(Token* tokens, i32* index) {
+  *index++;
+
+  CMaterial material = {};
+
+  if (tokens[*index].type == TOKEN_EQUALS) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \"=\"");
+    return NULL_HANDLE_32;
+  }
+
+  if (tokens[*index].type == TOKEN_OPEN_CURLY) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \"{\"");
+    return NULL_HANDLE_32;
+  }
+
+  while (tokens[*index].type != TOKEN_CLOSE_CURLY) {
+
+    if (tokens[*index].type == TOKEN_PERIOD) {
+      *index++;
+      // Nothing yet
+    } else if (tokens[*index].type == TOKEN_C_TEXTURE) {
+      *index++;
+      if ((material.texture_handle =
+	   scene_parse_texture_component(tokens, index)) ==
+	  NULL_HANDLE_32) {
+	MERROR_CORE("Failed to parse texture component:"
+		    "NULL_HANDLE_32");
+	return NULL_HANDLE_32;
+      }
+    }
+    if (tokens[*index].type == TOKEN_COMMA) {
+      *index++;
+    }
+  }
+
+  if (tokens[*index].type == TOKEN_SEMICOL) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \";\"");
+    return FALSE;
+  }
+
+  darray_push(data->materials, material);
+
   return NULL_HANDLE_32;
 }
 
 Handle32 scene_parse_texture_component(Token* tokens, i32* index) {
+  *index++;
+
+  CCTexture texture = {};
+
+  if (tokens[*index].type == TOKEN_EQUALS) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \"=\"");
+    return NULL_HANDLE_32;
+  }
+
+  if (tokens[*index].type == TOKEN_OPEN_CURLY) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \"{\"");
+    return NULL_HANDLE_32;
+  }
+
+  while (tokens[*index].type != TOKEN_CLOSE_CURLY) {
+
+    if (tokens[*index].type == TOKEN_PERIOD) {
+      *index++;
+      switch (tokens[*index].type) {
+      case TOKEN_V_ASSET:
+        *index++;
+        if (tokens[*index].type == TOKEN_EQUALS) {
+          *index++;
+          if (tokens[*index].type == TOKEN_IDENTIFIER) {
+	    StringView asset_name = (String)(tokens[*index].val);
+	    Handle32 asset_handle =
+	      (Handle32)darray_get_str_index(texture_asset_idens,
+					     asset_name);
+	    if (asset_handle == U64_MAX) {
+	      MERROR_CORE("\"%s\" is an undefined asset", asset_name);
+	      return NULL_HANDLE_32;
+	    } else {
+	      texture.texture_asset_handle = asset_handle;
+	    }
+
+          } else {
+            MERROR_CORE("Expected indentifier");
+            return NULL_HANDLE_32;
+          }
+        } else {
+          MERROR_CORE("Expected: \"=\"");
+          return NULL_HANDLE_32;
+        }
+        break;
+      };
+    }
+    *index++;
+    if (tokens[*index].type == TOKEN_COMMA) {
+      *index++;
+    }
+  }
+
+  if (tokens[*index].type == TOKEN_SEMICOL) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \";\"");
+    return FALSE;
+  }
+
+  darray_push(data->textures, texture);
+
   return NULL_HANDLE_32;
 }
 

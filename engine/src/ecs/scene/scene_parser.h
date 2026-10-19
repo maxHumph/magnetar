@@ -84,6 +84,31 @@ typedef struct TokenMap {
   const char *as_str;
 } TokenMap;
 
+typedef struct SceneIdentifiers {
+  String* entities;
+  String* meshes;
+  String* textures;
+} SceneIdentifiers;
+
+SceneIdentifiers* create_scene_indentifiers();
+
+void destroy_scene_identifiers(SceneIdentifiers* ids);
+
+typedef struct SceneParser {
+  SceneData* data;
+  SceneIdentifiers* ids;
+  Token* tokens;
+  u64 index;
+} SceneParser;
+
+SceneParser* create_scene_parser(SceneData* data,
+				 SceneIdentifiers* ids);
+
+void destroy_scene_parser(SceneParser* parser);
+
+void destroy_token_darray_vals(Token* tokens);
+
+
 /**
  * @brief Reads in a .scene file, creates Entity, Component and Asset
  * objects and pushes them into scene data.
@@ -94,7 +119,8 @@ typedef struct TokenMap {
  * @param path, A path to a .scene file.
  * @return TRUE if the scene was opened successfully, otherwise FALSE.
  */
-b8 scene_open_from_text(SceneData* data, const char* path);
+b8 scene_open_from_text(SceneData* data, SceneIdentifiers* ids,
+			const char* path);
 
 /**
  * @brief Reads the content of a .scene file into a char buffer.
@@ -116,39 +142,37 @@ b8 scene_read_text_file(const char* path, char* content, u64* length);
  * @return TRUE is the char buffer was tokenized successfullly, otherwise
  * FALSE.
  */
-b8 scene_tokenize_text_file(char* file_string, u64 length,
-			    Token* token_darray);
+b8 scene_tokenize_text_file(SceneParser* parser, char* file_string,
+			    u64 length);
 
-b8 scene_generate_token(char* string, Token* token_darray);
+b8 scene_generate_token(SceneParser* parser, char* string);
 
-b8 scene_parse_tokens(Token* tokens);
+b8 scene_parse_tokens(SceneParser* parser);
 
-b8 scene_parse_hash(Token* tokens, i32* index);
+b8 scene_parse_hash(SceneParser* parser);
 
-b8 scene_parse_mesh_asset(Token* tokens, i32* index);
+b8 scene_parse_mesh_asset(SceneParser* parser);
 
-b8 scene_parse_texture_asset(Token* tokens, i32* index);
+b8 scene_parse_texture_asset(SceneParser* parser);
 
-b8 scene_parse_entity(Token* tokens, i32* index);
+b8 scene_parse_entity(SceneParser* parser);
 
-b8 scene_parse_transform(Token* tokens, i32* index,
+b8 scene_parse_transform(SceneParser* parser,
 			 Transform* out_transform);
 
-Handle32 scene_parse_code_component(Token* tokens, i32* index);
+Handle32 scene_parse_code_component(SceneParser* parser);
 
-Handle32 scene_parse_mesh_component(Token* tokens, i32* index);
+Handle32 scene_parse_mesh_component(SceneParser* parser);
 
-Handle32 scene_parse_material_component(Token* tokens, i32* index);
+Handle32 scene_parse_material_component(SceneParser* parser);
 
-Handle32 scene_parse_texture_component(Token* tokens, i32* index);
+Handle32 scene_parse_texture_component(SceneParser* parser);
 
-Handle32 scene_parse_camera_component(Token* tokens, i32* index);
+Handle32 scene_parse_camera_component(SceneParser* parser);
 
-Handle32 scene_parse_box_collider_3d_component(Token* tokens,
-                                               i32* index);
+Handle32 scene_parse_box_collider_3d_component(SceneParser* parser);
 
-Handle32 scene_parse_ball_collider_3d_component(Token* tokens,
-                                                i32* index);
+Handle32 scene_parse_ball_collider_3d_component(SceneParser* parser);
 
 // UTIL
 
@@ -160,4 +184,4 @@ Handle32 scene_parse_ball_collider_3d_component(Token* tokens,
  * @param vec, A pointer to the Vec3 value to be filled.
  * @return TRUE if parsing was successful, otherwise FALSE.
  */
-b8 scene_parse_vec3(Token* tokens, i32* index, Vec3* vec);
+b8 scene_parse_vec3(SceneParser* parser, Vec3* vec);

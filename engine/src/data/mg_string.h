@@ -45,7 +45,7 @@ MGAPI void destroy_string(String str);
  * @param str, The String.
  * @return The length of the String.
  */
-MGAPI u64 string_length(StringView str);
+MGAPI u64 string_get_length(StringView str);
 
 /**
  * @brief Compares the each character of 2 Strings and returns

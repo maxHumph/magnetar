@@ -10,9 +10,8 @@ mkdir -p ../bin
 cFiles=("${(@f)$(find . -type f \( -name '*.c' -o -name '*.m' \))}")
 
 # echo "Files:" $cFiles
-
 assembly="engine"
-compilerFlags=(-g -dynamiclib -fPIC)
+compilerFlags=(-g -dynamiclib -fPIC -Wno-unused-value)
 # -fms-extensions
 # -Wall -Werror
 includeFlags=(-Isrc -I$VULKAN_SDK/include)

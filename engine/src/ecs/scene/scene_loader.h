@@ -1,0 +1,13 @@
+/**
+ * @file scene_loader.h
+ */
+
+#pragma once
+
+#include "define.h"
+#include "data/mg_string.h"
+#include "ecs/ecs_types.h"
+
+MGAPI b8 scene_load(StringView name);
+
+b8 scene_load_assets(SceneData* data);

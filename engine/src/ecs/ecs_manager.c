@@ -31,6 +31,8 @@ b8 ecs_on_update() {
   return TRUE;
 }
 
+/*
+
 b8 scene_load(Scene* scene) {
   scene_data.entities = darray_create(Entity);
   scene_data.drawable_handles = darray_create(Handle32);
@@ -57,6 +59,7 @@ b8 scene_load(Scene* scene) {
 
   return TRUE;
 };
+*/
 
 b8 scene_unload(/* Scene* scene */) {
   /*

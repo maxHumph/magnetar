@@ -17,12 +17,12 @@ String create_string(const char* str_in) {
 }
 
 void destroy_string(String str) {
-  u64 bytes = sizeof(u64) + ((string_length(str) + 1) * sizeof(char));
+  u64 bytes = sizeof(u64) + ((string_get_length(str) + 1) * sizeof(char));
   char* head = str - sizeof(u64);
   mfree(head, bytes, MEMORY_TAG_STRING);
 }
 
-u64 string_length(StringView str) {
+u64 string_get_length(StringView str) {
   return *((u64*)str - 1);
 }
 

@@ -503,6 +503,16 @@ b8 scene_parse_entity(Token* tokens, i32* index) {
   while (tokens[*index].type != TOKEN_CLOSE_CURLY) {
     switch (tokens[*index].type) {
 
+    case TOKEN_TRANSFORM:
+      Transform transform;
+      if (scene_parse_transform(tokens, index, &transform)) {
+	entity.transform = transform;
+      } else {
+	MERROR_CORE("Failed to parse transform");
+	return FALSE;
+      }
+      break;
+
     case TOKEN_C_CODE:
       if ((entity.components[COMPONENT_INDEX_CODE] =
            scene_parse_code_component(tokens, index)) ==
@@ -881,6 +891,93 @@ Handle32 scene_parse_texture_component(Token* tokens, i32* index) {
 }
 
 Handle32 scene_parse_camera_component(Token* tokens, i32* index) {
+  *index++;
+
+  CCamera camera = {};
+
+  if (tokens[*index].type == TOKEN_EQUALS) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \"=\"");
+    return NULL_HANDLE_32;
+  }
+
+  if (tokens[*index].type == TOKEN_OPEN_CURLY) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \"{\"");
+    return NULL_HANDLE_32;
+  }
+
+  while (tokens[*index].type != TOKEN_CLOSE_CURLY) {
+
+    if (tokens[*index].type == TOKEN_PERIOD) {
+      *index++;
+      switch (tokens[*index].type) {
+      case TOKEN_V_FOV:
+        *index++;
+        if (tokens[*index].type == TOKEN_EQUALS) {
+          *index++;
+	  if (tokens[*index].type == TOKEN_FLOAT_LIT) {
+	    camera.fov = (f32)(*(f64*)(tokens[*index].val));
+	  } else {
+	    MERROR_CORE("Expected TOKEN_FLOAT_LIT");
+	    return NULL_HANDLE_32;
+	  }
+        } else {
+          MERROR_CORE("Expected: \"=\"");
+          return NULL_HANDLE_32;
+        }
+        break;
+
+      case TOKEN_V_NEAR_PLANE:
+        *index++;
+        if (tokens[*index].type == TOKEN_EQUALS) {
+          *index++;
+	  if (tokens[*index].type == TOKEN_FLOAT_LIT) {
+	    camera.near_plane = (f32)(*(f64*)(tokens[*index].val));
+	  } else {
+	    MERROR_CORE("Expected TOKEN_FLOAT_LIT");
+	    return NULL_HANDLE_32;
+	  }
+        } else {
+          MERROR_CORE("Expected: \"=\"");
+          return NULL_HANDLE_32;
+        }
+        break;
+
+      case TOKEN_V_FAR_PLANE:
+        *index++;
+        if (tokens[*index].type == TOKEN_EQUALS) {
+          *index++;
+	  if (tokens[*index].type == TOKEN_FLOAT_LIT) {
+	    camera.far_plane = (f32)(*(f64*)(tokens[*index].val));
+	  } else {
+	    MERROR_CORE("Expected TOKEN_FLOAT_LIT");
+	    return NULL_HANDLE_32;
+	  }
+        } else {
+          MERROR_CORE("Expected: \"=\"");
+          return NULL_HANDLE_32;
+        }
+        break;
+      };
+    }
+    *index++;
+    if (tokens[*index].type == TOKEN_COMMA) {
+      *index++;
+    }
+  }
+
+  if (tokens[*index].type == TOKEN_SEMICOL) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \";\"");
+    return FALSE;
+  }
+
+  darray_push(data->cameras, camera);
+
   return NULL_HANDLE_32;
 }
 
@@ -905,7 +1002,7 @@ b8 scene_parse_vec3(Token* tokens, i32* index, Vec3* vec) {
 
   for (u32 i = 0; i < 3; i++) {
     if (tokens[*index].type == TOKEN_FLOAT_LIT) {
-      temp.index[i] = *(f32*)(tokens[*index].val);
+      temp.index[i] = (f32)(*(f64*)(tokens[*index].val));
       *index++;
     } else {
       MERROR_CORE("Expected FLOAT LIT");

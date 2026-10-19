@@ -12,6 +12,21 @@ a_texture crate_texture {
 
 #entities;
 
+entity player {
+
+  transform = {
+    .position = { 1.0, 1.0, 1.0 },
+    .scale = { 1.0, 1.0, 1.0 },
+    .rotation = { -30.0, 0.0, 0.0 }
+  },
+
+  c_camera = {
+    .fov = 90.0,
+    .near_plane = 0.1,
+    .far_plane = 1000.0
+  }
+};
+
 entity crate {
 
   transform = {

@@ -47,7 +47,7 @@ typedef u64 Handle64;
 #define U8_MAX 255
 #define U16_MAX 65535
 #define U32_MAX 4294967295
-#define U64_MAX 18446744073709551615
+#define U64_MAX 18446744073709551615ULL
 
 #define NULL_MASK_8  (u8)0x00
 #define NULL_MASK_16 (short)0x0000

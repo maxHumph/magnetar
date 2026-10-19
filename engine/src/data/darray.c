@@ -116,3 +116,12 @@ void* _darray_pop_at(void* darray, u64 index, void* dest) {
   _darray_set_field(darray, DARRAY_LENGTH, length - 1);
   return darray;
 }
+
+u64 darray_get_str_index(String* darray, StringView str) {
+  for (u64 i = 0; i < darray_get_length(darray); i++) {
+    if (string_compare(str, darray[i]) == 0) {
+      return i;
+    }
+  }
+  return U64_MAX;
+}

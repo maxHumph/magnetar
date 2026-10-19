@@ -200,7 +200,7 @@ b8 scene_tokenize_text_file(char* file_string, u64 length,
 
       // int/float lits
 
-    } else if (isdigit(file_string[i])) {
+    } else if (isdigit(file_string[i]) || file_string[i] == '-') {
       b8 is_int = TRUE;
       buffer[j] = file_string[i];
       i++;
@@ -583,7 +583,100 @@ b8 scene_parse_entity(Token* tokens, i32* index) {
   return TRUE;
 }
 
+b8 scene_parse_transform(Token* tokens, i32* index,
+			 Transform* out_transform) {
+  *index++;
 
+  Transform transform = {};
+
+  if (tokens[*index].type == TOKEN_EQUALS) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \"=\"");
+    return FALSE;
+  }
+
+  if (tokens[*index].type == TOKEN_OPEN_CURLY) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \"{\"");
+    return FALSE;
+  }
+
+  while (tokens[*index].type != TOKEN_CLOSE_CURLY) {
+
+    if (tokens[*index].type == TOKEN_PERIOD) {
+      *index++;
+      switch (tokens[*index].type) {
+      case TOKEN_V_POSITION:
+        *index++;
+        if (tokens[*index].type == TOKEN_EQUALS) {
+          *index++;
+	  Vec3 pos;
+	  if (scene_parse_vec3(tokens, index, &pos)) {
+	    MERROR_CORE("Failed to parse .positoin: Expected Vec3.");
+	    return FALSE;
+	  } else {
+	    transform.position = pos;
+	  }
+        } else {
+          MERROR_CORE("Expected: \"=\"");
+          return FALSE;
+        }
+        break;
+
+      case TOKEN_V_SCALE:
+        *index++;
+        if (tokens[*index].type == TOKEN_EQUALS) {
+          *index++;
+	  Vec3 scale;
+	  if (scene_parse_vec3(tokens, index, &scale)) {
+	    MERROR_CORE("Failed to parse .scale: Expected Vec3.");
+	    return FALSE;
+	  } else {
+	    transform.scale = scale;
+	  }
+        } else {
+          MERROR_CORE("Expected: \"=\"");
+          return FALSE;
+        }
+	break;
+
+      case TOKEN_V_ROTATION:
+        *index++;
+        if (tokens[*index].type == TOKEN_EQUALS) {
+          *index++;
+	  Vec3 rotation;
+	  if (scene_parse_vec3(tokens, index, &rotation)) {
+	    MERROR_CORE("Failed to parse .rotation: Expected Vec3.");
+	    return FALSE;
+	  } else {
+	    transform.rotation = /* @TODO: Convert to Quat */ ;
+	  }
+        } else {
+          MERROR_CORE("Expected: \"=\"");
+          return FALSE;
+        }
+	break;
+      };
+    }
+    *index++;
+    if (tokens[*index].type == TOKEN_COMMA) {
+      *index++;
+    }
+  }
+
+  if (tokens[*index].type == TOKEN_SEMICOL) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \";\"");
+    return FALSE;
+  }
+
+  *out_transform = transform;
+
+  return TRUE;
+}
 
 Handle32 scene_parse_code_component(Token* tokens, i32* index) {
   *index++;
@@ -621,7 +714,16 @@ Handle32 scene_parse_mesh_component(Token* tokens, i32* index) {
         if (tokens[*index].type == TOKEN_EQUALS) {
           *index++;
           if (tokens[*index].type == TOKEN_IDENTIFIER) {
-            // @TODO: mesh.mesh_asset_handle = get_handle_func();
+	    StringView asset_name = (String)(tokens[*index].val);
+	    Handle32 asset_handle =
+	      (Handle32)darray_get_str_index(mesh_asset_idens,
+					     asset_name);
+	    if (asset_handle == U64_MAX) {
+	      MERROR_CORE("\"%s\" is an undefined asset", asset_name);
+	      return NULL_HANDLE_32;
+	    } else {
+	      mesh.mesh_asset_handle = asset_handle;
+	    }
 
           } else {
             MERROR_CORE("Expected indentifier");
@@ -635,6 +737,9 @@ Handle32 scene_parse_mesh_component(Token* tokens, i32* index) {
       };
     }
     *index++;
+    if (tokens[*index].type == TOKEN_COMMA) {
+      *index++;
+    }
   }
 
   if (tokens[*index].type == TOKEN_SEMICOL) {
@@ -669,4 +774,38 @@ Handle32 scene_parse_box_collider_3d_component(Token* tokens,
 Handle32 scene_parse_ball_collider_3d_component(Token* tokens,
                                                 i32* index) {
   return NULL_HANDLE_32;
+}
+
+b8 scene_parse_vec3(Token* tokens, i32* index, Vec3* vec) {
+  Vec3 temp;
+  if (tokens[*index].type == TOKEN_OPEN_CURLY) {
+    *index++;
+  } else {
+    MERROR_CORE("Expected \"{\"");
+    return FALSE;
+  }
+
+  for (u32 i = 0; i < 3; i++) {
+    if (tokens[*index].type == TOKEN_FLOAT_LIT) {
+      temp.index[i] = *(f32*)(tokens[*index].val);
+      *index++;
+    } else {
+      MERROR_CORE("Expected FLOAT LIT");
+      return FALSE;
+    }
+    if (tokens[*index].type == TOKEN_COMMA) {
+      *index++;
+    }
+  }
+
+  if (tokens[*index].type == TOKEN_CLOSE_CURLY) {
+    *index;
+  } else {
+    MERROR_CORE("Expected \"}\"");
+    return FALSE;
+  }
+
+  *vec = temp;
+
+  return TRUE;
 }

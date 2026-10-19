@@ -19,6 +19,7 @@
 #pragma once
 
 #include "define.h"
+#include "data/mg_string.h"
 
 enum {
   DARRAY_CAPACITY,
@@ -64,6 +65,16 @@ MGAPI void* _darray_pop(void* darray, void* dest);
 
 MGAPI void* _darray_insert(void* darray, u64 index, void* val_ptr);
 MGAPI void* _darray_pop_at(void* darray, u64 index, void* dest);
+
+/**
+ * @brief Returns the index of the first matching String in a darray of
+ * type String*.
+ *
+ * @param darray, A darray of Strings.
+ * @param str, The String to search for.
+ * @return The index of the first match or U64_MAX if no match is found.
+ */
+MGAPI u64 darray_get_str_index(String* darray, StringView str);
 
 #define DARRAY_DEFAULT_CAPACITY 1
 #define DARRAY_RESIZE_FACTOR 2

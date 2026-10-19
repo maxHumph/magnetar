@@ -128,6 +128,9 @@ b8 scene_parse_texture_asset(Token* tokens, i32* index);
 
 b8 scene_parse_entity(Token* tokens, i32* index);
 
+b8 scene_parse_transform(Token* tokens, i32* index,
+			 Transform* out_transform);
+
 Handle32 scene_parse_code_component(Token* tokens, i32* index);
 
 Handle32 scene_parse_mesh_component(Token* tokens, i32* index);
@@ -143,3 +146,15 @@ Handle32 scene_parse_box_collider_3d_component(Token* tokens,
 
 Handle32 scene_parse_ball_collider_3d_component(Token* tokens,
                                                 i32* index);
+
+// UTIL
+
+/**
+ * @brief Parses a Vec3 from a Token array in the form { x.x, y.y, z.z }
+ *
+ * @param tokens, A pointer to the token array.
+ * @param index, A pointer to an int containing the current index.
+ * @param vec, A pointer to the Vec3 value to be filled.
+ * @return TRUE if parsing was successful, otherwise FALSE.
+ */
+b8 scene_parse_vec3(Token* tokens, i32* index, Vec3* vec);

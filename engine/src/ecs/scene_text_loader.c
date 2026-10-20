@@ -231,6 +231,7 @@ static b8 parse_box_collider_3d(Handle32 handle, char* name) {
       break;
     }
   }
+  return TRUE;
 }
 
 static b8 parse_mesh_asset(Handle32 handle, char* name) {

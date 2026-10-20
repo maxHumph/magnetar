@@ -16,23 +16,21 @@
 static SceneData* data = NULL_PTR;
 
 /*
-static String* entity_idens = NULL_PTR;
-static String* mesh_asset_idens = NULL_PTR;
-static String* texture_asset_idens = NULL_PTR;
+  static String* entity_idens = NULL_PTR;
+  static String* mesh_asset_idens = NULL_PTR;
+  static String* texture_asset_idens = NULL_PTR;
 */
 
 static const TokenMap token_map[] = {
 
-  /*
 
-    {TOKEN_HASH, "#", "TOKEN_HASH"},
-    {TOKEN_PERIOD, ".", "TOKEN_PERIOD"},
-    {TOKEN_COMMA, ",", "TOKEN_COMMA"},
-    {TOKEN_SEMICOL, ";", "TOKEN_SEMICOL"},
-    {TOKEN_OPEN_CURLY, "{", "TOKEN_OPEN_CURLY"},
-    {TOKEN_CLOSE_CURLY, "}", "TOKEN_CLOSE_CURLY"},
+  {TOKEN_HASH, "#", "TOKEN_HASH"},
+  {TOKEN_PERIOD, ".", "TOKEN_PERIOD"},
+  {TOKEN_COMMA, ",", "TOKEN_COMMA"},
+  {TOKEN_SEMICOL, ";", "TOKEN_SEMICOL"},
+  {TOKEN_OPEN_CURLY, "{", "TOKEN_OPEN_CURLY"},
+  {TOKEN_CLOSE_CURLY, "}", "TOKEN_CLOSE_CURLY"},
 
-  */
 
   {TOKEN_SCENE, "scene", "TOKEN_SCENE"},
   {TOKEN_ASSETS, "assets", "TOKEN_ASSETS"},
@@ -86,9 +84,11 @@ SceneParser* create_scene_parser(SceneData* data,
 
   SceneParser* parser = mallocate(sizeof(SceneParser),
 				  MEMORY_TAG_SCENE);
+  parser->index = 0;
   parser->data = data;
   parser->ids = create_scene_indentifiers();
   parser->tokens = darray_create(Token);
+  return parser;
 }
 
 void destroy_scene_parser(SceneParser* parser) {
@@ -126,44 +126,36 @@ void destroy_token_darray_vals(Token* tokens) {
 }
 
 b8 scene_open_from_text(SceneData* data, SceneIdentifiers* ids,
-			const char* path) {
+			StringView path) {
 
-  SceneParser parser = {
-    .ids = ids,
-    .data = data,
-  };
 
-  /*
+  SceneParser* parser = create_scene_parser(data, ids);
 
-  if (entity_idens != NULL_PTR) {
-    entity_idens = darray_create(String);
-  }
+  String file_string = NULL_PTR;
 
-  if (mesh_asset_idens != NULL_PTR) {
-    mesh_asset_idens = darray_create(String);
-  }
-
-  if (texture_asset_idens != NULL_PTR) {
-    texture_asset_idens = darray_create(String);
-  }
-
-  */
-
-  Token* token_list = darray_create(Token);
-  char* file_string = NULL_PTR;
-  u64 file_length = 0;
-
-  if (!scene_read_text_file(path, file_string, &file_length)) {
+  if (!scene_read_text_file(path, &file_string)) {
     MERROR_CORE("Scene parser failed to read: %s", path);
     return FALSE;
   }
 
+  if (!scene_tokenize_text_file(parser, file_string)) {
+    MERROR_CORE("Failed to tokenize text file");
+    return FALSE;
+  }
 
+  destroy_string(file_string);
+
+  if (!scene_parse_tokens(parser)) {
+    MERROR_CORE("Failed to parse tokens");
+    return FALSE;
+  }
+
+  destroy_scene_parser(parser);
 
   return TRUE;
 }
 
-b8 scene_read_text_file(const char *path, char* content, u64* length) {
+b8 scene_read_text_file(StringView path, String* content) {
   FILE *file;
   file = fopen(path, "r");
   if (file == NULL) {
@@ -172,11 +164,15 @@ b8 scene_read_text_file(const char *path, char* content, u64* length) {
   }
 
   fseek(file, 0, SEEK_END);
-  *length = ftell(file);
+  u64 length = ftell(file);
+  if (length == 0) {
+    MERROR_CORE("File: %s doesn't contain any data.");
+    return FALSE;
+  }
   fseek(file, 0, SEEK_SET);
-  content = malloc(*length);
+  *content = alloc_string(length);
   if (content) {
-    fread(content, sizeof(char), *length, file);
+    fread(*content, sizeof(char), length, file);
   } else {
     printf("%d: %s", errno, strerror(errno));
     return FALSE;
@@ -187,11 +183,11 @@ b8 scene_read_text_file(const char *path, char* content, u64* length) {
   return TRUE;
 }
 
-b8 scene_tokenize_text_file(SceneParser* parser, char* file_string,
-			    u64 length) {
+b8 scene_tokenize_text_file(SceneParser* parser,
+			    StringView file_string) {
 
 
-  for (u64 i = 0; i < length; i++) {
+  for (u64 i = 0; i < string_get_length(file_string); i++) {
     char buffer[100] = "";
     u64 j = 0;
 
@@ -199,28 +195,35 @@ b8 scene_tokenize_text_file(SceneParser* parser, char* file_string,
 
     if (file_string[i] == '#') {
       darray_push(parser->tokens, ((Token){TOKEN_HASH, NULL_PTR}));
+      MTRACE("Pushed Token: HASH");
       i++;
     } else if (file_string[i] == '.') {
       darray_push(parser->tokens, ((Token){TOKEN_PERIOD, NULL_PTR}));
+      MTRACE("Pushed Token: PERIOD");
       i++;
     } else if (file_string[i] == ',') {
       darray_push(parser->tokens, ((Token){TOKEN_COMMA, NULL_PTR}));
+      MTRACE("Pushed Token: COMMA");
       i++;
     } else if (file_string[i] == ';') {
       darray_push(parser->tokens,
                   ((Token){TOKEN_SEMICOL, NULL_PTR}));
+      MTRACE("Pushed Token: SEMICOL");
       i++;
     } else if (file_string[i] == '"') {
       darray_push(parser->tokens,
                   ((Token){TOKEN_DOUBLE_QUOTES, NULL_PTR}));
+      MTRACE("Pushed Token: QUOTES");
       i++;
     } else if (file_string[i] == '{') {
       darray_push(parser->tokens,
                   ((Token){TOKEN_OPEN_CURLY, NULL_PTR}));
+      MTRACE("Pushed Token: LCURLY");
       i++;
     } else if (file_string[i] == '}') {
       darray_push(parser->tokens,
                   ((Token){TOKEN_CLOSE_CURLY, NULL_PTR}));
+      MTRACE("Pushed Token: RCURLY");
       i++;
     
       // Keywords and identifiers
@@ -261,8 +264,8 @@ b8 scene_tokenize_text_file(SceneParser* parser, char* file_string,
 
       // @TODO: Free mem
       /*
-      char* val = mallocate(sizeof(char) * j, MEMORY_TAG_STRING); 
-      mcopy_memory(val, buffer, sizeof(char) * j);
+	char* val = mallocate(sizeof(char) * j, MEMORY_TAG_STRING); 
+	mcopy_memory(val, buffer, sizeof(char) * j);
       */
 
       String val = create_string(buffer);
@@ -273,6 +276,7 @@ b8 scene_tokenize_text_file(SceneParser* parser, char* file_string,
       };
 
       darray_push(parser->tokens, token);
+      MTRACE("Pushed Token: STR LIT");
 
       // int/float lits
 
@@ -305,6 +309,7 @@ b8 scene_tokenize_text_file(SceneParser* parser, char* file_string,
             .val = (void*)val,
           };
           darray_push(parser->tokens, token);
+	  MTRACE("Pushed Token: STR LIT");
         } else {
           MERROR_CORE("Failed to parse int lit");
           return FALSE;
@@ -320,6 +325,8 @@ b8 scene_tokenize_text_file(SceneParser* parser, char* file_string,
             .type = TOKEN_FLOAT_LIT,
             .val = (void*)val,
           };
+	  darray_push(parser->tokens, token);
+	  MTRACE("Pushed Token: FLOAT LIT");
         } else {
           MERROR_CORE("Failed to parse float lit");
           return FALSE;
@@ -343,6 +350,7 @@ b8 scene_generate_token(SceneParser* parser, char* string) {
       };
 
       darray_push(parser->tokens, token);
+      MTRACE("Pushed Token: keyword/identifier");
       return TRUE;
     }
   }
@@ -363,8 +371,13 @@ b8 scene_generate_token(SceneParser* parser, char* string) {
 }
  
 b8 scene_parse_tokens(SceneParser* parser) {
-  for (i32 i = 0; i < darray_get_length(parser->tokens); i++) {
-    switch (parser->tokens[i].type) {
+
+  parser->index = 0;
+
+  MTRACE_CORE("Tokens to parse: %u", darray_get_length(parser->tokens));
+
+  while (parser->index < darray_get_length(parser->tokens)) {
+    switch (parser->tokens[parser->index].type) {
 
     case INVALID_TOKEN:
       MERROR_CORE("Invalid token was found!");
@@ -376,6 +389,12 @@ b8 scene_parse_tokens(SceneParser* parser) {
         MERROR_CORE("Failed to parse hash statement");
         return FALSE;
       }
+      break;
+
+    case TOKEN_TRANSFORM:
+      // Unfinished
+      MERROR_CORE("Unfinshed switch");
+      return FALSE;
       break;
 
     case TOKEN_A_MESH:

@@ -120,30 +120,28 @@ void destroy_token_darray_vals(Token* tokens);
  * @return TRUE if the scene was opened successfully, otherwise FALSE.
  */
 b8 scene_open_from_text(SceneData* data, SceneIdentifiers* ids,
-			const char* path);
+			StringView path);
 
 /**
  * @brief Reads the content of a .scene file into a char buffer.
  *
  * @param path, A path to a .scene file.
- * @param content, A pointer to an unallocated char buffer.
- * @param length, A pointer to a u64 for the file length to be read into.
+ * @param content, An unallocated String.
  * @return TRUE, If the file was read successfully, otherwise FALSE.
  */
-b8 scene_read_text_file(const char* path, char* content, u64* length);
+b8 scene_read_text_file(StringView path, String* content);
 
 /**
  * @brief Separates a char buffer into tokens and pushed them onto a
  * dynamic array.
  *
+ * @param parser, A pointer to the SceneParser object.
  * @param file_string, A pointer to the char buffer.
- * @param length, The length of the char buffer.
- * @param token_darray, A pointer that was created using darray_create().
- * @return TRUE is the char buffer was tokenized successfullly, otherwise
- * FALSE.
+ * @return TRUE is the char buffer was tokenized successfullly,
+ * otherwise FALSE.
  */
-b8 scene_tokenize_text_file(SceneParser* parser, char* file_string,
-			    u64 length);
+b8 scene_tokenize_text_file(SceneParser* parser,
+			    StringView file_string);
 
 b8 scene_generate_token(SceneParser* parser, char* string);
 
@@ -185,3 +183,5 @@ Handle32 scene_parse_ball_collider_3d_component(SceneParser* parser);
  * @return TRUE if parsing was successful, otherwise FALSE.
  */
 b8 scene_parse_vec3(SceneParser* parser, Vec3* vec);
+
+

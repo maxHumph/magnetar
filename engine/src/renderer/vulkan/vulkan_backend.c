@@ -26,6 +26,7 @@
 #include "data/darray.h"
 #include "default_scene.h"
 #include "ecs/scene_text_loader.h"
+#include "ecs/scene/scene_parser.h"
 #include "ecs/ecs.h"
 #include "ui/ui.h"
 
@@ -51,6 +52,17 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 
 
   vulkan_context.ui_data = get_ui_data_ptr();
+
+  // SCENE TES~T
+
+  SceneData* scene_data = get_scene_data_ptr();
+  SceneIdentifiers* ids;
+  scene_open_from_text(scene_data, ids,
+		       "../engine/src/ecs/scene/sample.scene");
+
+  for (u32 i = 0; i < darray_get_length(ids->meshes); i++) {
+    MDEBUG_CORE("Mesh: %s", ids->meshes[i]);
+  }
 
   // UI TEST
 

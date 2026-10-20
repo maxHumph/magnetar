@@ -361,6 +361,8 @@ Handle32 ui_check_interaction_boxes() {
   for (u32 i = 0; i < darray_get_length(data.clickables); i++) {
     MTRACE("%d", i);
   }
+  MERROR_CORE("Unimplemented");
+  return FALSE;
 }
 
 char* ui_rect_string(UiRectHandle h_rect) {

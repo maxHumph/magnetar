@@ -40,6 +40,14 @@ MGAPI String create_string(const char* cstr);
 MGAPI void destroy_string(String str);
 
 /**
+ * @brief Allocates memory for a string of a specified length.
+ *
+ * @param length, The number of chars to be allocated.
+ * @return The newly allocated string.
+ */
+MGAPI String alloc_string(u64 length);
+
+/**
  * @brief Retrieves the length metadata from a String.
  *
  * @param str, The String.

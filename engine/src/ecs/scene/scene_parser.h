@@ -186,4 +186,6 @@ Handle32 scene_parse_ball_collider_3d_component(SceneParser* parser);
  */
 b8 scene_parse_vec3(SceneParser* parser, Vec3* vec);
 
+StringView token_type_as_string(TokenType type);
 
+void print_token_darray(Token* tokens);

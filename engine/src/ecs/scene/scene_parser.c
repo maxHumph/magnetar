@@ -128,6 +128,18 @@ void destroy_token_darray_vals(Token* tokens) {
 b8 scene_open_from_text(SceneData* data, SceneIdentifiers* ids,
 			StringView path) {
 
+  // @TODO move SceneData creating out of this function
+  data->entities = darray_create(Entity);
+
+  data->drawable_handles = darray_create(Handle32);
+  data->meshes = darray_create(CMesh);
+  data->materials = darray_create(CMaterial);
+  data->textures = darray_create(CCTexture);
+  data->cameras = darray_create(CCamera);
+
+  data->mesh_assets = darray_create(AMesh);
+  data->texture_assets = darray_create(ATexture);
+  
 
   SceneParser* parser = create_scene_parser(data, ids);
 
@@ -142,6 +154,8 @@ b8 scene_open_from_text(SceneData* data, SceneIdentifiers* ids,
     MERROR_CORE("Failed to tokenize text file");
     return FALSE;
   }
+
+  print_token_darray(parser->tokens);
 
   destroy_string(file_string);
 
@@ -379,7 +393,9 @@ b8 scene_parse_tokens(SceneParser* parser) {
 
   MTRACE_CORE("Tokens to parse: %u", darray_get_length(parser->tokens));
 
+
   while (parser->index < darray_get_length(parser->tokens)) {
+  MDEBUG_CORE("Index: %u", parser->index);
     switch (parser->tokens[parser->index].type) {
 
     case INVALID_TOKEN:
@@ -392,12 +408,6 @@ b8 scene_parse_tokens(SceneParser* parser) {
         MERROR_CORE("Failed to parse hash statement");
         return FALSE;
       }
-      break;
-
-    case TOKEN_TRANSFORM:
-      // Unfinished
-      MERROR_CORE("Unfinshed switch");
-      return FALSE;
       break;
 
     case TOKEN_A_MESH:
@@ -437,11 +447,12 @@ b8 scene_parse_tokens(SceneParser* parser) {
 }
 
 b8 scene_parse_hash(SceneParser* parser) {
-  MDEBUG_CORE("Darray size: %u", darray_get_length(parser->tokens));
+  MWARN_CORE("scene_parse_hash() is unimplemented.");
   parser->index++;
   while (parser->tokens[parser->index].type != TOKEN_SEMICOL) {
     parser->index++;
   }
+  parser->index++;
   return TRUE;
 }
 
@@ -499,10 +510,9 @@ b8 scene_parse_mesh_asset(SceneParser* parser) {
         }
       } // @TODO: Add other member values.
     }
-
-
     parser->index++;
   }
+  parser->index++;
 
   if (parser->tokens[parser->index].type == TOKEN_SEMICOL) {
     parser->index++;
@@ -572,6 +582,7 @@ b8 scene_parse_texture_asset(SceneParser* parser) {
     }
     parser->index++;
   }
+  parser->index++;
 
   if (parser->tokens[parser->index].type == TOKEN_SEMICOL) {
     parser->index++;
@@ -613,6 +624,7 @@ b8 scene_parse_entity(SceneParser* parser) {
 
     case TOKEN_TRANSFORM:
       Transform transform;
+      MDEBUG_CORE("Index 1: %u", parser->index);
       if (scene_parse_transform(parser, &transform)) {
 	entity.transform = transform;
       } else {
@@ -683,7 +695,8 @@ b8 scene_parse_entity(SceneParser* parser) {
 
     case INVALID_TOKEN:
     default:
-      MERROR_CORE("Invalid token");
+      MERROR_CORE("Invalid token at index: %u (%s)", parser->index,
+		  token_type_as_string(parser->tokens[parser->index].type));
       return FALSE;
       break;
 
@@ -727,6 +740,8 @@ b8 scene_parse_transform(SceneParser* parser,
     return FALSE;
   }
 
+  MDEBUG_CORE("Index 2: %u", parser->index);
+
   while (parser->tokens[parser->index].type != TOKEN_CLOSE_CURLY) {
 
     if (parser->tokens[parser->index].type == TOKEN_PERIOD) {
@@ -737,11 +752,11 @@ b8 scene_parse_transform(SceneParser* parser,
         if (parser->tokens[parser->index].type == TOKEN_EQUALS) {
           parser->index++;
 	  Vec3 pos;
-	  if (scene_parse_vec3(parser->tokens, &pos)) {
-	    MERROR_CORE("Failed to parse .positoin: Expected Vec3.");
-	    return FALSE;
-	  } else {
+	  if (scene_parse_vec3(parser, &pos)) {
 	    transform.position = pos;
+	  } else {
+	    MERROR_CORE("Failed to parse .position: Expected Vec3.");
+	    return FALSE;
 	  }
         } else {
           MERROR_CORE("Expected: \"=\"");
@@ -754,11 +769,11 @@ b8 scene_parse_transform(SceneParser* parser,
         if (parser->tokens[parser->index].type == TOKEN_EQUALS) {
           parser->index++;
 	  Vec3 scale;
-	  if (scene_parse_vec3(parser->tokens, &scale)) {
+	  if (scene_parse_vec3(parser, &scale)) {
+	    transform.scale = scale;
+	  } else {
 	    MERROR_CORE("Failed to parse .scale: Expected Vec3.");
 	    return FALSE;
-	  } else {
-	    transform.scale = scale;
 	  }
         } else {
           MERROR_CORE("Expected: \"=\"");
@@ -771,11 +786,11 @@ b8 scene_parse_transform(SceneParser* parser,
         if (parser->tokens[parser->index].type == TOKEN_EQUALS) {
           parser->index++;
 	  Vec3 rotation;
-	  if (scene_parse_vec3(parser->tokens, &rotation)) {
+	  if (scene_parse_vec3(parser, &rotation)) {
+	    transform.rotation = quat_from_euler(rotation);
+	  } else {
 	    MERROR_CORE("Failed to parse .rotation: Expected Vec3.");
 	    return FALSE;
-	  } else {
-	    transform.rotation = quat_from_euler(rotation);
 	  }
         } else {
           MERROR_CORE("Expected: \"=\"");
@@ -789,13 +804,13 @@ b8 scene_parse_transform(SceneParser* parser,
       parser->index++;
     }
   }
+  parser->index++;
 
-  if (parser->tokens[parser->index].type == TOKEN_SEMICOL) {
+  if (parser->tokens[parser->index].type == TOKEN_COMMA) {
     parser->index++;
-  } else {
-    MERROR_CORE("Expected \";\"");
-    return FALSE;
   }
+
+  MDEBUG_CORE("Index after parse_transform: %u", parser->index);
 
   *out_transform = transform;
 
@@ -1100,6 +1115,7 @@ Handle32 scene_parse_ball_collider_3d_component(SceneParser* parser) {
 }
 
 b8 scene_parse_vec3(SceneParser* parser, Vec3* vec) {
+  MDEBUG_CORE("Index 3: %u", parser->index);
   Vec3 temp;
   if (parser->tokens[parser->index].type == TOKEN_OPEN_CURLY) {
     parser->index++;
@@ -1131,4 +1147,20 @@ b8 scene_parse_vec3(SceneParser* parser, Vec3* vec) {
   *vec = temp;
 
   return TRUE;
+}
+
+StringView token_type_as_string(TokenType type) {
+  for (u32 i = 0; i < (sizeof(token_map) / sizeof(TokenMap)); i++) {
+    if (token_map[i].type  == type) {
+      return token_map[i].as_str;
+    }
+  }
+  return NULL_PTR;
+}
+
+void print_token_darray(Token* tokens) {
+  for (u32 i = 0; i < darray_get_length(tokens); i++) {
+    MDEBUG_CORE("Token (%u): %s", i,
+		token_type_as_string(tokens[i].type));
+  }
 }

@@ -53,7 +53,7 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
 
   vulkan_context.ui_data = get_ui_data_ptr();
 
-  // SCENE TES~T
+  // SCENE TEST
 
   SceneData* scene_data = get_scene_data_ptr();
   SceneIdentifiers* ids;

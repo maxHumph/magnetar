@@ -56,15 +56,13 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   // SCENE TEST
 
   SceneData* scene_data = get_scene_data_ptr();
-  SceneIdentifiers* ids;
-  scene_open_from_text(scene_data, ids,
+  SceneIdentifiers ids;
+  scene_open_from_text(scene_data, &ids,
 		       "../engine/src/ecs/scene/sample.scene");
 
-  /*
-  for (u32 i = 0; i < darray_get_length(ids->meshes); i++) {
-    MDEBUG_CORE("Mesh: %s", ids->meshes[i]);
+  for (u32 i = 0; i < darray_get_length(ids.meshes); i++) {
+    MDEBUG_CORE("Mesh: %s", ids.meshes[i]);
   }
-  */
 
   // UI TEST
 

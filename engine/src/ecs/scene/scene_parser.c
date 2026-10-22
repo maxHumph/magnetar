@@ -206,6 +206,10 @@ b8 scene_tokenize_text_file(SceneParser* parser,
       darray_push(parser->tokens,
                   ((Token){TOKEN_SEMICOL, NULL_PTR}));
       MTRACE("Pushed Token: SEMICOL");
+    } else if (file_string[i] == '=') {
+      darray_push(parser->tokens,
+		  ((Token){TOKEN_EQUALS, NULL_PTR}));
+      MTRACE("Pushed Token: EQUALS");
     } else if (file_string[i] == '{') {
       darray_push(parser->tokens,
                   ((Token){TOKEN_OPEN_CURLY, NULL_PTR}));
@@ -227,6 +231,7 @@ b8 scene_tokenize_text_file(SceneParser* parser,
         i++;
         j++;
       }
+      i--;
 
       buffer[j + 1] = '\0';
 
@@ -237,13 +242,13 @@ b8 scene_tokenize_text_file(SceneParser* parser,
 
       // sting lits
 
-    } else if (buffer[i] == '"') {
+    } else if (file_string[i] == '"') {
 
       MDEBUG("StrLit");
 
       i++;
 
-      while (buffer[i] != '"') { // @TODO: Add \" \\ and \n
+      while (file_string[i] != '"') { // @TODO: Add \" \\ and \n
         buffer[j] = file_string[i];
         i++;
         j++;
@@ -317,7 +322,7 @@ b8 scene_tokenize_text_file(SceneParser* parser,
             .val = (void*)val,
           };
 	  darray_push(parser->tokens, token);
-	  MTRACE("Pushed Token: FLOAT LIT - %d", *(f64*)token.val);
+	  MTRACE("Pushed Token: FLOAT LIT - %f", *(f64*)token.val);
         } else {
           MERROR_CORE("Failed to parse float lit");
           return FALSE;

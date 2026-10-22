@@ -150,10 +150,14 @@ b8 scene_open_from_text(SceneData* data, SceneIdentifiers* ids,
     return FALSE;
   }
 
+  MTRACE_CORE("%s read.", path);
+
   if (!scene_tokenize_text_file(parser, file_string)) {
     MERROR_CORE("Failed to tokenize text file");
     return FALSE;
   }
+
+  MTRACE_CORE("%s tokenized.", path);
 
   print_token_darray(parser->tokens);
 
@@ -163,6 +167,8 @@ b8 scene_open_from_text(SceneData* data, SceneIdentifiers* ids,
     MERROR_CORE("Failed to parse tokens");
     return FALSE;
   }
+
+  MTRACE_CORE("%s parsed.", path);
 
   destroy_scene_parser(parser);
 
@@ -890,18 +896,15 @@ Handle32 scene_parse_mesh_component(SceneParser* parser) {
       parser->index++;
     }
   }
+  parser->index++;
 
-
-  if (parser->tokens[parser->index].type == TOKEN_SEMICOL) {
+  if (parser->tokens[parser->index].type == TOKEN_COMMA) {
     parser->index++;
-  } else {
-    MERROR_CORE("Expected \";\"");
-    return FALSE;
   }
 
   darray_push(parser->data->meshes, mesh);
 
-  return NULL_HANDLE_32;
+  return (Handle32)darray_get_length(parser->data->meshes);
 }
 
 Handle32 scene_parse_material_component(SceneParser* parser) {
@@ -929,7 +932,6 @@ Handle32 scene_parse_material_component(SceneParser* parser) {
       parser->index++;
       // Nothing yet
     } else if (parser->tokens[parser->index].type == TOKEN_C_TEXTURE) {
-      parser->index++;
       if ((material.texture_handle =
 	   scene_parse_texture_component(parser)) ==
 	  NULL_HANDLE_32) {
@@ -942,17 +944,15 @@ Handle32 scene_parse_material_component(SceneParser* parser) {
       parser->index++;
     }
   }
+  parser->index++;
 
-  if (parser->tokens[parser->index].type == TOKEN_SEMICOL) {
+  if (parser->tokens[parser->index].type == TOKEN_COMMA) {
     parser->index++;
-  } else {
-    MERROR_CORE("Expected \";\"");
-    return FALSE;
   }
 
   darray_push(parser->data->materials, material);
 
-  return NULL_HANDLE_32;
+  return (Handle32)darray_get_length(parser->data->materials);
 }
 
 Handle32 scene_parse_texture_component(SceneParser* parser) {
@@ -1012,17 +1012,15 @@ Handle32 scene_parse_texture_component(SceneParser* parser) {
       parser->index++;
     }
   }
+  parser->index++;
 
-  if (parser->tokens[parser->index].type == TOKEN_SEMICOL) {
+  if (parser->tokens[parser->index].type == TOKEN_COMMA) {
     parser->index++;
-  } else {
-    MERROR_CORE("Expected \";\"");
-    return FALSE;
   }
 
   darray_push(parser->data->textures, texture);
 
-  return NULL_HANDLE_32;
+  return (Handle32)darray_get_length(parser->data->textures);
 }
 
 Handle32 scene_parse_camera_component(SceneParser* parser) {
@@ -1105,7 +1103,10 @@ Handle32 scene_parse_camera_component(SceneParser* parser) {
   }
 
   parser->index++;
-  MDEBUG_CORE("Index after cam: %u", parser->index);
+
+  if (parser->tokens[parser->index].type == TOKEN_COMMA) {
+    parser->index++;
+  }
 
   darray_push(parser->data->cameras, camera);
 

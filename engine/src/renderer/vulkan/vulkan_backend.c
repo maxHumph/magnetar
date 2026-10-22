@@ -60,9 +60,11 @@ b8 vulkan_backend_init(RendererBackend* renderer_backend,
   scene_open_from_text(scene_data, ids,
 		       "../engine/src/ecs/scene/sample.scene");
 
+  /*
   for (u32 i = 0; i < darray_get_length(ids->meshes); i++) {
     MDEBUG_CORE("Mesh: %s", ids->meshes[i]);
   }
+  */
 
   // UI TEST
 

@@ -196,35 +196,24 @@ b8 scene_tokenize_text_file(SceneParser* parser,
     if (file_string[i] == '#') {
       darray_push(parser->tokens, ((Token){TOKEN_HASH, NULL_PTR}));
       MTRACE("Pushed Token: HASH");
-      i++;
     } else if (file_string[i] == '.') {
       darray_push(parser->tokens, ((Token){TOKEN_PERIOD, NULL_PTR}));
       MTRACE("Pushed Token: PERIOD");
-      i++;
     } else if (file_string[i] == ',') {
       darray_push(parser->tokens, ((Token){TOKEN_COMMA, NULL_PTR}));
       MTRACE("Pushed Token: COMMA");
-      i++;
     } else if (file_string[i] == ';') {
       darray_push(parser->tokens,
                   ((Token){TOKEN_SEMICOL, NULL_PTR}));
       MTRACE("Pushed Token: SEMICOL");
-      i++;
-    } else if (file_string[i] == '"') {
-      darray_push(parser->tokens,
-                  ((Token){TOKEN_DOUBLE_QUOTES, NULL_PTR}));
-      MTRACE("Pushed Token: QUOTES");
-      i++;
     } else if (file_string[i] == '{') {
       darray_push(parser->tokens,
                   ((Token){TOKEN_OPEN_CURLY, NULL_PTR}));
       MTRACE("Pushed Token: LCURLY");
-      i++;
     } else if (file_string[i] == '}') {
       darray_push(parser->tokens,
                   ((Token){TOKEN_CLOSE_CURLY, NULL_PTR}));
       MTRACE("Pushed Token: RCURLY");
-      i++;
     
       // Keywords and identifiers
 
@@ -250,6 +239,8 @@ b8 scene_tokenize_text_file(SceneParser* parser,
 
     } else if (buffer[i] == '"') {
 
+      MDEBUG("StrLit");
+
       i++;
 
       while (buffer[i] != '"') { // @TODO: Add \" \\ and \n
@@ -258,7 +249,7 @@ b8 scene_tokenize_text_file(SceneParser* parser,
         j++;
       }
 
-      i++;
+      //i++;
       j++;
       buffer[j] = '\0';
 
@@ -276,7 +267,7 @@ b8 scene_tokenize_text_file(SceneParser* parser,
       };
 
       darray_push(parser->tokens, token);
-      MTRACE("Pushed Token: STR LIT");
+      MTRACE("Pushed Token: STR LIT - %s", (String)(token.val));
 
       // int/float lits
 
@@ -309,7 +300,7 @@ b8 scene_tokenize_text_file(SceneParser* parser,
             .val = (void*)val,
           };
           darray_push(parser->tokens, token);
-	  MTRACE("Pushed Token: STR LIT");
+	  MTRACE("Pushed Token: INT LIT - %l", *(i64*)token.val);
         } else {
           MERROR_CORE("Failed to parse int lit");
           return FALSE;
@@ -326,18 +317,23 @@ b8 scene_tokenize_text_file(SceneParser* parser,
             .val = (void*)val,
           };
 	  darray_push(parser->tokens, token);
-	  MTRACE("Pushed Token: FLOAT LIT");
+	  MTRACE("Pushed Token: FLOAT LIT - %d", *(f64*)token.val);
         } else {
           MERROR_CORE("Failed to parse float lit");
           return FALSE;
         }
       }
     }
-
-
-
-    return TRUE;
   }
+
+  Token end_token = {
+    .type = TOKEN_END,
+    .val = NULL_PTR,
+  };
+
+  darray_push(parser->tokens, end_token);
+
+  return TRUE;
 }
 
 b8 scene_generate_token(SceneParser* parser, char* string) {
@@ -350,7 +346,7 @@ b8 scene_generate_token(SceneParser* parser, char* string) {
       };
 
       darray_push(parser->tokens, token);
-      MTRACE("Pushed Token: keyword/identifier");
+      MTRACE("Pushed Token: keyword");
       return TRUE;
     }
   }
@@ -363,6 +359,8 @@ b8 scene_generate_token(SceneParser* parser, char* string) {
       .type = TOKEN_IDENTIFIER,
       .val = (void*)val,
     };
+    MTRACE("Pushed Token: Identifier - %s", (String)(token.val));
+    darray_push(parser->tokens, token);
 
     return TRUE;
   }
@@ -385,7 +383,7 @@ b8 scene_parse_tokens(SceneParser* parser) {
       break;
 
     case TOKEN_HASH:
-      if (!scene_parse_hash(parser->tokens)) {
+      if (!scene_parse_hash(parser)) {
         MERROR_CORE("Failed to parse hash statement");
         return FALSE;
       }
@@ -398,24 +396,28 @@ b8 scene_parse_tokens(SceneParser* parser) {
       break;
 
     case TOKEN_A_MESH:
-      if (!scene_parse_mesh_asset(parser->tokens)) {
+      if (!scene_parse_mesh_asset(parser)) {
         MERROR_CORE("Failed to parse mesh asset");
         return FALSE;
       }
       break;
 
     case TOKEN_A_TEXTURE:
-      if (!scene_parse_texture_asset(parser->tokens)) {
+      if (!scene_parse_texture_asset(parser)) {
         MERROR_CORE("Failed to parse texture asset");
         return FALSE;
       }
       break;
 
     case TOKEN_ENTITY:
-      if (!scene_parse_entity(parser->tokens)) {
+      if (!scene_parse_entity(parser)) {
         MERROR_CORE("Failed to parse entity defenition");
         return FALSE;
       }
+      break;
+
+    case TOKEN_END:
+      return TRUE;
       break;
 
     default:
@@ -424,9 +426,13 @@ b8 scene_parse_tokens(SceneParser* parser) {
       break;
     };
   }
+
+  MWARN_CORE("Parser did not find a: TOKEN_END");
+  return TRUE;
 }
 
 b8 scene_parse_hash(SceneParser* parser) {
+  MDEBUG_CORE("Darray size: %u", darray_get_length(parser->tokens));
   parser->index++;
   while (parser->tokens[parser->index].type != TOKEN_SEMICOL) {
     parser->index++;

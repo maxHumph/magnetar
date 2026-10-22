@@ -20,6 +20,8 @@ typedef enum TokenType {
 
   INVALID_TOKEN,
 
+  TOKEN_END,
+
   TOKEN_INT_LIT,
   TOKEN_FLOAT_LIT,
   TOKEN_STRING_LIT,

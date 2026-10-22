@@ -600,6 +600,7 @@ b8 scene_parse_texture_asset(SceneParser* parser) {
 }
 
 b8 scene_parse_entity(SceneParser* parser) {
+  MTRACE_CORE("Parsing entity");
   parser->index++;
 
   Entity entity = {};
@@ -620,6 +621,9 @@ b8 scene_parse_entity(SceneParser* parser) {
   }
 
   while (parser->tokens[parser->index].type != TOKEN_CLOSE_CURLY) {
+    MDEBUG("Token type: %s, Index: %u",
+	   token_type_as_string(parser->tokens[parser->index].type),
+	   parser->index);
     switch (parser->tokens[parser->index].type) {
 
     case TOKEN_TRANSFORM:
@@ -702,10 +706,12 @@ b8 scene_parse_entity(SceneParser* parser) {
 
     };
 
-    if (parser->tokens[parser->index].type = TOKEN_COMMA) {
+    if (parser->tokens[parser->index].type == TOKEN_COMMA) {
       parser->index++;
     }
   }
+
+  parser->index++;
 
   if (parser->tokens[parser->index].type == TOKEN_SEMICOL) {
     parser->index++;
@@ -804,11 +810,14 @@ b8 scene_parse_transform(SceneParser* parser,
       parser->index++;
     }
   }
+
   parser->index++;
 
+  /*
   if (parser->tokens[parser->index].type == TOKEN_COMMA) {
     parser->index++;
   }
+  */
 
   MDEBUG_CORE("Index after parse_transform: %u", parser->index);
 
@@ -881,6 +890,7 @@ Handle32 scene_parse_mesh_component(SceneParser* parser) {
       parser->index++;
     }
   }
+
 
   if (parser->tokens[parser->index].type == TOKEN_SEMICOL) {
     parser->index++;
@@ -1094,16 +1104,12 @@ Handle32 scene_parse_camera_component(SceneParser* parser) {
     }
   }
 
-  if (parser->tokens[parser->index].type == TOKEN_SEMICOL) {
-    parser->index++;
-  } else {
-    MERROR_CORE("Expected \";\"");
-    return FALSE;
-  }
+  parser->index++;
+  MDEBUG_CORE("Index after cam: %u", parser->index);
 
   darray_push(parser->data->cameras, camera);
 
-  return NULL_HANDLE_32;
+  return (Handle32)darray_get_length(parser->data->cameras);
 }
 
 Handle32 scene_parse_box_collider_3d_component(SceneParser* parser) {

@@ -58,6 +58,7 @@ static const TokenMap token_map[] = {
   {TOKEN_V_SCALE, "scale", "TOKEN_V_SCALE"},
   {TOKEN_V_ROTATION, "rotation", "TOKEN_V_ROTATION"},
   {TOKEN_V_ASSET, "asset", "TOKEN_V_ASSET"},
+  {TOKEN_V_PATH, "path", "TOKEN_V_PATH"},
   {TOKEN_V_FOV, "fov", "TOKEN_V_FOV"},
   {TOKEN_V_NEAR_PLANE, "near_plane", "TOKEN_V_NEAR_PLANE"},
   {TOKEN_V_FAR_PLANE, "far_plane", "TOKEN_V_FAR_PLANE"},
@@ -490,20 +491,16 @@ b8 scene_parse_mesh_asset(SceneParser* parser) {
     if (parser->tokens[parser->index].type == TOKEN_PERIOD) {
       parser->index++;
       if (parser->tokens[parser->index].type == TOKEN_V_PATH) {
-	    MFATAL("1");
         parser->index++;
         if (parser->tokens[parser->index].type == TOKEN_EQUALS) {
-	    MFATAL("2");
           parser->index++;
           if (parser->tokens[parser->index].type == TOKEN_STRING_LIT) {
-	    MFATAL("3");
             mesh.model_path =
 	      create_string((String)
 			    (parser->tokens[parser->index].val));
             parser->index++;
             if (parser->tokens[parser->index].type ==
 		TOKEN_CLOSE_CURLY) {
-              parser->index++;
               break;
             } else if (parser->tokens[parser->index].type ==
 		       TOKEN_COMMA) {
@@ -520,7 +517,10 @@ b8 scene_parse_mesh_asset(SceneParser* parser) {
           MERROR_CORE("Expected assignment operator");
           return FALSE;
         }
-      } // @TODO: Add other member values.
+      } else { // @TODO: Add other member values.
+	MERROR_CORE("Expected member value");
+	return FALSE;
+      }
     }
     parser->index++;
   }
@@ -529,6 +529,7 @@ b8 scene_parse_mesh_asset(SceneParser* parser) {
   if (parser->tokens[parser->index].type == TOKEN_SEMICOL) {
     parser->index++;
   } else {
+    MTRACE("%u", parser->index);
     MERROR_CORE("Expected \";\"");
     return FALSE;
   }
@@ -573,8 +574,8 @@ b8 scene_parse_texture_asset(SceneParser* parser) {
             texture.image_path =
 	      (String)(parser->tokens[parser->index].val);
             parser->index++;
-            if (parser->tokens[parser->index].type == TOKEN_CLOSE_CURLY) {
-              parser->index++;
+            if (parser->tokens[parser->index].type ==
+		TOKEN_CLOSE_CURLY) {
               break;
             } else if (parser->tokens[parser->index].type == TOKEN_COMMA) {
               parser->index++;
@@ -590,7 +591,10 @@ b8 scene_parse_texture_asset(SceneParser* parser) {
           MERROR_CORE("Expected assignment operator");
           return FALSE;
         }
-      } // @TODO: Add other member values.
+      } else {// @TODO: Add other member values.
+	MERROR_CORE("Expected member value");
+	return FALSE;
+      }
     }
     parser->index++;
   }

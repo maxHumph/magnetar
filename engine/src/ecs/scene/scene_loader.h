@@ -11,3 +11,7 @@
 MGAPI b8 scene_load(StringView name);
 
 b8 scene_load_assets(SceneData* data);
+
+b8 scene_load_mesh_assets(SceneData* data);
+
+b8 scene_load_texture_assets(SceneData* data);

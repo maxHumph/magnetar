@@ -12,7 +12,7 @@ MGAPI b8 scene_load(StringView name) {
   // @TODO: Remove text loading from this function when scene_compiler.h has been implemented.
   SceneData* data = get_scene_data_ptr();
   SceneIdentifiers* ids = create_scene_identifiers();
-  if (!scene_open_from_text(data, &ids,
+  if (!scene_open_from_text(data, ids,
 			    "../engine/src/ecs/scene/sample.scene")) {
     MERROR_CORE("Failed to open scene text file: %s", name);
     return FALSE;
@@ -26,16 +26,29 @@ MGAPI b8 scene_load(StringView name) {
   }
 
   data->scene_loaded = TRUE;
+  MTRACE("sdjafn");
 
   if (!scene_get_drawable_handles(data)) {
     MERROR_CORE("Failed to get drawable handles.");
     return FALSE;
   }
 
+  MTRACE("%u", darray_get_length(ids->entities));
+  for (u32 i = 0; i < darray_get_length(ids->entities); i++) {
+    MTRACE("%s", ids->entities[i]);
+  }
+
+  return FALSE;
+
+  MTRACE("%u", darray_get_str_index(ids->entities, "crate"));
+  MTRACE("%s", ids->meshes[darray_get_str_index(ids->entities, "crate") - 1]);
+  MTRACE("DSAD");
+
   if (!renderer_load_scene()) {
     MERROR_CORE("Renderer failed to load scene: %s", name);
     return FALSE;
   }
+
   
   return TRUE;
 }
@@ -74,6 +87,9 @@ b8 scene_load_mesh_assets(SceneData* data) {
 }
 
 b8 scene_load_texture_assets(SceneData* data) {
+
+  MTRACE_CORE("%u", darray_get_length(data->texture_assets));
+  MTRACE_CORE("%s", data->texture_assets[0].image_path);
 
   for (u32 i = 0; i < darray_get_length(data->texture_assets); i++) {
     ATexture* texture = &data->texture_assets[i];

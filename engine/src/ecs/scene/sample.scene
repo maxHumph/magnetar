@@ -36,12 +36,12 @@ entity crate {
   },
 
   c_mesh = {
-    .asset = a_crate_mesh
+    .asset = crate_mesh
   },
 
   c_material = {
     c_texture = {
-      .asset = a_crate_texture
+      .asset = crate_texture
     }
   }
 };

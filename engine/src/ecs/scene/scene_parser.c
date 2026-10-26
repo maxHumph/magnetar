@@ -89,7 +89,6 @@ SceneParser* create_scene_parser(SceneData* data,
   parser->index = 0;
   parser->data = data;
   parser->ids = ids;
-  create_scene_identifiers(parser->ids);
   parser->tokens = darray_create(Token);
   return parser;
 }
@@ -128,7 +127,7 @@ void destroy_token_darray_vals(Token* tokens) {
   }
 }
 
-b8 scene_open_from_text(SceneData* data, SceneIdentifiers** ids,
+b8 scene_open_from_text(SceneData* data, SceneIdentifiers* ids,
 			StringView path) {
 
   // @TODO move SceneData creating out of this function
@@ -144,7 +143,7 @@ b8 scene_open_from_text(SceneData* data, SceneIdentifiers** ids,
   data->texture_assets = darray_create(ATexture);
   
 
-  SceneParser* parser = create_scene_parser(data, *ids);
+  SceneParser* parser = create_scene_parser(data, ids);
 
   String file_string = NULL_PTR;
 
@@ -624,6 +623,7 @@ b8 scene_parse_entity(SceneParser* parser) {
   String name;
 
   if (parser->tokens[parser->index].type == TOKEN_IDENTIFIER) {
+    name = create_string((String)parser->tokens[parser->index].val);
     parser->index++;
   } else {
     MERROR_CORE("Entity declaration needs an identifier");
@@ -738,7 +738,12 @@ b8 scene_parse_entity(SceneParser* parser) {
   }
 
   darray_push(parser->data->entities, entity);
-  darray_push(parser->ids->entities, create_string(name));
+  MFATAL("HERE");
+  String str = create_string(name);
+  MFATAL("%s", name);
+  MFATAL("%s", str);
+  darray_push(parser->ids->entities, str); 
+  MTRACE("%s", parser->ids->entities[0]);
 
   return TRUE;
 }
@@ -881,14 +886,14 @@ Handle32 scene_parse_mesh_component(SceneParser* parser) {
           if (parser->tokens[parser->index].type == TOKEN_IDENTIFIER) {
 	    StringView asset_name =
 	      (String)(parser->tokens[parser->index].val);
-	    Handle32 asset_handle =
-	      (Handle32)darray_get_str_index(parser->ids->meshes,
-					     asset_name);
+	    u64 asset_handle =
+	      darray_get_str_index(parser->ids->meshes,
+				   asset_name);
 	    if (asset_handle == U64_MAX) {
 	      MERROR_CORE("\"%s\" is an undefined asset", asset_name);
 	      return NULL_HANDLE_32;
 	    } else {
-	      mesh.mesh_asset_handle = asset_handle;
+	      mesh.mesh_asset_handle = (Handle32)asset_handle;
 	    }
 
           } else {
@@ -997,14 +1002,14 @@ Handle32 scene_parse_texture_component(SceneParser* parser) {
           if (parser->tokens[parser->index].type == TOKEN_IDENTIFIER) {
 	    StringView asset_name =
 	      (String)(parser->tokens[parser->index].val);
-	    Handle32 asset_handle =
-	      (Handle32)darray_get_str_index(parser->ids->textures,
-					     asset_name);
+	    u64 asset_handle =
+	      darray_get_str_index(parser->ids->textures,
+				   asset_name);
 	    if (asset_handle == U64_MAX) {
 	      MERROR_CORE("\"%s\" is an undefined asset", asset_name);
 	      return NULL_HANDLE_32;
 	    } else {
-	      texture.texture_asset_handle = asset_handle;
+	      texture.texture_asset_handle = (Handle32)asset_handle;
 	    }
 
           } else {

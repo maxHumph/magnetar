@@ -4,6 +4,7 @@
 #include <core/mmemory.h>
 #include <core/input.h>
 #include <ecs/ecs.h>
+#include <ecs/scene/scene_loader.h>
 #include <asset/mg3d.h>
 
 #include "player/player_movement.h"
@@ -38,7 +39,7 @@ b8 game_initalize(Game* game_instance) {
 b8 on_update(Game* game_instance, f64 delta_time) {
 
   if (key_down(KEY_L) && !scene_data->scene_loaded) {
-    scene_load_text("../engine/src/ecs/default.txt");
+    scene_load("../engine/src/ecs/default.txt");
     camera_set_active(2);
     player = &scene_data->entities[2];
     dognut = &scene_data->entities[1];

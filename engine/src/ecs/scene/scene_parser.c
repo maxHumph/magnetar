@@ -572,7 +572,8 @@ b8 scene_parse_texture_asset(SceneParser* parser) {
           parser->index++;
           if (parser->tokens[parser->index].type == TOKEN_STRING_LIT) {
             texture.image_path =
-	      (String)(parser->tokens[parser->index].val);
+	      create_string((String)
+			    (parser->tokens[parser->index].val));
             parser->index++;
             if (parser->tokens[parser->index].type ==
 		TOKEN_CLOSE_CURLY) {

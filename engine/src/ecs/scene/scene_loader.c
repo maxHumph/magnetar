@@ -10,9 +10,9 @@
 MGAPI b8 scene_load(StringView name) {
 
   // @TODO: Remove text loading from this function when scene_compiler.h has been implemented.
-  SceneData* scene_data = get_scene_data_ptr();
+  SceneData* data = get_scene_data_ptr();
   SceneIdentifiers* ids = create_scene_identifiers();
-  if (!scene_open_from_text(scene_data, &ids,
+  if (!scene_open_from_text(data, &ids,
 			    "../engine/src/ecs/scene/sample.scene")) {
     MERROR_CORE("Failed to open scene text file: %s", name);
     return FALSE;
@@ -20,11 +20,17 @@ MGAPI b8 scene_load(StringView name) {
 
 
 
-  if (!scene_load_assets(scene_data)) {
+  if (!scene_load_assets(data)) {
     MERROR_CORE("Failed to load assets");
     return FALSE;
   }
-  scene_data->scene_loaded = TRUE;
+
+  data->scene_loaded = TRUE;
+
+  if (!scene_get_drawable_handles(data)) {
+    MERROR_CORE("Failed to get drawable handles.");
+    return FALSE;
+  }
 
   if (!renderer_load_scene()) {
     MERROR_CORE("Renderer failed to load scene: %s", name);
@@ -76,6 +82,19 @@ b8 scene_load_texture_assets(SceneData* data) {
 		      &texture->channels)) {
       MERROR_CORE("Failed to load %s", texture->image_path);
       return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+static b8 scene_get_drawable_handles(SceneData* data) {
+
+  for (u32 i = 0; i < darray_get_length(data->entities); i++) {
+    if (data->entities[i].components[COMPONENT_INDEX_MESH] !=
+	NULL_HANDLE_32) {
+
+      darray_push(data->drawable_handles, i);
     }
   }
 

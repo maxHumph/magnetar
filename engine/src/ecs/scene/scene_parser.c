@@ -63,7 +63,7 @@ static const TokenMap token_map[] = {
   
 };
 
-SceneIdentifiers* create_scene_indentifiers() {
+SceneIdentifiers* create_scene_identifiers() {
   SceneIdentifiers* ids = mallocate(sizeof(SceneIdentifiers),
 				    MEMORY_TAG_SCENE);
   ids->entities = darray_create(String);
@@ -86,7 +86,8 @@ SceneParser* create_scene_parser(SceneData* data,
 				  MEMORY_TAG_SCENE);
   parser->index = 0;
   parser->data = data;
-  parser->ids = create_scene_indentifiers();
+  parser->ids = ids;
+  create_scene_identifiers(parser->ids);
   parser->tokens = darray_create(Token);
   return parser;
 }
@@ -125,7 +126,7 @@ void destroy_token_darray_vals(Token* tokens) {
   }
 }
 
-b8 scene_open_from_text(SceneData* data, SceneIdentifiers* ids,
+b8 scene_open_from_text(SceneData* data, SceneIdentifiers** ids,
 			StringView path) {
 
   // @TODO move SceneData creating out of this function
@@ -141,7 +142,7 @@ b8 scene_open_from_text(SceneData* data, SceneIdentifiers* ids,
   data->texture_assets = darray_create(ATexture);
   
 
-  SceneParser* parser = create_scene_parser(data, ids);
+  SceneParser* parser = create_scene_parser(data, *ids);
 
   String file_string = NULL_PTR;
 

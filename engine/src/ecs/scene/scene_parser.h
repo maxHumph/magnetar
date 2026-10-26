@@ -92,7 +92,7 @@ typedef struct SceneIdentifiers {
   String* textures;
 } SceneIdentifiers;
 
-SceneIdentifiers* create_scene_indentifiers();
+SceneIdentifiers* create_scene_identifiers();
 
 void destroy_scene_identifiers(SceneIdentifiers* ids);
 
@@ -121,7 +121,7 @@ void destroy_token_darray_vals(Token* tokens);
  * @param path, A path to a .scene file.
  * @return TRUE if the scene was opened successfully, otherwise FALSE.
  */
-b8 scene_open_from_text(SceneData* data, SceneIdentifiers* ids,
+b8 scene_open_from_text(SceneData* data, SceneIdentifiers** ids,
 			StringView path);
 
 /**

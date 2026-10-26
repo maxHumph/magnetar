@@ -738,12 +738,7 @@ b8 scene_parse_entity(SceneParser* parser) {
   }
 
   darray_push(parser->data->entities, entity);
-  MFATAL("HERE");
-  String str = create_string(name);
-  MFATAL("%s", name);
-  MFATAL("%s", str);
-  darray_push(parser->ids->entities, str); 
-  MTRACE("%s", parser->ids->entities[0]);
+  darray_push(parser->ids->entities, create_string(name)); 
 
   return TRUE;
 }

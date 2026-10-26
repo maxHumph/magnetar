@@ -38,17 +38,14 @@ MGAPI b8 scene_load(StringView name) {
     MTRACE("%s", ids->entities[i]);
   }
 
-  return FALSE;
-
-  MTRACE("%u", darray_get_str_index(ids->entities, "crate"));
-  MTRACE("%s", ids->meshes[darray_get_str_index(ids->entities, "crate") - 1]);
-  MTRACE("DSAD");
 
   if (!renderer_load_scene()) {
     MERROR_CORE("Renderer failed to load scene: %s", name);
     return FALSE;
   }
 
+  MTRACE("DSAD");
+  return FALSE;
   
   return TRUE;
 }

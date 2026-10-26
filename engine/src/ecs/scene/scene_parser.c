@@ -28,6 +28,7 @@ static const TokenMap token_map[] = {
   {TOKEN_PERIOD, ".", "TOKEN_PERIOD"},
   {TOKEN_COMMA, ",", "TOKEN_COMMA"},
   {TOKEN_SEMICOL, ";", "TOKEN_SEMICOL"},
+  {TOKEN_EQUALS, "=", "TOKEN_EQUALS"},
   {TOKEN_OPEN_CURLY, "{", "TOKEN_OPEN_CURLY"},
   {TOKEN_CLOSE_CURLY, "}", "TOKEN_CLOSE_CURLY"},
 
@@ -488,13 +489,17 @@ b8 scene_parse_mesh_asset(SceneParser* parser) {
 
     if (parser->tokens[parser->index].type == TOKEN_PERIOD) {
       parser->index++;
-      if (parser->tokens[parser->index].type == TOKEN_V_ASSET) {
+      if (parser->tokens[parser->index].type == TOKEN_V_PATH) {
+	    MFATAL("1");
         parser->index++;
         if (parser->tokens[parser->index].type == TOKEN_EQUALS) {
+	    MFATAL("2");
           parser->index++;
           if (parser->tokens[parser->index].type == TOKEN_STRING_LIT) {
+	    MFATAL("3");
             mesh.model_path =
-	      (String)(parser->tokens[parser->index].val);
+	      create_string((String)
+			    (parser->tokens[parser->index].val));
             parser->index++;
             if (parser->tokens[parser->index].type ==
 		TOKEN_CLOSE_CURLY) {
@@ -560,7 +565,7 @@ b8 scene_parse_texture_asset(SceneParser* parser) {
 
     if (parser->tokens[parser->index].type == TOKEN_PERIOD) {
       parser->index++;
-      if (parser->tokens[parser->index].type == TOKEN_V_ASSET) {
+      if (parser->tokens[parser->index].type == TOKEN_V_PATH) {
         parser->index++;
         if (parser->tokens[parser->index].type == TOKEN_EQUALS) {
           parser->index++;
@@ -1168,7 +1173,32 @@ StringView token_type_as_string(TokenType type) {
 
 void print_token_darray(Token* tokens) {
   for (u32 i = 0; i < darray_get_length(tokens); i++) {
-    MDEBUG_CORE("Token (%u): %s", i,
-		token_type_as_string(tokens[i].type));
+    switch (tokens[i].type) {
+    case TOKEN_IDENTIFIER:
+      MDEBUG_CORE("Token (%u): TOKEN_IDENTIFIER : %s", i,
+		  (StringView)tokens[i].val);
+      break;
+
+    case TOKEN_STRING_LIT:
+      MDEBUG_CORE("Token (%u): TOKEN_STR_LIT : %s", i,
+		  (StringView)tokens[i].val);
+      break;
+
+    case TOKEN_INT_LIT:
+      MDEBUG_CORE("Token (%u): TOKEN_INT_LIT : %l", i,
+		  *(i64*)tokens[i].val);
+      break;
+      
+    case TOKEN_FLOAT_LIT:
+      MDEBUG_CORE("Token (%u): TOKEN_FLOAT_LIT : %f", i,
+		  *(f64*)tokens[i].val);
+      break;
+
+    default:
+      MDEBUG_CORE("Token (%u): %s", i,
+		  token_type_as_string(tokens[i].type));
+      break;
+      
+    };
   }
 }

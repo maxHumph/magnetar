@@ -38,7 +38,8 @@ b8 game_initalize(Game* game_instance) {
 
 b8 on_update(Game* game_instance, f64 delta_time) {
 
-  if (key_down(KEY_L) && !scene_data->scene_loaded) {
+  if (key_down(KEY_L) && !scene_data->scene_loaded &&
+      !key_down_prev(KEY_L)) {
     scene_load("../engine/src/ecs/default.txt");
     camera_set_active(2);
     player = &scene_data->entities[2];

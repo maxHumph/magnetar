@@ -44,7 +44,10 @@ b8 on_update(Game* game_instance, f64 delta_time) {
       MERROR_CORE("Failed to load scene");
       return FALSE;
     }
-    camera_set_active(2);
+    if(!camera_set_active(0)) {
+      MERROR("Failed to set player camera");
+      return FALSE;
+    }
     player = &scene_data->entities[2];
     dognut = &scene_data->entities[1];
   }

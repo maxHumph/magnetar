@@ -46,14 +46,15 @@ MGAPI b8 scene_load(StringView name) {
     MTRACE("%s", ids->textures[i]);
   }
 
+  // Im think the segfault is here
+
+
+
   if (!renderer_load_scene()) {
     MERROR_CORE("Renderer failed to load scene: %s", name);
     return FALSE;
   }
 
-  MTRACE("DSAD");
-  return FALSE;
-  
   return TRUE;
 }
 

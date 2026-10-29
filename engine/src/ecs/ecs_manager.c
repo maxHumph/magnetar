@@ -204,3 +204,9 @@ ATexture* texture_get_asset(CCTexture* p_texture) {
 CCamera* entity_get_camera(Entity* p_entity) {
   return &scene_data.cameras[entity_get_camera_handle(p_entity)];
 }
+
+String entity_as_string(Handle32 h_entity) {
+  String buffer = create_string("ENTITY: ");
+
+  return NULL_PTR;
+}

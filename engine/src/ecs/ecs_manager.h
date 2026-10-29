@@ -8,6 +8,7 @@
 #pragma once
 
 #include "ecs/ecs_types.h"
+#include "data/mg_string.h"
 
 b8 ecs_init();
 
@@ -63,3 +64,4 @@ MGINLINE Handle32 entity_get_camera_handle(Entity* p_entity) {
 
 MGAPI CCamera* entity_get_camera(Entity* p_entity);
 
+MGAPI String entity_as_string(Handle32 h_entity);

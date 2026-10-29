@@ -643,7 +643,7 @@ b8 scene_parse_entity(SceneParser* parser) {
 	   parser->index);
     switch (parser->tokens[parser->index].type) {
 
-    case TOKEN_TRANSFORM:
+    case TOKEN_TRANSFORM: {
       Transform transform;
       MDEBUG_CORE("Index 1: %u", parser->index);
       if (scene_parse_transform(parser, &transform)) {
@@ -653,8 +653,9 @@ b8 scene_parse_entity(SceneParser* parser) {
 	return FALSE;
       }
       break;
+    }
 
-    case TOKEN_C_CODE:
+    case TOKEN_C_CODE: {
       if ((entity.components[COMPONENT_INDEX_CODE] =
            scene_parse_code_component(parser)) ==
           NULL_HANDLE_32) {
@@ -663,8 +664,9 @@ b8 scene_parse_entity(SceneParser* parser) {
         return FALSE;
       }
       break;
+    }
 
-    case TOKEN_C_MESH:
+    case TOKEN_C_MESH: {
       if ((entity.components[COMPONENT_INDEX_MESH] =
            scene_parse_mesh_component(parser)) ==
           NULL_HANDLE_32) {
@@ -673,8 +675,9 @@ b8 scene_parse_entity(SceneParser* parser) {
         return FALSE;
       }
       break;
+    }
 
-    case TOKEN_C_MATERIAL:
+    case TOKEN_C_MATERIAL: {
       if ((entity.components[COMPONENT_INDEX_MATERIAL] =
            scene_parse_material_component(parser)) ==
           NULL_HANDLE_32) {
@@ -683,8 +686,9 @@ b8 scene_parse_entity(SceneParser* parser) {
         return FALSE;
       }
       break;
+    }
 
-    case TOKEN_C_CAMERA:
+    case TOKEN_C_CAMERA: {
       if ((entity.components[COMPONENT_INDEX_CAMERA] =
            scene_parse_camera_component(parser)) ==
           NULL_HANDLE_32) {
@@ -693,8 +697,9 @@ b8 scene_parse_entity(SceneParser* parser) {
         return FALSE;
       }
       break;
+    }
 
-    case TOKEN_C_BOX_COLLIDER_3D:
+    case TOKEN_C_BOX_COLLIDER_3D: {
       if ((entity.components[COMPONENT_INDEX_BOX_COLLIDER_3D] =
            scene_parse_box_collider_3d_component(parser)) ==
           NULL_HANDLE_32) {
@@ -703,8 +708,9 @@ b8 scene_parse_entity(SceneParser* parser) {
         return FALSE;
       }
       break;
+    }
 
-    case TOKEN_C_BALL_COLLIDER_3D:
+    case TOKEN_C_BALL_COLLIDER_3D: {
       if ((entity.components[COMPONENT_INDEX_BALL_COLLIDER_3D] =
            scene_parse_ball_collider_3d_component(parser)) ==
           NULL_HANDLE_32) {
@@ -713,13 +719,15 @@ b8 scene_parse_entity(SceneParser* parser) {
         return FALSE;
       }
       break;
+    }
 
-    case INVALID_TOKEN:
+    case INVALID_TOKEN: {
     default:
       MERROR_CORE("Invalid token at index: %u (%s)", parser->index,
 		  token_type_as_string(parser->tokens[parser->index].type));
       return FALSE;
       break;
+    }
 
     };
 
@@ -820,6 +828,10 @@ b8 scene_parse_transform(SceneParser* parser,
           return FALSE;
         }
 	break;
+
+      default:
+	MERROR_CORE("Unexpected token.");
+	return FALSE;
       };
     }
     parser->index++;
@@ -900,6 +912,10 @@ Handle32 scene_parse_mesh_component(SceneParser* parser) {
           return NULL_HANDLE_32;
         }
         break;
+
+      default:
+	MERROR_CORE("Unexpected token");
+	return NULL_HANDLE_32;
       };
     }
     parser->index++;
@@ -1016,6 +1032,10 @@ Handle32 scene_parse_texture_component(SceneParser* parser) {
           return NULL_HANDLE_32;
         }
         break;
+
+      default:
+	MERROR_CORE("Unexpected token");
+	return NULL_HANDLE_32;
       };
     }
     parser->index++;
@@ -1105,6 +1125,10 @@ Handle32 scene_parse_camera_component(SceneParser* parser) {
           return NULL_HANDLE_32;
         }
         break;
+
+      default:
+	MERROR_CORE("Unexpected token");
+	return NULL_HANDLE_32;
       };
     }
     parser->index++;
@@ -1156,7 +1180,7 @@ b8 scene_parse_vec3(SceneParser* parser, Vec3* vec) {
   }
 
   if (parser->tokens[parser->index].type == TOKEN_CLOSE_CURLY) {
-    parser->index;
+    //parser->index++;
   } else {
     MERROR_CORE("Expected \"}\"");
     return FALSE;

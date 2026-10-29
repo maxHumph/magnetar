@@ -2,7 +2,6 @@
  * @file platform_macos_types.h
  */
 
-#pragma once
 
 #if defined(MPLATFORM_APPLE)
 

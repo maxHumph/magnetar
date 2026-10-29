@@ -704,7 +704,7 @@ static void process_event(MacEvent* e) {
     exit(0);
     break;
     
-  case MAC_EVENT_TYPE_WINDOW_RESIZED:
+  case MAC_EVENT_TYPE_WINDOW_RESIZED: {
     
     // MTRACE_CORE("Window Resized: (%i, %i)", e->window_resized.width, e->window_resized.height);
     EventData event_data;
@@ -712,6 +712,7 @@ static void process_event(MacEvent* e) {
     event_data.data.u16[1] = (u16)e->window_resized.height;
     fire_event(EVENT_CODE_WINDOW_RESIZED, 0, event_data);
     break;
+  }
     
   case MAC_EVENT_TYPE_KEY_DOWN:
     input_process_key(e->key_down.keycode, TRUE);

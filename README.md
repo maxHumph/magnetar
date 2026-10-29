@@ -39,6 +39,14 @@ cd bin
 ./test
 ```
 ### Mac
+
+```shell
+cd magnetar
+make build-mac
+cd bin
+./test
+```
+Old:
 ``` shell
 cd magnetar
 ./build-proj-mac.sh

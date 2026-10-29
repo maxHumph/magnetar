@@ -54,7 +54,7 @@
 ### Major
 
 
-- [ ] Segfault when resizing window when no scene is loaded.
+
 
 ### Minor
 
@@ -95,3 +95,5 @@
 - [X] Rebuild UI tree on window resize. **12/10/2026**
 
 - [X] UiRects won't render if their extent is larger that their parent. (They should shrink down to their parents dimensions). **13/10/2026**
+
+- [X] Segfault when resizing window when no scene is loaded. **xx/10/2026**

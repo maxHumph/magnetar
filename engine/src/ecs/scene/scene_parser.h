@@ -16,6 +16,10 @@
 #include "ecs/ecs_manager.h"
 #include "data/mg_string.h"
 
+/**
+ * @enum Enumeration for every type of valid token in a .scene file.
+ */
+
 typedef enum TokenType {
 
   INVALID_TOKEN,
@@ -86,16 +90,36 @@ typedef struct TokenMap {
   const char *as_str;
 } TokenMap;
 
+/**
+ * @struct Contains Identifiers for entities and assets in handle order.
+ * Used for compiling scenes and serialization.
+ */
+
 typedef struct SceneIdentifiers {
   String* entities;
   String* meshes;
   String* textures;
 } SceneIdentifiers;
 
+/**
+ * @brief Creates a SceneIdentifiers object and initializes the dynamic
+ * arrays inside it.
+ *
+ * @return A pointer to the created SceneIdentifiers object.
+ */
 SceneIdentifiers* create_scene_identifiers();
 
+/**
+ * @brief Detroys a SceneIdentifiers object along with its dynamic arrays.
+ *
+ * @param ids, A pointer to the SceneIdentifiers to be destroyed.
+ */
 void destroy_scene_identifiers(SceneIdentifiers* ids);
 
+/**
+ * @struct Contains all the needed data and pointers for parsing a .scene
+ * file.
+ */
 typedef struct SceneParser {
   SceneData* data;
   SceneIdentifiers* ids;
@@ -103,11 +127,34 @@ typedef struct SceneParser {
   u64 index;
 } SceneParser;
 
+/**
+ * @brief Creates a SceneParser object along with its token darray.
+ *
+ * @param data, A pointer to the SceneData object to be loaded into.
+ * @param ids, A pointer to a SceneIdentifiers object to be used. Must
+ * have been created using create_scene_identifiers().
+ * @return A pointer to the newly created SceneParser.
+ *
+ * @see create_scene_identifiers()
+ */
 SceneParser* create_scene_parser(SceneData* data,
 				 SceneIdentifiers* ids);
 
+/**
+ * @brief Destroys a SceneParser and its token darray.
+ *
+ * Does not destroy the SceneIdentifiers object referenced by "ids".
+ *
+ * @param parser, A pointer to the SceneParser.
+ */
 void destroy_scene_parser(SceneParser* parser);
 
+/**
+ * @brief Destroys a dynamic array of Token and deallocates any vals
+ * inside the tokens.
+ *
+ * @param tokens, A pointer to the token darray.
+ */
 void destroy_token_darray_vals(Token* tokens);
 
 

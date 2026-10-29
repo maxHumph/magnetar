@@ -46,6 +46,11 @@ MGAPI b8 scene_load(StringView name) {
     MTRACE("%s", ids->textures[i]);
   }
 
+  MTRACE("%u", data->entities[1].components[COMPONENT_INDEX_MATERIAL]);
+  MTRACE("%u", data->materials[0].texture_handle);
+
+  MTRACE("%s", ids->textures[0]);
+
   // Im think the segfault is here
 
 

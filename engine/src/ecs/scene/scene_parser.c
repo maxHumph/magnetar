@@ -931,7 +931,7 @@ Handle32 scene_parse_mesh_component(SceneParser* parser) {
 
   darray_push(parser->data->meshes, mesh);
 
-  return (Handle32)darray_get_length(parser->data->meshes);
+  return (Handle32)(darray_get_length(parser->data->meshes) - 1);
 }
 
 Handle32 scene_parse_material_component(SceneParser* parser) {
@@ -979,7 +979,7 @@ Handle32 scene_parse_material_component(SceneParser* parser) {
 
   darray_push(parser->data->materials, material);
 
-  return (Handle32)darray_get_length(parser->data->materials);
+  return (Handle32)(darray_get_length(parser->data->materials) - 1);
 }
 
 Handle32 scene_parse_texture_component(SceneParser* parser) {
@@ -1051,7 +1051,7 @@ Handle32 scene_parse_texture_component(SceneParser* parser) {
 
   darray_push(parser->data->textures, texture);
 
-  return (Handle32)darray_get_length(parser->data->textures);
+  return (Handle32)(darray_get_length(parser->data->textures) - 1);
 }
 
 Handle32 scene_parse_camera_component(SceneParser* parser) {
@@ -1145,7 +1145,7 @@ Handle32 scene_parse_camera_component(SceneParser* parser) {
 
   darray_push(parser->data->cameras, camera);
 
-  return (Handle32)darray_get_length(parser->data->cameras);
+  return (Handle32)(darray_get_length(parser->data->cameras) - 1);
 }
 
 Handle32 scene_parse_box_collider_3d_component(SceneParser* parser) {

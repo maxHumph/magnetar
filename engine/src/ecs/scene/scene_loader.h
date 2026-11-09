@@ -16,6 +16,14 @@
 MGAPI b8 scene_load(StringView name);
 
 /**
+ * @brief Loads entitys and components from a .scenebin file into SceneData
+ *
+ * @param data, A pointer to the SceneData.
+ * @param name, The path of the .scenebin file.
+ */
+MGAPI b8 scene_load_binary(SceneData* data, StringView path);
+
+/**
  * @brief Calls the function for loading each type of asset data into the
  * scene.
  *

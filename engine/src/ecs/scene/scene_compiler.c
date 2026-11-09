@@ -36,6 +36,9 @@ b8 scene_compiler_generate_data(SceneData* scene_data, char** data, u32* size) {
     .signature = SCENE_BIN_SIG,
   };
 
+  String mesh_paths = NULL_PTR;
+  String texture_paths = NULL_PTR;
+
   header.obj_counts[SCENE_OBJ_INDEX_ENTITY] = darray_get_length(scene_data->entities);
   header.obj_counts[SCENE_OBJ_INDEX_CODE] = darray_get_length(scene_data->codes);
   header.obj_counts[SCENE_OBJ_INDEX_MESH] = darray_get_length(scene_data->meshes);
@@ -46,6 +49,14 @@ b8 scene_compiler_generate_data(SceneData* scene_data, char** data, u32* size) {
     darray_get_length(scene_data->box_colliders_3d);
   header.obj_counts[SCENE_OBJ_INDEX_BALL_COLLIDER_3D] =
     darray_get_length(scene_data->ball_colliders_3d);
+
+  header.obj_counts[SCENE_OBJ_INDEX_MESH_ASSET] = darray_get_length(scene_data->mesh_assets);
+  header.obj_counts[SCENE_OBJ_INDEX_TEXTURE_ASSET] =
+    darray_get_length(scene_data->texture_assets);
+
+  // @TODO allocate assets with their string data after them.
+
+  for
 
   *size = sizeof(scene_bin_header_t) +
     (header.obj_counts[SCENE_OBJ_INDEX_ENTITY] * sizeof(Entity)) +

@@ -11,6 +11,7 @@
 #include "core/log.h"
 #include "core/mmemory.h"
 #include "game_interface.h"
+#include "data/mg_string.h"
 
 extern b8 create_game(Game* out_game);
 

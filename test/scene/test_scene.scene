@@ -1,0 +1,93 @@
+#scene test_scene;
+
+#assets;
+
+a_mesh crate_mesh {
+  .path = "../test/res/models/crate.mg3d"
+};
+
+a_texture crate_texture {
+  .path = "../test/res/textures/crate.png"
+};
+
+a_mesh dognut_mesh {
+  .path = "../test/res/models/torus.mg3d"
+};
+
+a_texture dognut_texture {
+  .path = "../test/res/textures/torus.png"
+};
+
+#entities;
+
+entity player {
+
+  transform = {
+    .position = { 1.0, 1.0, -1.0 },
+    .scale = { 1.0, 1.0, 1.0 },
+    .rotation = { -30.0, 0.0, 0.0 }
+  },
+
+  c_camera = {
+    .fov = 90.0,
+    .near_plane = 0.1,
+    .far_plane = 1000.0
+  }
+};
+
+entity crate {
+
+  transform = {
+    .position = { 0.0, 0.0, 3.0 },
+    .scale = { 1.0, 1.0, 1.0 },
+    .rotation = { 0.0, 0.0, 0.0 }
+  },
+
+  c_mesh = {
+    .asset = crate_mesh
+  },
+
+  c_material = {
+    c_texture = {
+      .asset = crate_texture
+    }
+  }
+};
+
+entity dognut_01 {
+  transform = {
+    .position = { 2.5, 0.0, -3.0 },
+    .scale = { 1.0, 1.0, 1.0 },
+    .rotation = { 30.0, 0.0, 0.0 },
+  },
+
+  c_mesh = {
+    .asset = dognut_mesh
+  },
+
+  c_material = {
+    c_texture = {
+      .asset = dognut_texture
+    }
+  },
+  
+};
+
+entity dognut_02 {
+  transform = {
+    .position = { 8.5, 0.0, 3.0 },
+    .scale = { 1.0, 1.0, 1.0 },
+    .rotation = { 0.0, 0.0, 0.0 },
+  },
+
+  c_mesh = {
+    .asset = dognut_mesh
+  },
+
+  c_material = {
+    c_texture = {
+      .asset = dognut_texture
+    }
+  },
+  
+};

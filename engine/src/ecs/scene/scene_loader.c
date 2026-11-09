@@ -51,16 +51,29 @@ MGAPI b8 scene_load(StringView name) {
 
   MTRACE("%s", ids->textures[0]);
 
-  // Im think the segfault is here
-
-
-
-  if (!renderer_load_scene()) {
+    if (!renderer_load_scene()) {
     MERROR_CORE("Renderer failed to load scene: %s", name);
     return FALSE;
   }
 
   return TRUE;
+}
+
+b8 scene_load_binary(SceneData* data, StringView path) {
+
+  data->entities = darray_create(Entity);
+  
+  data->meshes = darray_create(CMesh);
+  data->materials = darray_create(CMaterial);
+  data->textures = darray_create(CCTexture);
+  data->cameras = darray_create(CCamera);
+  data->box_colliders_3d = darray_create(CBoxCollider3D);
+  data->ball_colliders_3d = darray_create(CBallCollider3D);
+  
+  data->mesh_assets = darray_create(AMesh);
+  data->texture_assets = darray_create(ATexture);
+
+  return FALSE;
 }
 
 b8 scene_load_assets(SceneData* data) {
@@ -77,6 +90,7 @@ b8 scene_load_assets(SceneData* data) {
   
   return TRUE;
 }
+
 
 b8 scene_load_mesh_assets(SceneData* data) {
 

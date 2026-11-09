@@ -178,10 +178,10 @@ b8 scene_open_from_text(SceneData* data, SceneIdentifiers* ids,
 }
 
 b8 scene_read_text_file(StringView path, String* content) {
-  FILE *file;
+  FILE* file;
   file = fopen(path, "r");
   if (file == NULL) {
-    printf("%d: %s\n", errno, strerror(errno));
+    MERROR_CORE("%d: %s\n", errno, strerror(errno));
     return FALSE;
   }
 
@@ -196,7 +196,7 @@ b8 scene_read_text_file(StringView path, String* content) {
   if (content) {
     fread(*content, sizeof(char), length, file);
   } else {
-    printf("%d: %s", errno, strerror(errno));
+    MERROR_CORE("%d: %s", errno, strerror(errno));
     return FALSE;
   }
   fclose(file);

@@ -3,6 +3,11 @@
 #include "data/darray.h"
 #include "core/mmemory.h"
 
+#include <stdio.h>
+#include <stddef.h>
+#include <errno.h>
+#include <string.h>
+
 b8 scene_compile(SceneData* scene_data, StringView path) {
 
   u32 size;
@@ -18,7 +23,9 @@ b8 scene_compile(SceneData* scene_data, StringView path) {
     return FALSE;
   }
 
-  return FALSE;
+  mfree(data, size, MEMORY_TAG_SCENE);
+
+  return TRUE;
 }
 
 b8 scene_compiler_generate_data(SceneData* scene_data, char** data, u32* size) {
@@ -53,21 +60,60 @@ b8 scene_compiler_generate_data(SceneData* scene_data, char** data, u32* size) {
   *data = mallocate(*size, MEMORY_TAG_SCENE); // @TODO Free
 
   u32 offset = 0;
+  u32 copy_size = 0;
 
   mcopy_memory(*data + offset, &header, sizeof(scene_bin_header_t));
   offset += sizeof(scene_bin_header_t);
 
-  mcopy_memory(*data + offset, scene_data->entities,
-	       header.obj_counts[SCENE_OBJ_INDEX_ENTITY] * sizeof(Entity));
-  offset += sizeof(header.obj_counts[SCENE_OBJ_INDEX_ENTITY] * sizeof(Entity));
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_ENTITY] * sizeof(Entity);
+  mcopy_memory(*data + offset, scene_data->entities, copy_size);
+  offset += copy_size;
 
-  mcopy_memory(*data + offset, scene_data->codes,
-	       header.obj_counts[SCENE_OBJ_INDEX_CODE] * sizeof(CCode));
-  offset += sizeof(header.obj_counts[SCENE_OBJ_INDEX_CODE] * sizeof(CCode));
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_CODE] * sizeof(CCode);
+  mcopy_memory(*data + offset, scene_data->codes, copy_size);
+  offset += copy_size;
 
-  return FALSE;
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_MESH] * sizeof(CMesh);
+  mcopy_memory(*data + offset, scene_data->meshes, copy_size);
+  offset += copy_size;
+
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_MATERIAL] * sizeof(CMaterial);
+  mcopy_memory(*data + offset, scene_data->materials, copy_size);
+  offset += copy_size;
+
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_TEXTURE] * sizeof(CCTexture);
+  mcopy_memory(*data + offset, scene_data->textures, copy_size);
+  offset += copy_size;
+
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_CAMERA] * sizeof(CCamera);
+  mcopy_memory(*data + offset, scene_data->cameras, copy_size);
+  offset += copy_size;
+
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_BOX_COLLIDER_3D] * sizeof(CBoxCollider3D);
+  mcopy_memory(*data + offset, scene_data->box_colliders_3d, copy_size);
+  offset += copy_size;
+
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_BALL_COLLIDER_3D] * sizeof(CBallCollider3D);
+  mcopy_memory(*data + offset, scene_data->ball_colliders_3d, copy_size);
+  offset += copy_size;
+
+  return TRUE;
 }
 
 b8 scene_compiler_write_file(StringView path, char* data, u32 size) {
-  return FALSE;
+
+  FILE* file;
+  file = fopen(path, "wb");
+  if (file == NULL) {
+    MERROR_CORE("%d: %s\n", errno, strerror(errno));
+    return FALSE;
+  }
+  if (fwrite(data, sizeof(char), size, file) != size) {
+    MERROR_CORE("Failed to write file: %s", path);
+    return FALSE;
+  }
+
+  fclose(file);
+  
+  return TRUE;
 }

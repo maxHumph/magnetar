@@ -8,6 +8,8 @@
 
 - [ ] Implement scene loader for compiled scene data.
 
+- [ ] Change code to use actual and actual magnetar package structure and generate symlinks in the makefiles to simulate a complete magnetar game.
+
 - [ ] Ui Pipeline can't render if pbr scene isnt loaded.
 
 - [ ] Create generic pipeline type so they can be easily activated or disabled.

@@ -4,8 +4,6 @@
 
 ### Primary
 
-- [ ] Rewrite the text-based scene declaration system to be less of an abomination.
-
 - [ ] Implement scene compilation to binary data for fast loading.
 
 - [ ] Implement scene loader for compiled scene data.
@@ -54,8 +52,6 @@
 ### Major
 
 
-
-
 ### Minor
 
 - [ ] The resolution given during MacOS window creation is half that of the resolution used by the renderer. (UiRects render using these dimensions until the window is manually resized).
@@ -97,3 +93,7 @@
 - [X] UiRects won't render if their extent is larger that their parent. (They should shrink down to their parents dimensions). **13/10/2026**
 
 - [X] Segfault when resizing window when no scene is loaded. **xx/10/2026**
+
+- [X] Either a problem with the scene parser or the implementation of `quat_from_euler()`. **09/11/2026**
+
+- [X] Rewrite the text-based scene declaration system to be less of an abomination. **09/11/2026**

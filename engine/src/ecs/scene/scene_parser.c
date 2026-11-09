@@ -818,7 +818,9 @@ b8 scene_parse_transform(SceneParser* parser,
           parser->index++;
 	  Vec3 rotation;
 	  if (scene_parse_vec3(parser, &rotation)) {
-	    transform.rotation = quat_from_euler(rotation);
+	    transform.rotation = quat_from_euler((Vec3){M_TO_RAD(rotation.x),
+							M_TO_RAD(rotation.y),
+							M_TO_RAD(rotation.z)});
 	  } else {
 	    MERROR_CORE("Failed to parse .rotation: Expected Vec3.");
 	    return FALSE;

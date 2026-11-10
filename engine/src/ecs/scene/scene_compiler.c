@@ -147,7 +147,7 @@ b8 scene_compiler_write_file(StringView path, char* data, u32 size) {
   FILE* file;
   file = fopen(path, "wb");
   if (file == NULL) {
-    MERROR_CORE("%d: %s\n", errno, strerror(errno));
+    MERROR_CORE("%d: %s", errno, strerror(errno));
     return FALSE;
   }
   if (fwrite(data, sizeof(char), size, file) != size) {

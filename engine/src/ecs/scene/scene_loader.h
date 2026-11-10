@@ -58,3 +58,13 @@ b8 scene_load_texture_assets(SceneData* data);
  * @return TRUE (not used atm)
  */
 static b8 scene_get_drawable_handles(SceneData* data);
+
+/**
+ * @brief Fills a char buffer with bytes read from a .scenebin file.
+ *
+ * @param path, The absolute path to the file.
+ * @param data, A pointer to an unallocated char buffer.
+ * @param size, A pointer to an int for the size of the buffer to be stored in.
+ * @return TRUE if the data was read into the buffer, otherwise FALSE.
+ */
+static b8 scene_loader_get_file_data(StringView path, char** data, u64* size);

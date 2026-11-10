@@ -193,7 +193,7 @@ b8 scene_read_text_file(StringView path, String* content) {
   }
   fseek(file, 0, SEEK_SET);
   *content = alloc_string(length);
-  if (content) {
+  if (*content) {
     fread(*content, sizeof(char), length, file);
   } else {
     MERROR_CORE("%d: %s", errno, strerror(errno));

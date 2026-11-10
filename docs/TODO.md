@@ -4,7 +4,7 @@
 
 ### Primary
 
-- [ ] Implement scene compilation to binary data for fast loading.
+
 
 - [ ] Implement scene loader for compiled scene data.
 
@@ -99,3 +99,5 @@
 - [X] Either a problem with the scene parser or the implementation of `quat_from_euler()`. **09/11/2026**
 
 - [X] Rewrite the text-based scene declaration system to be less of an abomination. **09/11/2026**
+
+- [X] Implement scene compilation to binary data for fast loading. **10/11/2026**

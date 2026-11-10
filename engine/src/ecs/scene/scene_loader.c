@@ -1,6 +1,8 @@
 #include "scene_loader.h"
 
 #include "define.h"
+#include "core/mmemory.h"
+#include "ecs/scene/scene_compiler.h"
 #include "renderer/renderer_frontend.h"
 #include "scene_parser.h"
 #include "data/darray.h"
@@ -9,6 +11,9 @@
 #include "ecs/ecs_manager.h"
 
 #include <stdio.h>
+#include <stddef.h>
+#include <errno.h>
+#include <string.h>
 
 #if MPLATOFRM_UNIX || MPLATFORM_APPLE
 #include <unistd.h>
@@ -95,20 +100,38 @@ MGAPI b8 scene_load(StringView name) {
   return TRUE;
 }
 
-b8 scene_load_binary(SceneData* data, StringView path) {
+b8 scene_load_binary(SceneData* scene_data, StringView path) {
 
-  data->entities = darray_create(Entity);
-  
-  data->meshes = darray_create(CMesh);
-  data->materials = darray_create(CMaterial);
-  data->textures = darray_create(CCTexture);
-  data->cameras = darray_create(CCamera);
-  data->box_colliders_3d = darray_create(CBoxCollider3D);
-  data->ball_colliders_3d = darray_create(CBallCollider3D);
-  
-  data->mesh_assets = darray_create(AMesh);
-  data->texture_assets = darray_create(ATexture);
+  char* file_data = NULL_PTR;
+  u64 data_size = 0;
 
+  if (!scene_loader_get_file_data(path, &file_data, &data_size)) {
+    MERROR_CORE("Failed to get data from: %s", path);
+    return FALSE;
+  }
+
+  u64 offset = 0;
+
+  scene_bin_header_t header;
+  mcopy_memory(&header, file_data + offset, sizeof(scene_bin_header_t));
+  offset += sizeof(scene_bin_header_t);
+
+  scene_data->entities = darray_create(Entity);
+  
+  scene_data->meshes = darray_create(CMesh);
+  scene_data->materials = darray_create(CMaterial);
+  scene_data->textures = darray_create(CCTexture);
+  scene_data->cameras = darray_create(CCamera);
+  scene_data->box_colliders_3d = darray_create(CBoxCollider3D);
+  scene_data->ball_colliders_3d = darray_create(CBallCollider3D);
+  
+  scene_data->mesh_assets = darray_create(AMesh);
+  scene_data->texture_assets = darray_create(ATexture);
+
+
+
+  mfree(file_data, data_size * sizeof(char), MEMORY_TAG_SCENE);
+  
   return FALSE;
 }
 
@@ -173,6 +196,32 @@ static b8 scene_get_drawable_handles(SceneData* data) {
       darray_push(data->drawable_handles, i);
     }
   }
+
+  return TRUE;
+}
+
+static b8 scene_loader_get_file_data(StringView path, char** data, u64* size) {
+
+  FILE* file;
+  file = fopen(path, "rb");
+  if (file == NULL) {
+    MERROR_CORE("%d: %s", errno, strerror(errno));
+    return FALSE;
+  }
+
+  fseek(file, 0, SEEK_END);
+  *size = ftell(file);
+  *data = mallocate(*size * sizeof(char), MEMORY_TAG_SCENE);
+
+  fseek(file, 0, SEEK_SET);
+  if (*data) {
+    fread(*data, sizeof(char), *size, file);
+  } else {
+    MERROR_CORE("%d: %s", errno, strerror(errno));
+    return FALSE;
+  }
+
+  fclose(file);
 
   return TRUE;
 }

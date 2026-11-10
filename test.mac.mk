@@ -21,6 +21,8 @@ all: scaffold compile link
 scaffold:
 	@echo Creating folder structure...
 	@mkdir -p $(addprefix $(OBJ_DIR)/,$(DIRS))
+	@ln -sf ../$(ASSEMBLY)/scene $(BUILD_DIR)/scene
+	@ln -sf ../$(ASSEMBLY)/res $(BUILD_DIR)/res
 	@echo Finished creating folder structure.
 
 .PHONY: link

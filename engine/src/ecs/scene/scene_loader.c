@@ -1,5 +1,6 @@
 #include "scene_loader.h"
 
+#include "define.h"
 #include "renderer/renderer_frontend.h"
 #include "scene_parser.h"
 #include "data/darray.h"
@@ -7,7 +8,20 @@
 #include "asset/texture.h"
 #include "ecs/ecs_manager.h"
 
+#include <stdio.h>
+
+#if MPLATOFRM_UNIX || MPLATFORM_APPLE
+#include <unistd.h>
+#elif MPLATFORM_WINDOWS
+#include <direct.h>
+#define getcwd(a, b) _getcwd(a, b)
+#else
+#error "Unsupported platform"
+#endif
+
 MGAPI b8 scene_load(StringView name) {
+
+  /*
 
   // @TODO: Remove text loading from this function when scene_compiler.h has been implemented.
   SceneData* data = get_scene_data_ptr();
@@ -18,7 +32,27 @@ MGAPI b8 scene_load(StringView name) {
     return FALSE;
   }
 
+  */
 
+  String path = alloc_string(FILENAME_MAX);
+  i32 path_length = snprintf(path, string_get_length(path), "%s/scene/%s.scenebin",
+			     getcwd(NULL, 0), name);
+  if (path_length < 0) {
+    MERROR_CORE("Failed to format scene path. Returned: %d", path_length);
+    return FALSE;
+  }
+
+  if (path_length > FILENAME_MAX) {
+    MERROR_CORE("Scene path exceeds FILENAME_MAX (%d): %d", FILENAME_MAX, path_length);
+    return FALSE;
+  }
+
+  SceneData* data = get_scene_data_ptr();
+
+  if (!scene_load_binary(data, path)) {
+    MERROR_CORE("Failed to load scene binary");
+    return FALSE;
+  }
 
   if (!scene_load_assets(data)) {
     MERROR_CORE("Failed to load assets");
@@ -26,12 +60,13 @@ MGAPI b8 scene_load(StringView name) {
   }
 
   data->scene_loaded = TRUE;
-  MTRACE("sdjafn");
 
   if (!scene_get_drawable_handles(data)) {
     MERROR_CORE("Failed to get drawable handles.");
     return FALSE;
   }
+
+  /*
 
   MTRACE("%u", darray_get_length(ids->entities));
   for (u32 i = 0; i < darray_get_length(ids->entities); i++) {
@@ -50,8 +85,9 @@ MGAPI b8 scene_load(StringView name) {
   MTRACE("%u", data->materials[0].texture_handle);
 
   MTRACE("%s", ids->textures[0]);
+  */
 
-    if (!renderer_load_scene()) {
+  if (!renderer_load_scene()) {
     MERROR_CORE("Renderer failed to load scene: %s", name);
     return FALSE;
   }

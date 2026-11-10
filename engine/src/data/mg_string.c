@@ -3,6 +3,7 @@
 #include "core/mmemory.h"
 
 #include <string.h>
+#include <stdarg.h>
 
 String create_string(const char* str_in) {
   u64 length = sizeof(char) * strlen(str_in);
@@ -32,6 +33,15 @@ String alloc_string(u64 length) {
   str[length + 1] = '\n';
 
   return str;
+}
+
+String string_cat(String str_1, String str_2) {
+  u64 str_1_len = string_get_length(str_1);
+  u64 str_2_len = string_get_length(str_2);
+  String new_str = alloc_string(str_1_len + str_2_len);
+  mcopy_memory(new_str, str_1, str_1_len);
+  mcopy_memory(new_str + str_1_len, str_2, str_2_len);
+  return new_str;
 }
 
 u64 string_get_length(StringView str) {

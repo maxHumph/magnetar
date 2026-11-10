@@ -40,7 +40,7 @@ b8 on_update(Game* game_instance, f64 delta_time) {
 
   if (key_down(KEY_L) && !scene_data->scene_loaded &&
       !key_down_prev(KEY_L)) {
-    if (!scene_load("../engine/src/ecs/default.txt")) {
+    if (!scene_load("test_scene")) {
       MERROR_CORE("Failed to load scene");
       return FALSE;
     }

@@ -56,8 +56,7 @@ b8 scene_compiler_generate_data(SceneData* scene_data, char** data, u32* size) {
 
   // @TODO allocate assets with their string data after them.
 
-  for
-
+  
   *size = sizeof(scene_bin_header_t) +
     (header.obj_counts[SCENE_OBJ_INDEX_ENTITY] * sizeof(Entity)) +
     (header.obj_counts[SCENE_OBJ_INDEX_CODE] * sizeof(CCode)) +

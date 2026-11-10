@@ -14,6 +14,8 @@
 
 #include "define.h"
 
+
+
 /**
  * @brief Generic string type.
  */
@@ -47,6 +49,7 @@ MGAPI void destroy_string(String str);
  */
 MGAPI String alloc_string(u64 length);
 
+
 /**
  * @brief Retrieves the length metadata from a String.
  *
@@ -67,6 +70,16 @@ MGAPI u64 string_get_length(StringView str);
  * is greater, a negative int if the second string is greater.
  */
 MGAPI i32 string_compare(StringView str_1, StringView str_2);
+
+/**
+ * @brief Concatinates two String.
+ *
+ * @param str_1, The First String.
+ * @param str_2, The Second String.
+ * @return The newly allocated string.
+ */
+MGAPI String string_cat(String str_1, String str_2);
+
 
 // To implement
 

@@ -59,6 +59,20 @@ MGAPI String alloc_string(u64 length);
 MGAPI u64 string_get_length(StringView str);
 
 /**
+ * @brief Get the size in bytes of all the underlying data in the String.
+ *
+ * @param str, The String to query.
+ * @return The total number of bytes taken up by: the metadata, the string data,
+ * the null terminator.
+ */
+MGAPI u64 string_get_raw_size(StringView str);
+
+/**
+ * @brief Returns a read only pointer to the start of the string data (The metadata).
+ */
+MGAPI const char* string_get_raw(StringView str);
+
+/**
  * @brief Compares the each character of 2 Strings and returns
  * whether they are equal or which one is greater.
  *

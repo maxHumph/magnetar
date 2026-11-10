@@ -54,8 +54,15 @@ b8 scene_compiler_generate_data(SceneData* scene_data, char** data, u32* size) {
   header.obj_counts[SCENE_OBJ_INDEX_TEXTURE_ASSET] =
     darray_get_length(scene_data->texture_assets);
 
-  // @TODO allocate assets with their string data after them.
-
+  u32 mesh_paths_length = 0;
+  for (u32 i = 0; i < darray_get_length(scene_data->mesh_assets); i++) {
+    mesh_paths_length += string_get_raw_size(scene_data->mesh_assets[i].model_path);
+  }
+  
+  u32 texture_paths_length = 0;
+  for (u32 i = 0; i < darray_get_length(scene_data->texture_assets); i++) {
+    texture_paths_length += string_get_raw_size(scene_data->texture_assets[i].image_path);
+  }
   
   *size = sizeof(scene_bin_header_t) +
     (header.obj_counts[SCENE_OBJ_INDEX_ENTITY] * sizeof(Entity)) +
@@ -65,7 +72,8 @@ b8 scene_compiler_generate_data(SceneData* scene_data, char** data, u32* size) {
     (header.obj_counts[SCENE_OBJ_INDEX_TEXTURE] * sizeof(CCTexture)) +
     (header.obj_counts[SCENE_OBJ_INDEX_CAMERA] * sizeof(CCamera)) +
     (header.obj_counts[SCENE_OBJ_INDEX_BOX_COLLIDER_3D] * sizeof(CBoxCollider3D)) +
-    (header.obj_counts[SCENE_OBJ_INDEX_BALL_COLLIDER_3D] * sizeof(CBallCollider3D));
+    (header.obj_counts[SCENE_OBJ_INDEX_BALL_COLLIDER_3D] * sizeof(CBallCollider3D)) +
+    mesh_paths_length + texture_paths_length;
 
   *data = mallocate(*size, MEMORY_TAG_SCENE); // @TODO Free
 
@@ -106,6 +114,30 @@ b8 scene_compiler_generate_data(SceneData* scene_data, char** data, u32* size) {
   copy_size = header.obj_counts[SCENE_OBJ_INDEX_BALL_COLLIDER_3D] * sizeof(CBallCollider3D);
   mcopy_memory(*data + offset, scene_data->ball_colliders_3d, copy_size);
   offset += copy_size;
+
+  // ASSETS
+
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_MESH_ASSET] * sizeof(AMesh);
+  mcopy_memory(*data + offset, scene_data->mesh_assets, copy_size);
+  offset += copy_size;
+
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_TEXTURE_ASSET] * sizeof(ATexture);
+  mcopy_memory(*data + offset, scene_data->texture_assets, copy_size);
+  offset += copy_size;
+
+  for (u32 i = 0; i < darray_get_length(scene_data->mesh_assets); i++) {
+    copy_size = string_get_raw_size(scene_data->mesh_assets[i].model_path);
+    mcopy_memory(*data + offset, string_get_raw(scene_data->mesh_assets[i].model_path),
+		 copy_size);
+    offset += copy_size;
+  }
+
+  for (u32 i = 0; i < darray_get_length(scene_data->texture_assets); i++) {
+    copy_size = string_get_raw_size(scene_data->texture_assets[i].image_path);
+    mcopy_memory(*data + offset, string_get_raw(scene_data->texture_assets[i].image_path),
+		 copy_size);
+    offset += copy_size;
+  }
 
   return TRUE;
 }

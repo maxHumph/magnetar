@@ -48,6 +48,14 @@ u64 string_get_length(StringView str) {
   return *((u64*)str - 1);
 }
 
+u64 string_get_raw_size(StringView str) {
+  return string_get_length(str) + sizeof(u64) + sizeof(char);
+}
+
+const char* string_get_raw(StringView str) {
+  return str - sizeof(u64);
+}
+
 i32 string_compare(StringView str_1, StringView str_2) {
   while (*str_1 && (*str_1 == *str_2)) {
     str_1++;

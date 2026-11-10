@@ -11,9 +11,23 @@
 #include "ecs/ecs_types.h"
 
 /**
- * Exact implementation undecided.
+ * @brief Loads a .scenebin file into SceneData.
+ *
+ * @param name, The name of the scene.
+ * @return TRUE if loading was successdul, otherwise FALSE.
  */
 MGAPI b8 scene_load(StringView name);
+
+/* Unimplemented */
+// MGAPI b8 scene_unload(StringView name);
+
+/**
+ * @brief Removes and deallocates any data found in a SceneData object.
+ *
+ * @param data, A pointer to the SceneData.
+ * @return TRUE if cleaning was successful, otherwise FALSE.
+ */
+b8 scene_data_clean(SceneData* data);
 
 /**
  * @brief Loads entitys and components from a .scenebin file into SceneData
@@ -21,7 +35,7 @@ MGAPI b8 scene_load(StringView name);
  * @param data, A pointer to the SceneData.
  * @param name, The path of the .scenebin file.
  */
-MGAPI b8 scene_load_binary(SceneData* data, StringView path);
+b8 scene_load_binary(SceneData* data, StringView path);
 
 /**
  * @brief Calls the function for loading each type of asset data into the

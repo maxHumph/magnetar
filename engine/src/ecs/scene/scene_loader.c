@@ -99,6 +99,46 @@ MGAPI b8 scene_load(StringView name) {
 
   return TRUE;
 }
+/*
+b8 scene_unload(StringView) {
+  return FALSE;
+}
+*/
+
+b8 scene_data_clean(SceneData* data) {
+  data->scene_loaded = FALSE;
+
+  if (data->entities) darray_destroy(data->entities);
+  if (data->drawable_handles) darray_destroy(data->drawable_handles);
+  
+  data->active_camera_entity = NULL_HANDLE_32;
+
+  if (data->codes) darray_destroy(data->codes);
+  if (data->meshes) darray_destroy(data->meshes);
+  if (data->materials) darray_destroy(data->materials);
+  if (data->textures) darray_destroy(data->textures);
+  if (data->cameras) darray_destroy(data->cameras);
+  if (data->box_colliders_3d) darray_destroy(data->box_colliders_3d);
+  if (data->ball_colliders_3d) darray_destroy(data->ball_colliders_3d);
+
+  if (data->mesh_assets) {
+    for (u32 i = 0; i < darray_get_length(data->mesh_assets); i++) {
+      if (data->mesh_assets[i].model_path) {
+	destroy_string(data->mesh_assets[i].model_path);
+      }
+    }
+    darray_destroy(data->mesh_assets);
+  }
+
+  if (data->texture_assets) {
+    for (u32 i = 0; i < darray_get_length(data->texture_assets); i++) {
+      if (data->texture_assets[i].image_path) {
+	destroy_string(data->texture_assets[i].image_path);
+      }
+    }
+    darray_destroy(data->texture_assets);
+  }
+}
 
 b8 scene_load_binary(SceneData* scene_data, StringView path) {
 

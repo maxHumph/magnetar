@@ -42,4 +42,8 @@ b8 scene_compiler_generate_data(SceneData* scene_data, char** data, u32* size);
 
 b8 scene_compiler_generate_header(SceneData* scene_data, scene_bin_header_t* header);
 
+b8 scene_compiler_calculate_size(SceneData* scene_data, u32* size, scene_bin_header_t* header);
+
+b8 scene_compiler_copy_data(SceneData* scene_data, char* data, scene_bin_header_t* header);
+
 b8 scene_compiler_write_file(StringView path, char* data, u32 size);

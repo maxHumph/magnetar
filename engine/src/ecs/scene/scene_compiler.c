@@ -75,92 +75,21 @@ b8 scene_compiler_generate_data(SceneData* scene_data, char** data, u32* size) {
 
   if (!scene_compiler_generate_header(scene_data, &header)) {
     MERROR_CORE("Failed to generate file header.");
+    return FALSE;
   }
 
-  u32 mesh_paths_length = 0;
-  for (u32 i = 0; i < darray_get_length(scene_data->mesh_assets); i++) {
-    mesh_paths_length += string_get_raw_size(scene_data->mesh_assets[i].model_path);
+  if (!scene_compiler_calculate_size(scene_data, size, &header)) {
+    MERROR_CORE("Failed to calculate output file size.");
+    return FALSE;
   }
-  
-  u32 texture_paths_length = 0;
-  for (u32 i = 0; i < darray_get_length(scene_data->texture_assets); i++) {
-    texture_paths_length += string_get_raw_size(scene_data->texture_assets[i].image_path);
-  }
-  
-  *size = sizeof(scene_bin_header_t) +
-    (header.obj_counts[SCENE_OBJ_INDEX_ENTITY] * sizeof(Entity)) +
-    (header.obj_counts[SCENE_OBJ_INDEX_CODE] * sizeof(CCode)) +
-    (header.obj_counts[SCENE_OBJ_INDEX_MESH] * sizeof(CMesh)) +
-    (header.obj_counts[SCENE_OBJ_INDEX_MATERIAL] * sizeof(CMaterial)) +
-    (header.obj_counts[SCENE_OBJ_INDEX_TEXTURE] * sizeof(CCTexture)) +
-    (header.obj_counts[SCENE_OBJ_INDEX_CAMERA] * sizeof(CCamera)) +
-    (header.obj_counts[SCENE_OBJ_INDEX_BOX_COLLIDER_3D] * sizeof(CBoxCollider3D)) +
-    (header.obj_counts[SCENE_OBJ_INDEX_BALL_COLLIDER_3D] * sizeof(CBallCollider3D)) +
-    mesh_paths_length + texture_paths_length;
 
   *data = mallocate(*size, MEMORY_TAG_SCENE); // @TODO Free
 
-  u32 offset = 0;
-  u32 copy_size = 0;
-
-  mcopy_memory(*data + offset, &header, sizeof(scene_bin_header_t));
-  offset += sizeof(scene_bin_header_t);
-
-  copy_size = header.obj_counts[SCENE_OBJ_INDEX_ENTITY] * sizeof(Entity);
-  mcopy_memory(*data + offset, scene_data->entities, copy_size);
-  offset += copy_size;
-
-  copy_size = header.obj_counts[SCENE_OBJ_INDEX_CODE] * sizeof(CCode);
-  mcopy_memory(*data + offset, scene_data->codes, copy_size);
-  offset += copy_size;
-
-  copy_size = header.obj_counts[SCENE_OBJ_INDEX_MESH] * sizeof(CMesh);
-  mcopy_memory(*data + offset, scene_data->meshes, copy_size);
-  offset += copy_size;
-
-  copy_size = header.obj_counts[SCENE_OBJ_INDEX_MATERIAL] * sizeof(CMaterial);
-  mcopy_memory(*data + offset, scene_data->materials, copy_size);
-  offset += copy_size;
-
-  copy_size = header.obj_counts[SCENE_OBJ_INDEX_TEXTURE] * sizeof(CCTexture);
-  mcopy_memory(*data + offset, scene_data->textures, copy_size);
-  offset += copy_size;
-
-  copy_size = header.obj_counts[SCENE_OBJ_INDEX_CAMERA] * sizeof(CCamera);
-  mcopy_memory(*data + offset, scene_data->cameras, copy_size);
-  offset += copy_size;
-
-  copy_size = header.obj_counts[SCENE_OBJ_INDEX_BOX_COLLIDER_3D] * sizeof(CBoxCollider3D);
-  mcopy_memory(*data + offset, scene_data->box_colliders_3d, copy_size);
-  offset += copy_size;
-
-  copy_size = header.obj_counts[SCENE_OBJ_INDEX_BALL_COLLIDER_3D] * sizeof(CBallCollider3D);
-  mcopy_memory(*data + offset, scene_data->ball_colliders_3d, copy_size);
-  offset += copy_size;
-
-  // ASSETS
-
-  copy_size = header.obj_counts[SCENE_OBJ_INDEX_MESH_ASSET] * sizeof(AMesh);
-  mcopy_memory(*data + offset, scene_data->mesh_assets, copy_size);
-  offset += copy_size;
-
-  copy_size = header.obj_counts[SCENE_OBJ_INDEX_TEXTURE_ASSET] * sizeof(ATexture);
-  mcopy_memory(*data + offset, scene_data->texture_assets, copy_size);
-  offset += copy_size;
-
-  for (u32 i = 0; i < darray_get_length(scene_data->mesh_assets); i++) {
-    copy_size = string_get_raw_size(scene_data->mesh_assets[i].model_path);
-    mcopy_memory(*data + offset, string_get_raw(scene_data->mesh_assets[i].model_path),
-		 copy_size);
-    offset += copy_size;
+  if (!scene_compiler_copy_data(scene_data, *data, &header)) {
+    MERROR_CORE("Failed to copy data.");
+    return FALSE;
   }
 
-  for (u32 i = 0; i < darray_get_length(scene_data->texture_assets); i++) {
-    copy_size = string_get_raw_size(scene_data->texture_assets[i].image_path);
-    mcopy_memory(*data + offset, string_get_raw(scene_data->texture_assets[i].image_path),
-		 copy_size);
-    offset += copy_size;
-  }
 
   return TRUE;
 }
@@ -183,6 +112,98 @@ b8 scene_compiler_generate_header(SceneData* scene_data, scene_bin_header_t* hea
     darray_get_length(scene_data->texture_assets);
 
   
+  return TRUE;
+}
+
+b8 scene_compiler_calculate_size(SceneData* scene_data, u32* size, scene_bin_header_t* header) {
+
+  u32 mesh_paths_length = 0;
+  for (u32 i = 0; i < darray_get_length(scene_data->mesh_assets); i++) {
+    mesh_paths_length += string_get_raw_size(scene_data->mesh_assets[i].model_path);
+  }
+  
+  u32 texture_paths_length = 0;
+  for (u32 i = 0; i < darray_get_length(scene_data->texture_assets); i++) {
+    texture_paths_length += string_get_raw_size(scene_data->texture_assets[i].image_path);
+  }
+  
+  *size = sizeof(scene_bin_header_t) +
+    (header->obj_counts[SCENE_OBJ_INDEX_ENTITY] * sizeof(Entity)) +
+    (header->obj_counts[SCENE_OBJ_INDEX_CODE] * sizeof(CCode)) +
+    (header->obj_counts[SCENE_OBJ_INDEX_MESH] * sizeof(CMesh)) +
+    (header->obj_counts[SCENE_OBJ_INDEX_MATERIAL] * sizeof(CMaterial)) +
+    (header->obj_counts[SCENE_OBJ_INDEX_TEXTURE] * sizeof(CCTexture)) +
+    (header->obj_counts[SCENE_OBJ_INDEX_CAMERA] * sizeof(CCamera)) +
+    (header->obj_counts[SCENE_OBJ_INDEX_BOX_COLLIDER_3D] * sizeof(CBoxCollider3D)) +
+    (header->obj_counts[SCENE_OBJ_INDEX_BALL_COLLIDER_3D] * sizeof(CBallCollider3D)) +
+    mesh_paths_length + texture_paths_length;
+  
+  return TRUE;
+}
+
+b8 scene_compiler_copy_data(SceneData* scene_data, char* data, scene_bin_header_t* header) {
+  u32 offset = 0;
+  u32 copy_size = 0;
+
+  mcopy_memory(data + offset, header, sizeof(scene_bin_header_t));
+  offset += sizeof(scene_bin_header_t);
+
+  copy_size = header->obj_counts[SCENE_OBJ_INDEX_ENTITY] * sizeof(Entity);
+  mcopy_memory(data + offset, scene_data->entities, copy_size);
+  offset += copy_size;
+
+  copy_size = header->obj_counts[SCENE_OBJ_INDEX_CODE] * sizeof(CCode);
+  mcopy_memory(data + offset, scene_data->codes, copy_size);
+  offset += copy_size;
+
+  copy_size = header->obj_counts[SCENE_OBJ_INDEX_MESH] * sizeof(CMesh);
+  mcopy_memory(data + offset, scene_data->meshes, copy_size);
+  offset += copy_size;
+
+  copy_size = header->obj_counts[SCENE_OBJ_INDEX_MATERIAL] * sizeof(CMaterial);
+  mcopy_memory(data + offset, scene_data->materials, copy_size);
+  offset += copy_size;
+
+  copy_size = header->obj_counts[SCENE_OBJ_INDEX_TEXTURE] * sizeof(CCTexture);
+  mcopy_memory(data + offset, scene_data->textures, copy_size);
+  offset += copy_size;
+
+  copy_size = header->obj_counts[SCENE_OBJ_INDEX_CAMERA] * sizeof(CCamera);
+  mcopy_memory(data + offset, scene_data->cameras, copy_size);
+  offset += copy_size;
+
+  copy_size = header->obj_counts[SCENE_OBJ_INDEX_BOX_COLLIDER_3D] * sizeof(CBoxCollider3D);
+  mcopy_memory(data + offset, scene_data->box_colliders_3d, copy_size);
+  offset += copy_size;
+
+  copy_size = header->obj_counts[SCENE_OBJ_INDEX_BALL_COLLIDER_3D] * sizeof(CBallCollider3D);
+  mcopy_memory(data + offset, scene_data->ball_colliders_3d, copy_size);
+  offset += copy_size;
+
+  // ASSETS
+
+  copy_size = header->obj_counts[SCENE_OBJ_INDEX_MESH_ASSET] * sizeof(AMesh);
+  mcopy_memory(data + offset, scene_data->mesh_assets, copy_size);
+  offset += copy_size;
+
+  copy_size = header->obj_counts[SCENE_OBJ_INDEX_TEXTURE_ASSET] * sizeof(ATexture);
+  mcopy_memory(data + offset, scene_data->texture_assets, copy_size);
+  offset += copy_size;
+
+  for (u32 i = 0; i < darray_get_length(scene_data->mesh_assets); i++) {
+    copy_size = string_get_raw_size(scene_data->mesh_assets[i].model_path);
+    mcopy_memory(data + offset, string_get_raw(scene_data->mesh_assets[i].model_path),
+		 copy_size);
+    offset += copy_size;
+  }
+
+  for (u32 i = 0; i < darray_get_length(scene_data->texture_assets); i++) {
+    copy_size = string_get_raw_size(scene_data->texture_assets[i].image_path);
+    mcopy_memory(data + offset, string_get_raw(scene_data->texture_assets[i].image_path),
+		 copy_size);
+    offset += copy_size;
+  }
+
   return TRUE;
 }
 

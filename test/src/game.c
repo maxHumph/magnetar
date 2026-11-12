@@ -5,6 +5,7 @@
 #include <core/input.h>
 #include <ecs/ecs.h>
 #include <ecs/scene/scene_loader.h>
+#include <ecs/scene/scene_compiler.h>
 #include <asset/mg3d.h>
 
 #include "player/player_movement.h"
@@ -38,10 +39,16 @@ b8 game_initalize(Game* game_instance) {
 
 b8 on_update(Game* game_instance, f64 delta_time) {
 
+  if (key_down(KEY_C) && !key_down_prev(KEY_C)) {
+    if (!scene_compile(scene_data, "test_scene")) {
+      MERROR("Faile to compile test scene.");
+      return FALSE;
+    }
+  }
   if (key_down(KEY_L) && !scene_data->scene_loaded &&
       !key_down_prev(KEY_L)) {
     if (!scene_load("test_scene")) {
-      MERROR_CORE("Failed to load scene");
+      MERROR("Failed to load test scene.");
       return FALSE;
     }
     if(!camera_set_active(0)) {

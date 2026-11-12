@@ -138,6 +138,8 @@ b8 scene_data_clean(SceneData* data) {
     }
     darray_destroy(data->texture_assets);
   }
+
+  return TRUE;
 }
 
 b8 scene_load_binary(SceneData* scene_data, StringView path) {
@@ -145,30 +147,87 @@ b8 scene_load_binary(SceneData* scene_data, StringView path) {
   char* file_data = NULL_PTR;
   u64 data_size = 0;
 
+  if (!scene_data_clean(scene_data)) {
+    MERROR_CORE("Failed to clean scene data.");
+    return FALSE;
+  }
+
   if (!scene_loader_get_file_data(path, &file_data, &data_size)) {
     MERROR_CORE("Failed to get data from: %s", path);
     return FALSE;
   }
 
+  u64 copy_size = 0;
   u64 offset = 0;
 
   scene_bin_header_t header;
   mcopy_memory(&header, file_data + offset, sizeof(scene_bin_header_t));
   offset += sizeof(scene_bin_header_t);
 
-  scene_data->entities = darray_create(Entity);
-  
-  scene_data->meshes = darray_create(CMesh);
-  scene_data->materials = darray_create(CMaterial);
-  scene_data->textures = darray_create(CCTexture);
-  scene_data->cameras = darray_create(CCamera);
-  scene_data->box_colliders_3d = darray_create(CBoxCollider3D);
-  scene_data->ball_colliders_3d = darray_create(CBallCollider3D);
-  
-  scene_data->mesh_assets = darray_create(AMesh);
-  scene_data->texture_assets = darray_create(ATexture);
+  // @TODO: Check for file signature.
 
+  scene_data->entities =
+    darray_create_reserved(Entity, header.obj_counts[SCENE_OBJ_INDEX_ENTITY]);
+  
+  scene_data->meshes = darray_create_reserved(CMesh, header.obj_counts[SCENE_OBJ_INDEX_MESH]);
+  scene_data->materials =
+    darray_create_reserved(CMaterial, header.obj_counts[SCENE_OBJ_INDEX_MATERIAL]);
+  scene_data->textures =
+    darray_create_reserved(CCTexture, header.obj_counts[SCENE_OBJ_INDEX_TEXTURE]);
+  scene_data->cameras =
+    darray_create_reserved(CCamera, header.obj_counts[SCENE_OBJ_INDEX_CAMERA]);
+  scene_data->box_colliders_3d =
+    darray_create_reserved(CBoxCollider3D, header.obj_counts[SCENE_OBJ_INDEX_BOX_COLLIDER_3D]);
+  scene_data->ball_colliders_3d =
+    darray_create_reserved(CBallCollider3D, header.obj_counts[SCENE_OBJ_INDEX_BALL_COLLIDER_3D]);
+  
+  scene_data->mesh_assets =
+    darray_create_reserved(AMesh, header.obj_counts[SCENE_OBJ_INDEX_MESH_ASSET]);
+  scene_data->texture_assets =
+    darray_create_reserved(ATexture, header.obj_counts[SCENE_OBJ_INDEX_TEXTURE_ASSET]);
 
+  // @TODO: This memory moght be aligned wrong.
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_ENTITY] * sizeof(Entity);
+  mcopy_memory(scene_data->entities, file_data + offset, copy_size);
+  offset += copy_size;
+
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_CODE] * sizeof(CCode);
+  mcopy_memory(scene_data->codes, file_data + offset, copy_size);
+  offset += copy_size;
+
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_MESH] * sizeof(CMesh);
+  mcopy_memory(scene_data->meshes, file_data + offset, copy_size);
+  offset += copy_size;
+
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_MATERIAL] * sizeof(CMaterial);
+  mcopy_memory(scene_data->materials, file_data + offset, copy_size);
+  offset += copy_size;
+
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_TEXTURE] * sizeof(CCTexture);
+  mcopy_memory(scene_data->textures, file_data + offset, copy_size);
+  offset += copy_size;
+
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_CAMERA] * sizeof(CCamera);
+  mcopy_memory(scene_data->cameras, file_data + offset, copy_size);
+  offset += copy_size;
+
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_BOX_COLLIDER_3D] * sizeof(CBoxCollider3D);
+  mcopy_memory(scene_data->box_colliders_3d, file_data + offset, copy_size);
+  offset += copy_size;
+
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_BALL_COLLIDER_3D] * sizeof(CBallCollider3D);
+  mcopy_memory(scene_data->ball_colliders_3d, file_data + offset, copy_size);
+  offset += copy_size;
+
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_MESH_ASSET] * sizeof(AMesh);
+  mcopy_memory(scene_data->mesh_assets, file_data + offset, copy_size);
+  offset += copy_size;
+
+  copy_size = header.obj_counts[SCENE_OBJ_INDEX_TEXTURE_ASSET] * sizeof(ATexture);
+  mcopy_memory(scene_data->texture_assets, file_data + offset, copy_size);
+  offset += copy_size;
+
+  MTRACE("%s", file_data + offset);
 
   mfree(file_data, data_size * sizeof(char), MEMORY_TAG_SCENE);
   

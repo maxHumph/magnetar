@@ -1,5 +1,8 @@
 #include "scene_compiler.h"
 
+#include "ecs/ecs_manager.h"
+#include "ecs/scene/scene_parser.h"
+#include "ecs/scene/scene_loader.h"
 #include "data/darray.h"
 #include "core/mmemory.h"
 
@@ -8,7 +11,28 @@
 #include <errno.h>
 #include <string.h>
 
-b8 scene_compile(SceneData* scene_data, StringView path) {
+#if MPLATOFRM_UNIX || MPLATFORM_APPLE
+#include <unistd.h>
+#elif MPLATFORM_WINDOWS
+#include <direct.h>
+#define getcwd(a, b) _getcwd(a, b)
+#else
+#error "Unsupported platform"
+#endif
+
+b8 scene_compile(SceneData* scene_data, StringView name) {
+  
+  String path = alloc_string(FILENAME_MAX);
+  i32 path_length = snprintf(path, string_get_length(path), "%s/scene/%s.scene",
+			     getcwd(NULL, 0), name);
+
+
+  SceneIdentifiers* ids = create_scene_identifiers();
+  if (!scene_open_from_text(scene_data, ids, path)) {
+    MERROR_CORE("Failed to open: %s", path);
+    return FALSE;
+  }
+
 
   u32 size;
   char* data = NULL_PTR;
@@ -25,6 +49,16 @@ b8 scene_compile(SceneData* scene_data, StringView path) {
 
   mfree(data, size, MEMORY_TAG_SCENE);
 
+  if (!scene_data_clean(scene_data)) {
+    MERROR_CORE("Failed to clean scene data.");
+    return FALSE;
+  }
+
+  if (!scene_unload()) {
+    MERROR_CORE("Failed to unload scene.");
+    return FALSE;
+  }
+
   return TRUE;
 }
 
@@ -39,20 +73,9 @@ b8 scene_compiler_generate_data(SceneData* scene_data, char** data, u32* size) {
   String mesh_paths = NULL_PTR;
   String texture_paths = NULL_PTR;
 
-  header.obj_counts[SCENE_OBJ_INDEX_ENTITY] = darray_get_length(scene_data->entities);
-  header.obj_counts[SCENE_OBJ_INDEX_CODE] = darray_get_length(scene_data->codes);
-  header.obj_counts[SCENE_OBJ_INDEX_MESH] = darray_get_length(scene_data->meshes);
-  header.obj_counts[SCENE_OBJ_INDEX_MATERIAL] = darray_get_length(scene_data->materials);
-  header.obj_counts[SCENE_OBJ_INDEX_TEXTURE] = darray_get_length(scene_data->textures);
-  header.obj_counts[SCENE_OBJ_INDEX_CAMERA] = darray_get_length(scene_data->cameras);
-  header.obj_counts[SCENE_OBJ_INDEX_BOX_COLLIDER_3D] =
-    darray_get_length(scene_data->box_colliders_3d);
-  header.obj_counts[SCENE_OBJ_INDEX_BALL_COLLIDER_3D] =
-    darray_get_length(scene_data->ball_colliders_3d);
-
-  header.obj_counts[SCENE_OBJ_INDEX_MESH_ASSET] = darray_get_length(scene_data->mesh_assets);
-  header.obj_counts[SCENE_OBJ_INDEX_TEXTURE_ASSET] =
-    darray_get_length(scene_data->texture_assets);
+  if (!scene_compiler_generate_header(scene_data, &header)) {
+    MERROR_CORE("Failed to generate file header.");
+  }
 
   u32 mesh_paths_length = 0;
   for (u32 i = 0; i < darray_get_length(scene_data->mesh_assets); i++) {
@@ -139,6 +162,27 @@ b8 scene_compiler_generate_data(SceneData* scene_data, char** data, u32* size) {
     offset += copy_size;
   }
 
+  return TRUE;
+}
+
+b8 scene_compiler_generate_header(SceneData* scene_data, scene_bin_header_t* header) {
+
+  header->obj_counts[SCENE_OBJ_INDEX_ENTITY] = darray_get_length(scene_data->entities);
+  header->obj_counts[SCENE_OBJ_INDEX_CODE] = darray_get_length(scene_data->codes);
+  header->obj_counts[SCENE_OBJ_INDEX_MESH] = darray_get_length(scene_data->meshes);
+  header->obj_counts[SCENE_OBJ_INDEX_MATERIAL] = darray_get_length(scene_data->materials);
+  header->obj_counts[SCENE_OBJ_INDEX_TEXTURE] = darray_get_length(scene_data->textures);
+  header->obj_counts[SCENE_OBJ_INDEX_CAMERA] = darray_get_length(scene_data->cameras);
+  header->obj_counts[SCENE_OBJ_INDEX_BOX_COLLIDER_3D] =
+    darray_get_length(scene_data->box_colliders_3d);
+  header->obj_counts[SCENE_OBJ_INDEX_BALL_COLLIDER_3D] =
+    darray_get_length(scene_data->ball_colliders_3d);
+
+  header->obj_counts[SCENE_OBJ_INDEX_MESH_ASSET] = darray_get_length(scene_data->mesh_assets);
+  header->obj_counts[SCENE_OBJ_INDEX_TEXTURE_ASSET] =
+    darray_get_length(scene_data->texture_assets);
+
+  
   return TRUE;
 }
 

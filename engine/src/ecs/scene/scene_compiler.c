@@ -22,14 +22,19 @@
 
 b8 scene_compile(SceneData* scene_data, StringView name) {
   
-  String path = alloc_string(FILENAME_MAX);
-  i32 path_length = snprintf(path, string_get_length(path), "%s/scene/%s.scene",
-			     getcwd(NULL, 0), name);
+  String text_path = alloc_string(FILENAME_MAX);
+  i32 text_path_length = snprintf(path, string_get_length(path), "%s/scene/%s.scene",
+				  getcwd(NULL, 0), name);
+  
+  String bin_text_path = alloc_string(FILENAME_MAX);
+  i32 bin_path_length = snprintf(path, string_get_length(path), "%s/scene/%s.scenebin",
+				 getcwd(NULL, 0), name);
+
 
 
   SceneIdentifiers* ids = create_scene_identifiers();
-  if (!scene_open_from_text(scene_data, ids, path)) {
-    MERROR_CORE("Failed to open: %s", path);
+  if (!scene_open_from_text(scene_data, ids, text_path)) {
+    MERROR_CORE("Failed to open: %s", text_path);
     return FALSE;
   }
 
@@ -43,7 +48,7 @@ b8 scene_compile(SceneData* scene_data, StringView name) {
   }
 
   if (!scene_compiler_write_file(path, data, size)) {
-    MERROR_CORE("Failed to write %s.scenebin.", path);
+    MERROR_CORE("Failed to write %s.scenebin.", bin_path);
     return FALSE;
   }
 
@@ -54,7 +59,7 @@ b8 scene_compile(SceneData* scene_data, StringView name) {
     return FALSE;
   }
 
-  if (!scene_unload()) {
+  if (!scene_data_clean(scene_data)) {
     MERROR_CORE("Failed to unload scene.");
     return FALSE;
   }

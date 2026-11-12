@@ -76,10 +76,14 @@ b8 scene_unload(/* Scene* scene */) {
   darray_destroy(scene_data.entities);
 
   darray_destroy(scene_data.drawable_handles);
+
+  darray_destroy(scene_data.codes);
   darray_destroy(scene_data.meshes);
   darray_destroy(scene_data.materials);
   darray_destroy(scene_data.textures);
   darray_destroy(scene_data.cameras);
+  darray_destroy(scene_data.box_colliders_3d);
+  darray_destroy(scene_data.ball_colliders_3d);
 
   darray_destroy(scene_data.mesh_assets);
   darray_destroy(scene_data.texture_assets);
@@ -87,10 +91,14 @@ b8 scene_unload(/* Scene* scene */) {
   scene_data.entities = NULL_PTR;
 
   scene_data.drawable_handles = NULL_PTR;
+
+  scene_data.codes = NULL_PTR;
   scene_data.meshes = NULL_PTR;
   scene_data.materials = NULL_PTR;
   scene_data.textures = NULL_PTR;
   scene_data.cameras = NULL_PTR;
+  scene_data.box_colliders_3d = NULL_PTR;
+  scene_data.ball_colliders_3d = NULL_PTR;
 
   scene_data.mesh_assets = NULL_PTR;
   scene_data.texture_assets = NULL_PTR;

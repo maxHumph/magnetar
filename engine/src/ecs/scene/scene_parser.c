@@ -134,10 +134,14 @@ b8 scene_open_from_text(SceneData* data, SceneIdentifiers* ids,
   data->entities = darray_create(Entity);
 
   data->drawable_handles = darray_create(Handle32);
+
+  data->codes = darray_create(CCode);
   data->meshes = darray_create(CMesh);
   data->materials = darray_create(CMaterial);
   data->textures = darray_create(CCTexture);
   data->cameras = darray_create(CCamera);
+  data->box_colliders_3d = darray_create(CBoxCollider3D);
+  data->ball_colliders_3d = darray_create(CBallCollider3D);
 
   data->mesh_assets = darray_create(AMesh);
   data->texture_assets = darray_create(ATexture);
